@@ -28,14 +28,15 @@ Skills are automatically discovered by the AI assistant when placed in the appro
 
 ## Available Skills
 
-| Skill                 | Description                                            |
-| --------------------- | ------------------------------------------------------ |
-| `turbo-pipelines`     | Create, configure, and update Turbo pipelines          |
-| `turbo-monitor-debug` | Monitor pipelines and debug issues                     |
-| `turbo-lifecycle`     | List and delete pipelines                              |
-| `goldsky-auth-setup`  | Login, projects, and initial setup                     |
-| `goldsky-secrets`     | Manage credentials for sinks (PostgreSQL, Kafka, etc.) |
-| `goldsky-datasets`    | Discover available blockchain datasets and chains      |
+| Skill                    | Description                                            |
+| ------------------------ | ------------------------------------------------------ |
+| `goldsky-auth-setup`     | Install CLI, login, and project setup                  |
+| `goldsky-datasets`       | Discover available blockchain datasets and chains      |
+| `goldsky-secrets`        | Manage credentials for sinks (PostgreSQL, Kafka, etc.) |
+| `goldsky-skill-authoring`| Create new Goldsky workflow skills                     |
+| `turbo-pipelines`        | Create, configure, and update Turbo pipelines          |
+| `turbo-lifecycle`        | List and delete pipelines                              |
+| `turbo-monitor-debug`    | Monitor pipelines and debug issues                     |
 
 ## Usage
 
@@ -64,9 +65,14 @@ The AI will automatically use the appropriate skill based on your request.
 
 ## Prerequisites
 
-- [Goldsky CLI](https://docs.goldsky.com/get-started/cli) installed (`curl https://goldsky.com | sh`)
-- Logged in via `goldsky login`
-- Turbo CLI extension installed (`curl https://install-turbo.goldsky.com | sh`)
+**None required!** The skills will guide you through setup if needed.
+
+The `goldsky-auth-setup` skill helps you:
+- Install the Goldsky CLI
+- Install the Turbo CLI extension
+- Log in and select a project
+
+Just ask your AI assistant to help you get started, and it will walk you through the entire setup process.
 
 ## Skill Structure
 
