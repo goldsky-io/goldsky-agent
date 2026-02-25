@@ -67,9 +67,13 @@ sources:
 
 **Best for:** Raw logs, transactions, transfers, blocks — anything where you need historical backfill or decoded event processing.
 
-**Available datasets:** `raw_logs`, `raw_blocks`, `raw_transactions`, `erc20_transfers`, `erc721_transfers`, `traces`, `decoded_logs`
+**Available EVM datasets:** `raw_logs`, `blocks`, `raw_transactions`, `raw_traces`, `erc20_transfers`, `erc721_transfers`, `erc1155_transfers`, `decoded_logs`
+
+**Non-EVM chains also supported:** Solana (`solana.*`), Bitcoin (`bitcoin.raw.*`), Stellar (`stellar_mainnet.*`)
 
 ### Kafka Sources — Real-Time Streaming
+
+> **Note:** Kafka sources are used in production pipelines but are **not documented** in the official Goldsky docs. Use with caution and contact Goldsky support for topic names.
 
 Use `type: kafka` when consuming from a Goldsky-managed Kafka topic, typically for continuously-updated state like balances.
 
@@ -264,14 +268,16 @@ When you need the **same pipeline logic** across multiple chains, create separat
 
 ### Choosing a Sink Type
 
-| Destination       | Sink Type    | Best For                                      |
-| ----------------- | ------------ | --------------------------------------------- |
-| Analytics queries | `clickhouse` | Large-scale aggregations, time-series data    |
-| Application DB    | `postgres`   | Row-level lookups, joins, application serving |
-| Event processing  | `kafka`      | Downstream consumers, event-driven systems    |
-| Notifications     | `webhook`    | Lambda functions, API callbacks, alerts        |
-| Data lake         | `s3`         | Long-term archival, batch processing          |
-| Testing           | `blackhole`  | Validate pipeline without writing data        |
+| Destination          | Sink Type            | Best For                                      |
+| -------------------- | -------------------- | --------------------------------------------- |
+| Analytics queries    | `clickhouse`         | Large-scale aggregations, time-series data    |
+| Application DB       | `postgres`           | Row-level lookups, joins, application serving |
+| Real-time aggregates | `postgres_aggregate` | Balances, counters, running totals via triggers|
+| Event processing     | `kafka`              | Downstream consumers, event-driven systems    |
+| Notifications        | `webhook`            | Lambda functions, API callbacks, alerts        |
+| Data lake            | `s3_sink`            | Long-term archival, batch processing          |
+| Serverless streaming | `s2_sink`            | S2.dev streams, alternative to Kafka          |
+| Testing              | `blackhole`          | Validate pipeline without writing data        |
 
 ### Multi-Sink Considerations
 
