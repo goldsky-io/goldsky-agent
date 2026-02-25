@@ -227,7 +227,7 @@ When you need the **same pipeline logic** across multiple chains, create separat
 | Field              | Chain A (base)                    | Chain B (arbitrum)                    |
 | ------------------ | --------------------------------- | ------------------------------------- |
 | `name`             | `base-balance-streaming`          | `arbitrum-balance-streaming`          |
-| `topic`            | `base.raw.latest_balances_v2`     | `arbitrum-one.raw.latest_balances_v2` |
+| `topic`            | `base.raw.latest_balances_v2`     | `arbitrum.raw.latest_balances_v2`     |
 | Source key         | `base_latest_balances_v2`         | `arbitrum_latest_balances_v2`         |
 | Transform SQL      | `'base' AS chain`                 | `'arbitrum' AS chain`                 |
 | Sink table         | `base_token_balances`             | `arbitrum_token_balances`             |
