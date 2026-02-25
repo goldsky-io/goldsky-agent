@@ -102,8 +102,10 @@ If validation fails with "Dataset not found", try alternate naming (see Verified
 | Token transfers (ERC-20) | `<chain>.erc20_transfers`  | `base.erc20_transfers` (v1.2.0)      |
 | NFT transfers (ERC-721)  | `<chain>.erc721_transfers` | `ethereum.erc721_transfers` (v1.0.0) |
 | Transactions             | `<chain>.raw_transactions` | `ethereum.raw_transactions` (v1.0.0) |
-| Event logs               | `<chain>.logs`             | `base.logs` (v1.0.0)                 |
+| Event logs               | `<chain>.raw_logs`         | `base.raw_logs` (v1.0.0)             |
 | Solana tokens            | `solana.token_transfers`   | v1.0.0                               |
+| Bitcoin transactions     | `bitcoin.raw.transactions` | v1.0.0                               |
+| Stellar transfers        | `stellar_mainnet.transfers`| v1.1.0                               |
 
 > **Important:** Use `raw_transactions`, NOT `transactions`
 
@@ -111,16 +113,18 @@ If validation fails with "Dataset not found", try alternate naming (see Verified
 
 ## Popular Chain Prefixes
 
-| Chain     | Prefix      | Note                              |
-| --------- | ----------- | --------------------------------- |
-| Ethereum  | `ethereum`  |                                   |
-| Base      | `base`      |                                   |
-| Polygon   | `matic`     | **NOT** `polygon`                 |
-| Arbitrum  | `arbitrum`  |                                   |
-| Optimism  | `optimism`  |                                   |
-| BSC       | `bsc`       |                                   |
-| Avalanche | `avalanche` |                                   |
-| Solana    | `solana`    | Uses `start_block` not `start_at` |
+| Chain     | Prefix             | Note                              |
+| --------- | ------------------ | --------------------------------- |
+| Ethereum  | `ethereum`         |                                   |
+| Base      | `base`             |                                   |
+| Polygon   | `matic`            | **NOT** `polygon`                 |
+| Arbitrum  | `arbitrum`         |                                   |
+| Optimism  | `optimism`         |                                   |
+| BSC       | `bsc`              |                                   |
+| Avalanche | `avalanche`        |                                   |
+| Solana    | `solana`           | Uses `start_block` not `start_at` |
+| Bitcoin   | `bitcoin.raw`      | Uses `start_at` like EVM          |
+| Stellar   | `stellar_mainnet`  | Uses `start_at` like EVM          |
 
 **See `data/chain-prefixes.json` for complete list with chain IDs.**
 
@@ -130,23 +134,52 @@ If validation fails with "Dataset not found", try alternate naming (see Verified
 
 ### EVM Chains
 
-| Dataset Type       | Description                 | Use Case                             |
-| ------------------ | --------------------------- | ------------------------------------ |
-| `blocks`           | Block headers with metadata | Block explorers, timing analysis     |
-| `transactions`     | Transaction data            | Wallet activity, gas analysis        |
-| `logs`             | Raw event logs              | Custom event filtering               |
-| `traces`           | Internal transactions/calls | MEV analysis, contract interactions  |
-| `erc20_transfers`  | Fungible token transfers    | Token tracking, DeFi analytics       |
-| `erc721_transfers` | NFT transfers               | NFT marketplaces, ownership tracking |
-| `decoded_logs`     | ABI-decoded event logs      | Specific contract events             |
+| Dataset Type        | Description                 | Use Case                             |
+| ------------------- | --------------------------- | ------------------------------------ |
+| `blocks`            | Block headers with metadata | Block explorers, timing analysis     |
+| `raw_transactions`  | Transaction data            | Wallet activity, gas analysis        |
+| `raw_logs`          | Raw event logs              | Custom event filtering               |
+| `raw_traces`        | Internal transaction traces | MEV analysis, contract interactions  |
+| `erc20_transfers`   | Fungible token transfers    | Token tracking, DeFi analytics       |
+| `erc721_transfers`  | NFT transfers               | NFT marketplaces, ownership tracking |
+| `erc1155_transfers` | Multi-token transfers       | Gaming, multi-token standards        |
+| `decoded_logs`      | ABI-decoded event logs      | Specific contract events             |
+
+> **Important:** Use `raw_transactions`, NOT `transactions`. Use `raw_logs`, NOT `logs` (though `logs` works as an alias on some chains).
 
 ### Solana
 
-| Dataset Type      | Description         | Use Case        |
-| ----------------- | ------------------- | --------------- |
-| `token_transfers` | SPL token transfers | Token tracking  |
-| `transactions`    | Transaction data    | Wallet activity |
-| `blocks`          | Block/slot data     | Chain analysis  |
+| Dataset Type                     | Description                       | Use Case                     |
+| -------------------------------- | --------------------------------- | ---------------------------- |
+| `blocks`                         | Block data with leader info       | Chain analysis               |
+| `transactions`                   | Transaction data with balances    | Wallet activity              |
+| `transactions_with_instructions` | Transactions + nested instructions| Multi-instruction analysis   |
+| `instructions`                   | Individual instructions           | Program-specific analysis    |
+| `token_transfers`                | SPL token transfers               | Token tracking               |
+| `native_balances`                | SOL balance changes               | Whale tracking               |
+| `token_balances`                 | SPL token balance changes         | Portfolio tracking           |
+| `rewards`                        | Validator rewards                 | Staking analysis             |
+
+### Bitcoin
+
+| Dataset Type           | Description              | Use Case                     |
+| ---------------------- | ------------------------ | ---------------------------- |
+| `bitcoin.raw.blocks`       | Block data (hash, difficulty, size) | Network analysis     |
+| `bitcoin.raw.transactions` | Transactions (inputs, outputs, values) | Payment tracking |
+
+### Stellar
+
+All datasets use version `1.1.0`:
+
+| Dataset Type                       | Description                       | Use Case                     |
+| ---------------------------------- | --------------------------------- | ---------------------------- |
+| `stellar_mainnet.transactions`     | All network transactions          | Account monitoring           |
+| `stellar_mainnet.transfers`        | All transfer events               | Asset tracking               |
+| `stellar_mainnet.events`           | All events (contract + operation) | Contract monitoring          |
+| `stellar_mainnet.operations`       | Operations within transactions    | Action tracking              |
+| `stellar_mainnet.ledger_entries`   | Ledger state changes              | State analysis               |
+| `stellar_mainnet.ledgers`          | Ledger metadata                   | Network analysis             |
+| `stellar_mainnet.balances`         | Account balance changes           | Balance tracking             |
 
 ---
 

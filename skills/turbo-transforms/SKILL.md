@@ -14,7 +14,7 @@ Invoke this skill when the user:
 - Asks "how do transforms work" or "what can I do with transforms"
 - Wants to decode raw EVM logs or contract events
 - Needs to filter, reshape, or combine blockchain data
-- Asks about `_gs_log_decode`, `_gs_balance`, or other Goldsky SQL functions
+- Asks about `evm_log_decode`, `_gs_log_decode`, U256/I256 math, or other Goldsky SQL functions
 - Wants to chain multiple transforms together
 - Needs help writing SQL for a pipeline YAML
 - Is debugging a transform that isn't producing expected results
@@ -27,7 +27,7 @@ Invoke this skill when the user:
 
 Determine the transform goal:
 
-- **Decode raw logs** → Guide them through ABI-based log decoding with `_gs_log_decode()`
+- **Decode raw logs** → Guide them through ABI-based log decoding with `evm_log_decode()`
 - **Filter data** → Help write WHERE clauses (address, event type, block range, etc.)
 - **Reshape columns** → Help with SELECT, CAST, CASE WHEN, string manipulation
 - **Combine data** → Help with UNION ALL across multiple event types or sources
@@ -71,7 +71,7 @@ transforms:
 
 | Field         | Required | Description                                      |
 | ------------- | -------- | ------------------------------------------------ |
-| `type`        | Yes      | `sql`, `script`, `http`, or `dynamic`            |
+| `type`        | Yes      | `sql`, `script`, `handler`, or `dynamic_table`   |
 | `primary_key` | Yes      | Column used for uniqueness and ordering           |
 | `sql`         | Yes      | SQL query (for `sql` type transforms)            |
 
@@ -81,27 +81,43 @@ transforms:
 - Reference **other transforms** by their YAML key name: `FROM my_transform`
 - No need for a `from` field in SQL transforms — the `FROM` clause in SQL handles it
 
+### SQL Streaming Limitations
+
+Turbo SQL is powered by Apache DataFusion in streaming mode. The following are **NOT supported**:
+
+- **Joins** — use `dynamic_table` transforms for lookup-style joins instead
+- **Aggregations** (GROUP BY, COUNT, SUM, AVG) — use `postgres_aggregate` sink instead
+- **Window functions** (OVER, PARTITION BY, ROW_NUMBER)
+- **Subqueries** — use transform chaining instead
+- **CTEs** (WITH...AS) **are** supported
+
+### The `_gs_op` Column
+
+Every record includes a `_gs_op` column that tracks the operation type: `'i'` (insert), `'u'` (update), `'d'` (delete). Preserve this column through transforms for correct upsert semantics in database sinks.
+
 ---
 
 ## Goldsky SQL Functions
 
-### `_gs_log_decode()` — Decode Raw EVM Logs
+### `evm_log_decode()` — Decode Raw EVM Logs
 
 Decodes raw Ethereum log data into structured event fields using an ABI specification.
 
+> **Aliases:** `_gs_log_decode` and `evm_decode_log` also work. Existing pipelines using `_gs_log_decode` are valid.
+
 **Syntax:**
 ```sql
-_gs_log_decode(abi_json, topics, data) AS decoded
+evm_log_decode(abi_json, topics, data) -> STRUCT<name: VARCHAR, event_params: LIST<VARCHAR>>
 ```
 
 **Parameters:**
-- `abi_json` — JSON string containing the ABI event definitions
+- `abi_json` — JSON string containing the ABI event definitions (or full contract ABI)
 - `topics` — The `topics` column from `raw_logs`
 - `data` — The `data` column from `raw_logs`
 
-**Returns an object with:**
-- `decoded.event_signature` — Event name (e.g., `'OrderFilled'`, `'Transfer'`)
-- `decoded.event_params[N]` — Positional event parameters (1-indexed)
+**Returns a struct with:**
+- `decoded.name` (or `decoded.event_signature` via alias) — Event name (e.g., `'OrderFilled'`, `'Transfer'`)
+- `decoded.event_params[N]` — Positional event parameters (1-indexed, returned as strings)
 
 **Example — Decode ERC-20 Transfer events:**
 ```yaml
@@ -158,31 +174,161 @@ SELECT
 FROM my_raw_logs
 ```
 
-### `to_timestamp()` — Convert to Timestamp
+### `fetch_abi()` — Fetch ABI/IDL from URL
+
+Fetch an ABI or IDL from a remote URL. Cached internally for performance.
 
 ```sql
-to_timestamp(block_timestamp) AS block_time
+fetch_abi(url, format) -> VARCHAR
+-- format: 'raw' for plain JSON, 'etherscan' for Etherscan API responses
 ```
 
-### `lower()` — Lowercase Strings
+**Aliases:** `_gs_fetch_abi`
 
-Useful for case-insensitive address comparison:
+**Example:**
 ```sql
-WHERE address = lower('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48')
+evm_log_decode(
+  fetch_abi('https://example.com/erc20.json', 'raw'),
+  topics, data
+) AS decoded
 ```
 
-### `CONCAT()` — Build Composite Strings
+### `_gs_keccak256()` — Keccak256 Hash
 
-Useful for constructing composite primary keys from multiple fields:
+Compute Keccak256 hash (same as Solidity's `keccak256`). Returns hex with `0x` prefix.
+
 ```sql
-CONCAT('base', '-', COALESCE(balance.contract_address, ''), '-', balance.owner_address) AS id
+_gs_keccak256('Transfer(address,address,uint256)')
+-- 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef
 ```
 
-### `COALESCE()` — Null-Safe Values
+### `xxhash()` — Fast Non-Cryptographic Hash
 
-Returns the first non-null argument. Use to provide fallback values for nullable columns:
 ```sql
-COALESCE(balance.contract_address, '') -- returns '' if contract_address is null
+xxhash(concat(transaction_hash, '_', log_index::VARCHAR)) AS unique_id
+```
+
+### U256/I256 — 256-bit Integer Math
+
+For precise token amount arithmetic without JavaScript precision loss.
+
+```sql
+-- Convert to/from U256
+to_u256(value)              -> U256
+u256_to_string(u256_value)  -> VARCHAR
+
+-- Arithmetic (also available: u256_sub, u256_mul, u256_div, u256_mod)
+u256_add(a, b) -> U256
+
+-- Automatic operator rewriting: once values are cast to U256/I256,
+-- standard operators (+, -, *, /, %) are auto-rewritten to function calls
+to_u256(value) / to_u256('1000000000000000000')  -- same as u256_div(...)
+```
+
+**I256 (signed):** `to_i256`, `i256_to_string`, `i256_add`, `i256_sub`, `i256_mul`, `i256_div`, `i256_mod`, `i256_neg`, `i256_abs`
+
+**Example — Convert wei to ETH:**
+```sql
+u256_to_string(
+  to_u256(evt.event_params[3]) / to_u256('1000000000000000000')
+) AS amount_eth
+```
+
+### Solana Decode Functions
+
+```sql
+-- Decode instruction data using IDL (returns STRUCT<name, value>)
+_gs_decode_instruction_data(idl_json, data)
+
+-- Decode program log messages using IDL
+_gs_decode_log_message(idl_json, log_messages)
+
+-- Program-specific decoders:
+gs_solana_decode_token_program_instruction(data)
+gs_solana_decode_system_program_instruction(data)
+gs_solana_get_accounts(transaction_data)
+gs_solana_get_balance_changes(transaction_data)
+gs_solana_decode_associated_token_program_instruction(data)
+gs_solana_decode_stake_program_instruction(data)
+gs_solana_decode_vote_program_instruction(data)
+
+-- Base58 decoding
+_gs_from_base58(base58_string) -> BINARY
+```
+
+### Array Functions
+
+```sql
+-- Filter array elements by struct field matching a list of values
+-- (prevents overflow panics by filtering BEFORE unnest)
+array_filter_in(array, field_name, values_list) -> LIST
+
+-- Convert list to large-list (i64 offsets) for very large arrays
+to_large_list(array) -> LARGE_LIST
+
+-- Filter array by field value
+array_filter(array, field_name, value) -> LIST
+
+-- Get first matching element
+array_filter_first(array, field_name, value) -> STRUCT
+
+-- Add index to each element
+array_enumerate(array) -> LIST<STRUCT<index, value>>
+
+-- Combine multiple arrays element-wise
+zip_arrays(array1, array2, ...) -> LIST<STRUCT>
+```
+
+### JSON Functions
+
+```sql
+json_query(json_string, path) -> VARCHAR       -- Query JSON by path
+json_value(json_string, path) -> VARCHAR       -- Extract scalar value
+json_exists(json_string, path) -> BOOLEAN      -- Check path exists
+is_json(string) -> BOOLEAN                     -- Validate JSON
+parse_json(json_string) -> JSON                -- Parse (errors on invalid)
+try_parse_json(json_string) -> JSON            -- Parse (NULL on invalid)
+json_object(key1, val1, ...) -> JSON           -- Construct JSON object
+json_array(val1, val2, ...) -> JSON            -- Construct JSON array
+```
+
+### Time Functions
+
+```sql
+to_timestamp(seconds) -> TIMESTAMP
+to_timestamp_micros(microseconds) -> TIMESTAMP
+now() -> TIMESTAMP                              -- volatile, current time
+date_part('hour', timestamp) -> INT             -- extract timestamp parts
+```
+
+### `dynamic_table_check()` — Lookup Table Check
+
+Check if a value exists in a dynamic table (async). Used with `dynamic_table` transforms.
+
+```sql
+WHERE dynamic_table_check('tracked_wallets', from_address)
+```
+
+### String & Encoding Functions
+
+```sql
+_gs_hex_to_byte(hex_string) -> BINARY
+_gs_byte_to_hex(bytes) -> VARCHAR
+string_to_array(string, delimiter) -> LIST<VARCHAR>
+regexp_extract(string, pattern, group_index) -> VARCHAR
+regexp_replace(string, pattern, replacement) -> VARCHAR
+```
+
+### Standard SQL Functions
+
+All Apache DataFusion SQL functions are also available: `lower`, `upper`, `trim`, `substring`, `concat`, `replace`, `reverse`, `COALESCE`, `CASE WHEN`, `CAST`, etc.
+
+```sql
+-- Common patterns
+lower('0xABC...')                              -- case-insensitive address
+CONCAT('base', '-', COALESCE(addr, ''))        -- composite keys
+COALESCE(balance.contract_address, '')         -- null-safe values
+to_timestamp(block_timestamp) AS block_time    -- timestamp conversion
 ```
 
 ---
@@ -248,7 +394,7 @@ transforms:
 
 ### 4. Type Casting and Numeric Scaling
 
-Cast values between types. Supported CAST targets include `DOUBLE`, `STRING`, `VARCHAR`.
+Cast values between types. Supported CAST targets include `DOUBLE`, `STRING`, `VARCHAR`, `DECIMAL(p,s)`, `INT`, `BIGINT`.
 
 ```sql
 -- Convert from raw uint256 to human-readable amounts

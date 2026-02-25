@@ -416,6 +416,11 @@ For full chain prefixes, dataset types, and version discovery, use `/goldsky-dat
 | View live data          | `goldsky turbo inspect <name>`                         |
 | Inspect node            | `goldsky turbo inspect <name> -n <node>`               |
 | View logs               | `goldsky turbo logs <name>`                            |
+| Follow logs             | `goldsky turbo logs <name> --follow`                   |
+| Pause                   | `goldsky turbo pause <name>`                           |
+| Resume                  | `goldsky turbo resume <name>`                          |
+| Restart                 | `goldsky turbo restart <name>`                         |
+| Restart (clear state)   | `goldsky turbo restart <name> --clear-state`           |
 | Delete                  | `goldsky turbo delete <name>`                          |
 | List secrets            | `goldsky secret list`                                  |
 
@@ -489,13 +494,15 @@ sources:
 
 | Field          | Required | Description                            |
 | -------------- | -------- | -------------------------------------- |
-| `type`         | Yes      | Always `dataset` for now               |
+| `type`         | Yes      | `dataset` for blockchain data          |
 | `dataset_name` | Yes      | Format: `<chain>.<dataset_type>`       |
 | `version`      | Yes      | Dataset version (e.g., `1.2.0`)        |
 | `start_at`     | EVM      | `latest` or `earliest`                 |
 | `start_block`  | Solana   | Specific slot number (omit for latest) |
 
-### Available Chains (EVM)
+### Available Chains
+
+**EVM Chains:**
 
 | Chain Prefix | Network           |
 | ------------ | ----------------- |
@@ -507,17 +514,34 @@ sources:
 | `bsc`        | BNB Smart Chain   |
 | `avalanche`  | Avalanche C-Chain |
 
+**Non-EVM Chains:**
+
+| Chain Prefix        | Network  | Note                                |
+| ------------------- | -------- | ----------------------------------- |
+| `solana`            | Solana   | Uses `start_block` not `start_at`   |
+| `bitcoin.raw`       | Bitcoin  | Uses `start_at` like EVM            |
+| `stellar_mainnet`   | Stellar  | Uses `start_at` like EVM, v1.1.0    |
+
 ### Common Dataset Types
+
+**EVM:**
 
 | Dataset Type            | Description                               |
 | ----------------------- | ----------------------------------------- |
-| `blocks` / `raw_blocks` | Block headers                             |
+| `blocks`                | Block headers                             |
 | `raw_transactions`      | Transaction data (**NOT** `transactions`) |
-| `logs` / `raw_logs`     | Event logs                                |
-| `traces`                | Internal transactions                     |
+| `raw_logs`              | Event logs                                |
+| `raw_traces`            | Internal transaction traces               |
 | `erc20_transfers`       | ERC-20 token transfers                    |
 | `erc721_transfers`      | ERC-721 NFT transfers                     |
+| `erc1155_transfers`     | ERC-1155 multi-token transfers            |
 | `decoded_logs`          | ABI-decoded event logs                    |
+
+**Solana:** `blocks`, `transactions`, `transactions_with_instructions`, `instructions`, `token_transfers`, `native_balances`, `token_balances`, `rewards`
+
+**Bitcoin:** `bitcoin.raw.blocks`, `bitcoin.raw.transactions`
+
+**Stellar:** `stellar_mainnet.transactions`, `stellar_mainnet.transfers`, `stellar_mainnet.events`, `stellar_mainnet.operations`, `stellar_mainnet.ledger_entries`, `stellar_mainnet.ledgers`, `stellar_mainnet.balances`
 
 ---
 
@@ -525,12 +549,12 @@ sources:
 
 ### Transform Types
 
-| Type      | Use Case                             |
-| --------- | ------------------------------------ |
-| `sql`     | Filtering, projections, aggregations |
-| `script`  | Custom TypeScript/JavaScript logic   |
-| `http`    | Call external APIs to enrich data    |
-| `dynamic` | Create lookup tables for filtering   |
+| Type            | Use Case                              |
+| --------------- | ------------------------------------- |
+| `sql`           | Filtering, projections, SQL functions |
+| `script`        | Custom TypeScript/WASM logic          |
+| `handler`       | Call external HTTP APIs to enrich data|
+| `dynamic_table` | Lookup tables backed by a database    |
 
 ### SQL Transform
 
@@ -639,19 +663,35 @@ sinks:
     primary_key: id
 ```
 
-**Secret format:**
-
-```json
-{
-  "type": "jdbc",
-  "protocol": "postgres",
-  "host": "db.example.com",
-  "port": 5432,
-  "databaseName": "mydb",
-  "user": "admin",
-  "password": "secret"
-}
+**Secret format:** PostgreSQL connection string:
 ```
+postgres://username:password@host:port/database
+```
+
+### PostgreSQL Aggregate Sink
+
+Real-time aggregations in PostgreSQL using database triggers. Data flows into a landing table, and a trigger maintains aggregated values in a separate table.
+
+```yaml
+sinks:
+  balances:
+    type: postgres_aggregate
+    from: transfers
+    schema: public
+    landing_table: transfer_log
+    agg_table: account_balances
+    primary_key: transfer_id
+    secret_name: MY_POSTGRES
+    group_by:
+      account:
+        type: text
+    aggregate:
+      balance:
+        from: amount
+        fn: sum
+```
+
+Supported aggregation functions: `sum`, `count`, `avg`, `min`, `max`
 
 ### ClickHouse Sink
 
@@ -665,16 +705,9 @@ sinks:
     primary_key: id
 ```
 
-**Secret format:**
-
-```json
-{
-  "type": "clickHouse",
-  "url": "https://xyz.clickhouse.cloud:8443",
-  "username": "default",
-  "password": "secret",
-  "databaseName": "default"
-}
+**Secret format:** ClickHouse connection string:
+```
+https://username:password@host:port/database
 ```
 
 ### Kafka Sink
@@ -685,23 +718,14 @@ sinks:
     type: kafka
     from: my_transform
     topic: my-topic
-    secret_name: MY_KAFKA_SECRET
-```
-
-**Secret format:**
-
-```json
-{
-  "type": "kafka",
-  "bootstrapServers": "broker:9092",
-  "securityProtocol": "SASL_SSL",
-  "saslMechanism": "PLAIN",
-  "saslJaasUsername": "user",
-  "saslJaasPassword": "pass"
-}
+    topic_partitions: 10
+    data_format: avro          # or: json
+    schema_registry_url: http://schema-registry:8081  # required for avro
 ```
 
 ### Webhook Sink
+
+> **Note:** Turbo webhook sinks do **not** support Goldsky's native secrets management. Include auth headers directly in the pipeline config.
 
 ```yaml
 sinks:
@@ -709,7 +733,10 @@ sinks:
     type: webhook
     from: my_transform
     url: https://api.example.com/webhook
-    secret_name: MY_WEBHOOK_SECRET
+    one_row_per_request: true
+    headers:
+      Authorization: Bearer your-token
+      Content-Type: application/json
 ```
 
 ### S3 Sink
@@ -717,11 +744,28 @@ sinks:
 ```yaml
 sinks:
   s3_output:
-    type: s3
+    type: s3_sink
     from: my_transform
+    endpoint: https://s3.amazonaws.com
     bucket: my-bucket
     prefix: data/
     secret_name: MY_S3_SECRET
+```
+
+**Secret format:** `access_key_id:secret_access_key` (or `access_key_id:secret_access_key:session_token` for temporary credentials)
+
+### S2 Sink
+
+Publish to [S2.dev](https://s2.dev) streams — a serverless alternative to Kafka.
+
+```yaml
+sinks:
+  s2_output:
+    type: s2_sink
+    from: my_transform
+    access_token: your_access_token
+    basin: your-basin-name
+    stream: your-stream-name
 ```
 
 ---

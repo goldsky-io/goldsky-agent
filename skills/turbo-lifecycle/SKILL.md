@@ -1,6 +1,6 @@
 ---
 name: turbo-lifecycle
-description: Manage Turbo pipeline lifecycle - list, delete pipelines. Use when listing pipelines, deleting pipelines, or managing pipeline state.
+description: Manage Turbo pipeline lifecycle - list, delete, pause, resume, restart pipelines. Use when listing pipelines, deleting pipelines, pausing/resuming, restarting, or managing pipeline state.
 ---
 
 # Turbo Pipeline Lifecycle Management
@@ -41,6 +41,9 @@ Use AskUserQuestion to ask:
 - **Options:**
   - "List all pipelines" (description: "See all pipelines in my project")
   - "Delete a pipeline" (description: "Remove a pipeline permanently")
+  - "Pause a pipeline" (description: "Temporarily stop a running pipeline")
+  - "Resume a pipeline" (description: "Restart a paused pipeline")
+  - "Restart a pipeline" (description: "Restart pods, optionally clearing state")
   - "Clean up multiple pipelines" (description: "Delete several pipelines at once")
 
 Based on their selection, follow the appropriate workflow below.
@@ -243,11 +246,15 @@ Confirm deleted pipelines no longer appear.
 
 ## Quick Reference
 
-| Action             | Command                                   |
-| ------------------ | ----------------------------------------- |
-| List all pipelines | `goldsky turbo list`                      |
-| Delete by name     | `goldsky turbo delete <pipeline-name>`    |
-| Delete by YAML     | `goldsky turbo delete -f <pipeline.yaml>` |
+| Action             | Command                                           |
+| ------------------ | ------------------------------------------------- |
+| List all pipelines | `goldsky turbo list`                              |
+| Delete by name     | `goldsky turbo delete <pipeline-name>`            |
+| Delete by YAML     | `goldsky turbo delete -f <pipeline.yaml>`         |
+| Pause pipeline     | `goldsky turbo pause <pipeline-name>`             |
+| Resume pipeline    | `goldsky turbo resume <pipeline-name>`            |
+| Restart pipeline   | `goldsky turbo restart <pipeline-name>`           |
+| Restart fresh      | `goldsky turbo restart <pipeline-name> --clear-state` |
 
 ## Pipeline States
 
@@ -255,8 +262,53 @@ Confirm deleted pipelines no longer appear.
 | -------- | ------------------------------------------ |
 | running  | Pipeline is actively processing data       |
 | starting | Pipeline is initializing                   |
+| paused   | Pipeline is paused (replicas set to 0)     |
 | stopped  | Pipeline is not running (manually stopped) |
 | error    | Pipeline encountered an error              |
+
+## Pause, Resume, and Restart
+
+### Pause a Pipeline
+
+Temporarily stop processing without deleting:
+
+```bash
+goldsky turbo pause <pipeline-name>
+# or by YAML:
+goldsky turbo pause -f <pipeline.yaml>
+```
+
+This sets deployment replicas to 0, preserving all state for later resumption.
+
+### Resume a Pipeline
+
+Restore a paused pipeline to its running state:
+
+```bash
+goldsky turbo resume <pipeline-name>
+# or by YAML:
+goldsky turbo resume -f <pipeline.yaml>
+```
+
+> You can only resume a **paused** pipeline. Attempting to resume an already running pipeline returns an error.
+
+### Restart a Pipeline
+
+Trigger a pod restart for a running or paused pipeline:
+
+```bash
+goldsky turbo restart <pipeline-name>
+```
+
+To clear all checkpoints and reprocess from the beginning:
+
+```bash
+goldsky turbo restart <pipeline-name> --clear-state
+```
+
+> **Restart vs Resume:** Use `resume` to restore a paused pipeline without restarting pods. Use `restart` when you need a fresh pod restart (e.g., after configuration changes or to recover from issues). Restart is **not supported** for Job-mode pipelines — use `delete` + `apply` instead.
+
+---
 
 ## Important Notes
 

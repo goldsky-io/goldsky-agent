@@ -88,16 +88,39 @@ This opens an interactive TUI (Terminal User Interface) showing live data.
 
 Explain the keyboard shortcuts:
 
+**Navigation:**
+
+| Key                     | Action                            |
+| ----------------------- | --------------------------------- |
+| `Tab` / `→`             | Next tab                          |
+| `Shift+Tab` / `←`      | Previous tab                      |
+| `1`-`9`                 | Jump to tab by number             |
+| `j`/`k` / `↑`/`↓`     | Scroll up/down                    |
+| `g` / `Home`            | Jump to top                       |
+| `G` / `End`             | Jump to bottom                    |
+| `Page Up` / `Page Down` | Scroll by page                    |
+| Mouse wheel             | Scroll up/down                    |
+
+**Search:**
+
+| Key     | Action                  |
+| ------- | ----------------------- |
+| `/`     | Start search            |
+| `Enter` | Execute search          |
+| `n`     | Next match              |
+| `N`     | Previous match          |
+| `Esc`   | Clear search            |
+
+**Actions:**
+
 | Key            | Action                            |
 | -------------- | --------------------------------- |
-| `Tab` / `←→`   | Switch between topology node tabs |
-| `j`/`k` / `↑↓` | Scroll up/down                    |
-| `g` / `G`      | Jump to top/bottom                |
-| `/`            | Search records                    |
-| `n` / `N`      | Next/previous search match        |
 | `d`            | Toggle pipeline definition view   |
 | `w`            | Open in web dashboard             |
-| `q`            | Quit                              |
+| `e`            | Open in web editor                |
+| `q` / `Ctrl+C` | Quit                             |
+
+> **Tip:** Hold `Shift` while using the mouse to select and copy text from the TUI.
 
 ### Step 3: Filter to Specific Nodes
 
@@ -396,17 +419,25 @@ After checking, provide a summary:
 
 ## Live Inspect TUI Shortcuts
 
-| Key            | Action               |
-| -------------- | -------------------- |
-| `Tab` / `←→`   | Switch tabs          |
-| `j`/`k` / `↑↓` | Scroll               |
-| `g` / `G`      | Top/bottom           |
-| `/`            | Search               |
-| `n` / `N`      | Next/prev match      |
-| `d`            | Toggle definition    |
-| `w`            | Open web dashboard   |
-| `q`            | Quit                 |
-| `Cmd` + mouse  | Select and copy text |
+| Key                     | Action               |
+| ----------------------- | -------------------- |
+| `Tab`/`→`, `Shift+Tab`/`←` | Next/prev tab    |
+| `1`-`9`                 | Jump to tab number   |
+| `j`/`k` / `↑`/`↓`     | Scroll               |
+| `g`/`Home`, `G`/`End`  | Top/bottom           |
+| `Page Up`/`Page Down`  | Scroll by page       |
+| `/` → `Enter`          | Search               |
+| `n` / `N`              | Next/prev match      |
+| `Esc`                   | Clear search         |
+| `d`                     | Toggle definition    |
+| `w`                     | Open web dashboard   |
+| `e`                     | Open web editor      |
+| `q` / `Ctrl+C`         | Quit                 |
+| `Shift` + mouse         | Select and copy text |
+
+### Auto-Reconnection
+
+The TUI automatically reconnects when the pipeline is updated, paused, resumed, or temporarily unavailable. It displays "Reconnecting..." and preserves previously received data. The TUI has a **30-minute timeout** — if the pipeline remains unreachable for 30 minutes, it closes automatically.
 
 ## Error Pattern Reference
 

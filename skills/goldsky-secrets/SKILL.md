@@ -62,12 +62,12 @@ postgresql://USER:PASSWORD@HOST/DATABASE
 postgresql://neondb_owner:abc123@ep-cool-name.us-east-2.aws.neon.tech/neondb?sslmode=require
 ```
 
-**Parse and create:**
+**Create using the connection string directly:**
 
 ```bash
-goldsky secret create \
-  --name SUGGESTED_NAME \
-  --value '{"type":"jdbc","protocol":"postgres","host":"ep-cool-name.us-east-2.aws.neon.tech","port":5432,"databaseName":"neondb","user":"neondb_owner","password":"abc123"}'
+goldsky secret create --name SUGGESTED_NAME
+# When prompted, paste the connection string:
+# postgresql://neondb_owner:abc123@ep-cool-name.us-east-2.aws.neon.tech/neondb?sslmode=require
 ```
 
 ### Step 4: Provider-Specific Quick Paths
@@ -127,33 +127,24 @@ Run `goldsky secret list` to confirm creation.
 
 ### Quick Reference Examples
 
-**PostgreSQL:**
+**PostgreSQL** — Connection string format:
 
-```json
-{
-  "type": "jdbc",
-  "protocol": "postgres",
-  "host": "hostname",
-  "port": 5432,
-  "databaseName": "mydb",
-  "user": "username",
-  "password": "password"
-}
+```
+postgres://username:password@host:port/database
 ```
 
-**ClickHouse:**
-
-```json
-{
-  "type": "clickHouse",
-  "url": "https://host:8443",
-  "username": "default",
-  "password": "secret",
-  "databaseName": "default"
-}
+```bash
+goldsky secret create --name MY_POSTGRES_SECRET
+# The CLI will prompt for the connection string interactively
 ```
 
-**Kafka:**
+**ClickHouse** — Connection string format:
+
+```
+https://username:password@host:port/database
+```
+
+**Kafka** — JSON format:
 
 ```json
 {
@@ -166,15 +157,17 @@ Run `goldsky secret list` to confirm creation.
 }
 ```
 
+**S3** — Colon-separated format:
+
+```
+access_key_id:secret_access_key
+```
+
+Or with session token: `access_key_id:secret_access_key:session_token`
+
 **Webhook:**
 
-```json
-{
-  "type": "httpauth",
-  "secretKey": "Authorization",
-  "secretValue": "Bearer your-token"
-}
-```
+> **Note:** Turbo pipeline webhook sinks do **not** support Goldsky's native secrets management. Include auth headers directly in the pipeline YAML `headers:` field instead.
 
 ### Connection String Parser
 
@@ -313,9 +306,9 @@ goldsky secret list
 ### PostgreSQL Secret
 
 ```bash
-goldsky secret create \
-  --name PROD_POSTGRES \
-  --value '{"type":"jdbc","protocol":"postgres","host":"db.example.com","port":5432,"databaseName":"mydb","user":"admin","password":"secret"}'
+goldsky secret create --name PROD_POSTGRES
+# When prompted, provide the connection string:
+# postgres://admin:secret@db.example.com:5432/mydb
 ```
 
 Pipeline usage:
@@ -333,9 +326,9 @@ sinks:
 ### ClickHouse Secret
 
 ```bash
-goldsky secret create \
-  --name CLICKHOUSE_ANALYTICS \
-  --value '{"type":"clickHouse","url":"https://abc123.clickhouse.cloud:8443","username":"default","password":"secret","databaseName":"analytics"}'
+goldsky secret create --name CLICKHOUSE_ANALYTICS
+# When prompted, provide the connection string:
+# https://default:secret@abc123.clickhouse.cloud:8443/analytics
 ```
 
 Pipeline usage:
@@ -355,8 +348,7 @@ sinks:
 Update an existing secret without changing pipeline configs:
 
 ```bash
-goldsky secret update MY_POSTGRES_SECRET \
-  --value '{"type":"jdbc","protocol":"postgres","host":"db.example.com","port":5432,"databaseName":"mydb","user":"admin","password":"NEW_PASSWORD"}'
+goldsky secret update MY_POSTGRES_SECRET --value 'postgres://admin:NEW_PASSWORD@db.example.com:5432/mydb'
 ```
 
 Active pipelines will pick up the new credentials on their next connection.
@@ -434,7 +426,7 @@ echo '{"url":"...","user":"..."}' | jq .
 **Fix:** Update the secret with correct credentials:
 
 ```bash
-goldsky secret update MY_SECRET --value '{"type":"jdbc","protocol":"postgres","host":"host","port":5432,"databaseName":"db","user":"correct","password":"credentials"}'
+goldsky secret update MY_SECRET --value 'postgres://correct:credentials@host:5432/db'
 ```
 
 ### Secret value contains special characters
