@@ -1,0 +1,639 @@
+---
+name: turbo-transforms
+description: Write and understand SQL transforms for Turbo pipelines. Use when decoding EVM logs, filtering events, casting types, chaining transforms, combining data with UNION ALL, or building complex data processing logic.
+---
+
+# Turbo Transforms
+
+Write, understand, and debug SQL transforms for Turbo pipeline configurations.
+
+## Triggers
+
+Invoke this skill when the user:
+
+- Asks "how do transforms work" or "what can I do with transforms"
+- Wants to decode raw EVM logs or contract events
+- Needs to filter, reshape, or combine blockchain data
+- Asks about `_gs_log_decode`, `_gs_balance`, or other Goldsky SQL functions
+- Wants to chain multiple transforms together
+- Needs help writing SQL for a pipeline YAML
+- Is debugging a transform that isn't producing expected results
+- Wants to combine multiple event types into a single output
+- Mentions `/turbo-transforms`
+
+## Agent Instructions
+
+### Step 1: Understand What the User Needs
+
+Determine the transform goal:
+
+- **Decode raw logs** → Guide them through ABI-based log decoding with `_gs_log_decode()`
+- **Filter data** → Help write WHERE clauses (address, event type, block range, etc.)
+- **Reshape columns** → Help with SELECT, CAST, CASE WHEN, string manipulation
+- **Combine data** → Help with UNION ALL across multiple event types or sources
+- **Chain transforms** → Help build multi-step processing pipelines
+- **Understand existing transforms** → Walk through the SQL and explain each part
+
+### Step 2: Write or Explain the Transform
+
+Use the patterns and references below to help the user. Always ensure:
+
+1. Every transform has `type: sql` and `primary_key: id` (or appropriate column)
+2. SQL references source or transform names in the `FROM` clause
+3. Column names match the source schema
+4. CAST operations use correct target types (DOUBLE, VARCHAR, etc.)
+
+### Step 3: Validate
+
+> **CRITICAL:** After writing transforms, always validate the full pipeline YAML:
+> ```bash
+> goldsky turbo validate <pipeline.yaml>
+> ```
+
+---
+
+## Transform Basics
+
+### YAML Structure
+
+```yaml
+transforms:
+  my_transform:
+    type: sql
+    primary_key: id
+    sql: |
+      SELECT id, block_number, address
+      FROM my_source
+      WHERE address = '0xabc...'
+```
+
+### Required Fields
+
+| Field         | Required | Description                                      |
+| ------------- | -------- | ------------------------------------------------ |
+| `type`        | Yes      | `sql`, `script`, `http`, or `dynamic`            |
+| `primary_key` | Yes      | Column used for uniqueness and ordering           |
+| `sql`         | Yes      | SQL query (for `sql` type transforms)            |
+
+### Referencing Data
+
+- Reference **sources** by their YAML key name: `FROM my_source`
+- Reference **other transforms** by their YAML key name: `FROM my_transform`
+- No need for a `from` field in SQL transforms — the `FROM` clause in SQL handles it
+
+---
+
+## Goldsky SQL Functions
+
+### `_gs_log_decode()` — Decode Raw EVM Logs
+
+Decodes raw Ethereum log data into structured event fields using an ABI specification.
+
+**Syntax:**
+```sql
+_gs_log_decode(abi_json, topics, data) AS decoded
+```
+
+**Parameters:**
+- `abi_json` — JSON string containing the ABI event definitions
+- `topics` — The `topics` column from `raw_logs`
+- `data` — The `data` column from `raw_logs`
+
+**Returns an object with:**
+- `decoded.event_signature` — Event name (e.g., `'OrderFilled'`, `'Transfer'`)
+- `decoded.event_params[N]` — Positional event parameters (1-indexed)
+
+**Example — Decode ERC-20 Transfer events:**
+```yaml
+transforms:
+  decoded_events:
+    type: sql
+    primary_key: id
+    sql: |
+      SELECT
+        _gs_log_decode(
+          '[{"anonymous":false,"inputs":[{"indexed":true,"name":"from","type":"address"},{"indexed":true,"name":"to","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"Transfer","type":"event"}]',
+          topics,
+          data
+        ) AS decoded,
+        id,
+        block_number,
+        transaction_hash,
+        address,
+        block_timestamp
+      FROM my_raw_logs
+```
+
+**Then filter by event in a downstream transform:**
+```yaml
+  transfers:
+    type: sql
+    primary_key: id
+    sql: |
+      SELECT
+        id,
+        block_number,
+        block_timestamp,
+        transaction_hash,
+        address AS token_address,
+        decoded.event_params[1] AS from_address,
+        decoded.event_params[2] AS to_address,
+        (CAST(decoded.event_params[3] AS DOUBLE) / 1e18) AS amount
+      FROM decoded_events
+      WHERE decoded.event_signature = 'Transfer'
+```
+
+**Tips for `_gs_log_decode()`:**
+- The ABI JSON must be a **single-line string** or use YAML `>-` / `|` block syntax
+- Include **all event ABIs** you want to decode in a single array — events not matching are ignored
+- Multiple events with the same name but different signatures (e.g., from different contracts) can coexist
+- Use the source's `filter:` field to pre-filter by contract address before decoding (more efficient)
+- **Backtick-escape reserved words:** Several column names conflict with SQL reserved words and must be escaped with backticks: `` `data` ``, `` `decoded` ``, `` `balance` ``, `` `owner_address` ``, `` `id` `` (in some contexts). When in doubt, backtick-escape column names that could be keywords.
+
+**Correct escaping example:**
+```sql
+SELECT
+  _gs_log_decode('[...]', topics, `data`) AS `decoded`,
+  id, block_number, transaction_hash, address, block_timestamp
+FROM my_raw_logs
+```
+
+### `to_timestamp()` — Convert to Timestamp
+
+```sql
+to_timestamp(block_timestamp) AS block_time
+```
+
+### `lower()` — Lowercase Strings
+
+Useful for case-insensitive address comparison:
+```sql
+WHERE address = lower('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48')
+```
+
+### `CONCAT()` — Build Composite Strings
+
+Useful for constructing composite primary keys from multiple fields:
+```sql
+CONCAT('base', '-', COALESCE(balance.contract_address, ''), '-', balance.owner_address) AS id
+```
+
+### `COALESCE()` — Null-Safe Values
+
+Returns the first non-null argument. Use to provide fallback values for nullable columns:
+```sql
+COALESCE(balance.contract_address, '') -- returns '' if contract_address is null
+```
+
+---
+
+## Common Transform Patterns
+
+### 1. Table Aliasing
+
+Use table aliases to reference columns clearly, especially when column names are ambiguous:
+
+```sql
+SELECT
+  balance.token_type,
+  balance.owner_address,
+  contract_address AS token_address,
+  CAST(`balance` AS STRING) AS balance_amount
+FROM my_balances_source balance
+WHERE balance.token_type = 'ERC_20'
+  AND balance.balance IS NOT NULL
+```
+
+**Null checks:** Use `IS NULL` and `IS NOT NULL` to filter on nullable columns:
+```sql
+WHERE balance.token_type IS NULL    -- native token (no token type)
+WHERE balance.balance IS NOT NULL   -- only rows with a balance value
+```
+
+### 2. Simple Filtering (WHERE)
+
+Filter rows from a source by column values:
+
+```yaml
+transforms:
+  usdc_transfers:
+    type: sql
+    primary_key: id
+    sql: |
+      SELECT *
+      FROM base_transfers
+      WHERE address = lower('0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913')
+```
+
+### 3. Column Projection and Aliasing
+
+Select and rename specific columns:
+
+```yaml
+transforms:
+  clean_transfers:
+    type: sql
+    primary_key: id
+    sql: |
+      SELECT
+        id,
+        block_number,
+        to_timestamp(block_timestamp) AS block_time,
+        address AS token_address,
+        sender,
+        recipient,
+        amount
+      FROM my_source
+```
+
+### 4. Type Casting and Numeric Scaling
+
+Cast values between types. Supported CAST targets include `DOUBLE`, `STRING`, `VARCHAR`.
+
+```sql
+-- Convert from raw uint256 to human-readable amounts
+(CAST(decoded.event_params[3] AS DOUBLE) / 1e6) AS amount_usdc    -- 6 decimals (USDC)
+(CAST(decoded.event_params[3] AS DOUBLE) / 1e18) AS amount_eth    -- 18 decimals (ETH, most ERC-20s)
+(CAST(decoded.event_params[3] AS DOUBLE) / 1e8) AS amount_btc     -- 8 decimals (WBTC)
+
+-- Cast to STRING to preserve precision for very large numbers (e.g., raw balances)
+CAST(`balance` AS STRING) AS balance_amount
+```
+
+Common decimal places by token:
+
+| Token          | Decimals | Divisor |
+| -------------- | -------- | ------- |
+| USDC, USDT     | 6        | `1e6`   |
+| WBTC           | 8        | `1e8`   |
+| ETH, most ERC-20 | 18    | `1e18`  |
+
+### 5. Conditional Logic with CASE WHEN
+
+Derive new columns based on conditions:
+
+```sql
+-- Determine trade side based on asset type
+CASE WHEN decoded.event_params[4] = '0' THEN 'BUY' ELSE 'SELL' END AS side
+
+-- Conditional amount extraction
+(CASE
+  WHEN decoded.event_params[4] = '0'
+  THEN CAST(decoded.event_params[6] AS DOUBLE)
+  ELSE CAST(decoded.event_params[7] AS DOUBLE)
+END / 1e6) AS amount_usdc
+
+-- Classify transaction types
+CASE
+  WHEN decoded.event_params[3] = '0x4bfb...' THEN 'taker'
+  WHEN decoded.event_params[3] = '0xc5d5...' THEN 'taker'
+  ELSE 'maker'
+END AS order_type
+```
+
+### 6. String Manipulation
+
+```sql
+-- Prepend '0x' to hex values from decoded params
+'0x' || decoded.event_params[4] AS condition_id
+
+-- Static string values
+'TRADE' AS tx_type
+'' AS placeholder_field
+```
+
+### 7. Exclusion Filters
+
+Exclude known contract/system addresses from user-facing data:
+
+```sql
+WHERE decoded.event_params[1] NOT IN (
+  '0x4bfb41d5b3570defd03c39a9a4d8de6bd8b8982e',
+  '0xc5d563a36ae78145c45a50134d48a1215220f80a',
+  '0x4d97dcd97ec945f40cf65f87097ace5ea0476045'
+)
+```
+
+### 8. Price Calculations
+
+Derive price from filled amounts:
+
+```sql
+-- price = cost / quantity
+(CASE
+  WHEN decoded.event_params[4] = '0'
+  THEN CAST(decoded.event_params[6] AS DOUBLE)
+  ELSE CAST(decoded.event_params[7] AS DOUBLE)
+END / CASE
+  WHEN decoded.event_params[4] = '0'
+  THEN CAST(decoded.event_params[7] AS DOUBLE)
+  ELSE CAST(decoded.event_params[6] AS DOUBLE)
+END) AS price
+```
+
+---
+
+## Advanced Patterns
+
+### Decode Once, Filter Many
+
+When working with raw logs from multiple contract events, decode **all events in a single transform** and then create separate downstream transforms that filter by `decoded.event_signature`. This is more efficient than creating multiple decode transforms.
+
+```yaml
+transforms:
+  # Single decode step — include ALL event ABIs
+  all_decoded:
+    type: sql
+    primary_key: id
+    sql: |
+      SELECT
+        _gs_log_decode('[...full ABI with all events...]', topics, `data`) AS `decoded`,
+        id, block_number, transaction_hash, address, block_timestamp
+      FROM raw_logs_source
+
+  # Downstream: each transform filters for one event type
+  transfers:
+    type: sql
+    primary_key: id
+    sql: |
+      SELECT id, block_number, decoded.event_params[1] AS from_addr, ...
+      FROM all_decoded
+      WHERE decoded.event_signature = 'Transfer'
+
+  approvals:
+    type: sql
+    primary_key: id
+    sql: |
+      SELECT id, block_number, decoded.event_params[1] AS owner, ...
+      FROM all_decoded
+      WHERE decoded.event_signature = 'Approval'
+```
+
+Even if you only need one event type downstream, it's fine to include the full ABI — unmatched events are simply ignored by the downstream WHERE filter.
+
+### Transform Chaining
+
+Build multi-step pipelines where each transform reads from the previous one:
+
+```yaml
+transforms:
+  # Step 1: Decode raw logs
+  decoded:
+    type: sql
+    primary_key: id
+    sql: |
+      SELECT
+        _gs_log_decode('[...]', topics, data) AS decoded,
+        id, block_number, transaction_hash, address, block_timestamp
+      FROM raw_logs_source
+
+  # Step 2: Extract specific event fields
+  transfers:
+    type: sql
+    primary_key: id
+    sql: |
+      SELECT
+        id, block_number, block_timestamp, transaction_hash,
+        decoded.event_params[1] AS from_address,
+        decoded.event_params[2] AS to_address,
+        (CAST(decoded.event_params[3] AS DOUBLE) / 1e18) AS amount
+      FROM decoded
+      WHERE decoded.event_signature = 'Transfer'
+
+  # Step 3: Add computed columns
+  enriched_transfers:
+    type: sql
+    primary_key: id
+    sql: SELECT *, 'ethereum' AS chain FROM transfers
+```
+
+### UNION ALL — Combining Multiple Event Types
+
+Combine multiple transforms with identical schemas into a single output. Every SELECT in the UNION must have the **exact same columns in the same order**.
+
+```yaml
+transforms:
+  # Individual event transforms (each with identical output columns)
+  transfers:
+    type: sql
+    primary_key: id
+    sql: |
+      SELECT id, block_number, block_timestamp, transaction_hash,
+        decoded.event_params[1] AS user_id,
+        (CAST(decoded.event_params[3] AS DOUBLE) / 1e18) AS amount,
+        'TRANSFER' AS event_type
+      FROM decoded_events
+      WHERE decoded.event_signature = 'Transfer'
+
+  approvals:
+    type: sql
+    primary_key: id
+    sql: |
+      SELECT id, block_number, block_timestamp, transaction_hash,
+        decoded.event_params[1] AS user_id,
+        (CAST(decoded.event_params[3] AS DOUBLE) / 1e18) AS amount,
+        'APPROVAL' AS event_type
+      FROM decoded_events
+      WHERE decoded.event_signature = 'Approval'
+
+  # Combined output
+  all_events:
+    type: sql
+    primary_key: id
+    sql: |
+      SELECT * FROM transfers
+      UNION ALL
+      SELECT * FROM approvals
+```
+
+**UNION ALL rules:**
+- All SELECTs must produce the **same number of columns** with **compatible types**
+- Use empty strings (`''`) or zero (`0`) as placeholders for columns that don't apply to a particular event type
+- `UNION ALL` keeps duplicates (use `UNION` to deduplicate, but `UNION ALL` is preferred for performance)
+- You can UNION as many transforms as needed
+
+### Normalizing Disparate Events to a Common Schema
+
+When different events have different fields, map them all to a unified schema using placeholder values:
+
+```yaml
+transforms:
+  trades:
+    type: sql
+    primary_key: id
+    sql: |
+      SELECT id, block_number, block_timestamp, transaction_hash, address,
+        decoded.event_params[2] AS user_id,
+        decoded.event_params[4] AS asset,
+        '' AS condition_id,                    -- not applicable for trades
+        (CAST(decoded.event_params[6] AS DOUBLE) / 1e6) AS amount_usdc,
+        'TRADE' AS tx_type,
+        CASE WHEN decoded.event_params[4] = '0' THEN 'BUY' ELSE 'SELL' END AS side,
+        (CAST(decoded.event_params[8] AS DOUBLE) / 1e6) AS fee
+      FROM decoded_events
+      WHERE decoded.event_signature = 'OrderFilled'
+
+  redemptions:
+    type: sql
+    primary_key: id
+    sql: |
+      SELECT id, block_number, block_timestamp, transaction_hash, address,
+        decoded.event_params[1] AS user_id,
+        '' AS asset,                           -- not applicable for redemptions
+        '0x' || decoded.event_params[4] AS condition_id,
+        (CAST(decoded.event_params[6] AS DOUBLE) / 1e6) AS amount_usdc,
+        'REDEEM' AS tx_type,
+        '' AS side,                            -- not applicable for redemptions
+        0 AS fee                               -- no fee for redemptions
+      FROM decoded_events
+      WHERE decoded.event_signature = 'PayoutRedemption'
+
+  all_activities:
+    type: sql
+    primary_key: id
+    sql: |
+      SELECT * FROM trades
+      UNION ALL
+      SELECT * FROM redemptions
+```
+
+### Adding Columns to an Existing Transform
+
+Extend a transform's output without rewriting it:
+
+```yaml
+  activities_v2:
+    type: sql
+    primary_key: id
+    sql: SELECT *, '' AS builder FROM all_activities
+```
+
+---
+
+## Source-Level Filtering
+
+For efficiency, filter data **at the source** before it reaches transforms. Use the `filter:` field on dataset sources to reduce the volume of data processed:
+
+```yaml
+sources:
+  my_logs:
+    type: dataset
+    dataset_name: matic.raw_logs
+    version: 1.0.0
+    start_at: earliest
+    filter: >-
+      address IN ('0xabc...', '0xdef...')
+      AND block_number > 50000000
+```
+
+This is significantly more efficient than filtering in a transform because it reduces data at the ingestion layer.
+
+### Bounded Historical Backfill
+
+To process historical data starting from a specific block (not genesis), combine `start_at: earliest` with a `block_number` floor in the filter:
+
+```yaml
+sources:
+  poly_logs:
+    type: dataset
+    dataset_name: matic.raw_logs
+    version: 1.0.0
+    start_at: earliest
+    filter: >-
+      address IN ('0xabc...', '0xdef...')
+      AND block_number >= 82422949
+```
+
+This processes all data from block 82422949 onward, rather than from genesis or only latest. Useful when:
+- A contract was deployed at a known block
+- You only need data from a certain date forward
+- You want to avoid processing irrelevant ancient blocks
+
+**Combine source filtering with transform filtering:**
+- Source `filter:` → coarse pre-filtering (contract addresses, block ranges)
+- Transform `WHERE` → fine-grained filtering (event types, parameter values, exclusions)
+
+---
+
+## Debugging Transforms
+
+### Common Errors
+
+**"Unknown source reference"**
+The `FROM` clause references a name that doesn't match any source or transform key in the YAML. Check for typos.
+
+**"Missing primary_key"**
+Every transform needs `primary_key`. Almost always use `id` (carried from the source data).
+
+**"Column not found"**
+Column name doesn't exist on the source. Use `goldsky turbo inspect <pipeline> -n <source_node>` to see actual column names.
+
+**Empty results from decoded events**
+- Verify the ABI JSON matches the actual contract events
+- Check `decoded.event_signature` matches the event name exactly (case-sensitive)
+- Ensure `address` filter matches the correct contract
+- Check `decoded.event_params[N]` indexing — parameters are **1-indexed**
+
+**Type mismatch in UNION ALL**
+All branches of a UNION ALL must have identical column counts and compatible types. Add placeholder columns (`''`, `0`) where needed.
+
+### Inspecting Transform Output
+
+Use the TUI inspector to see data at any node in the pipeline:
+
+```bash
+# Inspect a specific transform's output
+goldsky turbo inspect <pipeline-name> -n <transform_name>
+```
+
+This helps verify that decoded fields, casts, and filters are producing expected results.
+
+---
+
+## Complete Example: Multi-Event Activity Feed
+
+This end-to-end example shows how to build a unified activity feed from raw logs. See the template file `templates/multi-event-activity-feed.yaml` for the full working YAML.
+
+**Pattern:**
+1. Source raw logs filtered by contract addresses
+2. Decode all events with `_gs_log_decode()`
+3. Create individual transforms per event type, each mapping to a common schema
+4. Combine with `UNION ALL`
+5. Sink to a database
+
+---
+
+## Sink Batching Configuration
+
+Database and streaming sinks support batching to tune latency vs throughput:
+
+```yaml
+sinks:
+  my_sink:
+    type: clickhouse
+    from: my_transform
+    table: my_table
+    secret_name: MY_SECRET
+    primary_key: id
+    batch_size: 1000           # rows per batch
+    batch_flush_interval: 300ms # max time before flushing
+```
+
+| Setting                | Description                              | Trade-off                        |
+| ---------------------- | ---------------------------------------- | -------------------------------- |
+| `batch_size`           | Max rows accumulated before flushing     | Higher = more throughput         |
+| `batch_flush_interval` | Max wait time before flushing a batch    | Lower = lower latency            |
+
+**Guidelines:**
+- Latency-sensitive (real-time dashboards): `batch_flush_interval: 300ms`, `batch_size: 1000`
+- Moderate throughput (trade data, events): `batch_flush_interval: 1000ms`, `batch_size: 1000`
+- High-volume streaming (balance snapshots): `batch_flush_interval: 10s`, `batch_size: 100000`
+
+---
+
+## Related Skills
+
+- **`/turbo-pipelines`** — Full pipeline creation, deployment, and configuration
+- **`/turbo-architecture`** — Pipeline architecture decisions (source types, data flow patterns, resource sizing)
+- **`/goldsky-datasets`** — Discover available datasets and their schemas
+- **`/turbo-monitor-debug`** — Inspect transform output and debug pipeline issues
