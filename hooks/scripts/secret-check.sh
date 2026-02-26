@@ -14,23 +14,18 @@ set -euo pipefail
 # Read stdin
 INPUT=$(cat)
 
-# Check if jq is available; fall through if not
-if ! command -v jq &>/dev/null; then
-  exit 0
-fi
-
 # Extract the command from tool input
-COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // ""' 2>/dev/null)
+COMMAND=$(echo "$INPUT" | sed -n 's/.*"command"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
 
 # Only intercept `goldsky turbo apply` commands
-if ! echo "$COMMAND" | grep -qE 'goldsky\s+turbo\s+apply'; then
+if ! echo "$COMMAND" | grep -qE 'goldsky[[:space:]]+turbo[[:space:]]+apply'; then
   exit 0
 fi
 
 # Extract the YAML file path from the command
 YAML_FILE=""
 
-if echo "$COMMAND" | grep -qE '\s+(-f|--file)\s+'; then
+if echo "$COMMAND" | grep -qE '[[:space:]]+(-f|--file)[[:space:]]+'; then
   YAML_FILE=$(echo "$COMMAND" | sed -nE 's/.*(-f|--file)[[:space:]]+([^ ]+).*/\2/p')
 else
   YAML_FILE=$(echo "$COMMAND" | grep -oE '[^ ]+\.(yaml|yml)' | tail -1)
@@ -53,8 +48,8 @@ fi
 
 # Extract secret_name values from the YAML file
 # Looks for patterns like: secret_name: my-secret or secret_name: "my-secret"
-SECRET_NAMES=$(grep -oE 'secret_name:[[:space:]]*"?([a-zA-Z0-9_-]+)"?' "$YAML_FILE" 2>/dev/null \
-  | sed -E 's/secret_name:[[:space:]]*"?([a-zA-Z0-9_-]+)"?/\1/' \
+SECRET_NAMES=$(grep -oE 'secret_name:[[:space:]]*"?([a-zA-Z0-9._-]+)"?' "$YAML_FILE" 2>/dev/null \
+  | sed -E 's/secret_name:[[:space:]]*"?([a-zA-Z0-9._-]+)"?/\1/' \
   | sort -u)
 
 # If no secrets referenced, allow the command

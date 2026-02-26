@@ -13,16 +13,11 @@ set -euo pipefail
 # Read stdin
 INPUT=$(cat)
 
-# Check if jq is available; fall through if not
-if ! command -v jq &>/dev/null; then
-  exit 0
-fi
-
 # Extract the command from tool input
-COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // ""' 2>/dev/null)
+COMMAND=$(echo "$INPUT" | sed -n 's/.*"command"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
 
 # Only intercept `goldsky turbo apply` commands
-if ! echo "$COMMAND" | grep -qE 'goldsky\s+turbo\s+apply'; then
+if ! echo "$COMMAND" | grep -qE 'goldsky[[:space:]]+turbo[[:space:]]+apply'; then
   exit 0
 fi
 
@@ -32,7 +27,7 @@ fi
 #          goldsky turbo apply --file <file.yaml>
 YAML_FILE=""
 
-if echo "$COMMAND" | grep -qE '\s+(-f|--file)\s+'; then
+if echo "$COMMAND" | grep -qE '[[:space:]]+(-f|--file)[[:space:]]+'; then
   YAML_FILE=$(echo "$COMMAND" | sed -nE 's/.*(-f|--file)[[:space:]]+([^ ]+).*/\2/p')
 else
   # Last argument that looks like a .yaml or .yml file

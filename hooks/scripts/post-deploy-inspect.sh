@@ -13,17 +13,12 @@ set -euo pipefail
 # Read stdin
 INPUT=$(cat)
 
-# Check if jq is available; fall through if not
-if ! command -v jq &>/dev/null; then
-  exit 0
-fi
-
 # Extract command and output
-COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // ""' 2>/dev/null)
-OUTPUT=$(echo "$INPUT" | jq -r '.tool_output // ""' 2>/dev/null)
+COMMAND=$(echo "$INPUT" | sed -n 's/.*"command"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+OUTPUT=$(echo "$INPUT" | sed -n 's/.*"tool_output"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
 
 # Only fire after `goldsky turbo apply` commands
-if ! echo "$COMMAND" | grep -qE 'goldsky\s+turbo\s+apply'; then
+if ! echo "$COMMAND" | grep -qE 'goldsky[[:space:]]+turbo[[:space:]]+apply'; then
   exit 0
 fi
 
@@ -34,7 +29,7 @@ if echo "$OUTPUT" | grep -qiE '(error|failed|failure|invalid)'; then
 fi
 
 # Check if the user already included inspect in the same command chain
-if echo "$COMMAND" | grep -qE 'goldsky\s+turbo\s+inspect'; then
+if echo "$COMMAND" | grep -qE 'goldsky[[:space:]]+turbo[[:space:]]+inspect'; then
   exit 0
 fi
 
@@ -43,7 +38,7 @@ PIPELINE_NAME=""
 
 # Try to get it from YAML file
 YAML_FILE=""
-if echo "$COMMAND" | grep -qE '\s+(-f|--file)\s+'; then
+if echo "$COMMAND" | grep -qE '[[:space:]]+(-f|--file)[[:space:]]+'; then
   YAML_FILE=$(echo "$COMMAND" | sed -nE 's/.*(-f|--file)[[:space:]]+([^ ]+).*/\2/p')
 else
   YAML_FILE=$(echo "$COMMAND" | grep -oE '[^ ]+\.(yaml|yml)' | tail -1)
