@@ -106,11 +106,41 @@ These skills cover the full Goldsky Turbo pipeline surface:
 
 The `goldsky-auth-setup` skill helps you install the Goldsky CLI, log in, and select a project.
 
+## Goldsky Docs MCP Server
+
+The plugin bundles the [Goldsky docs MCP server](https://docs.goldsky.com/mcp-server), giving the AI real-time search access to the full Goldsky documentation — Subgraphs, Mirror, Turbo, and Compose — so it can look up product details, configuration references, and examples while helping you build pipelines.
+
+When installed as a Claude Code plugin, the MCP server starts automatically. No extra setup is needed.
+
+For standalone use, or in other tools, you can connect the MCP server manually:
+
+**Claude Code (CLI)**
+
+```bash
+claude mcp add --transport http goldsky-docs https://docs.goldsky.com/mcp
+```
+
+**Cursor / VS Code**
+
+Add to your MCP settings (`.cursor/mcp.json` or `.vscode/mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "goldsky-docs": {
+      "type": "http",
+      "url": "https://docs.goldsky.com/mcp"
+    }
+  }
+}
+```
+
 ## Documentation
 
 - [Goldsky Docs](https://docs.goldsky.com)
 - [Turbo Pipelines Guide](https://docs.goldsky.com/turbo-pipelines/introduction)
 - [CLI Reference](https://docs.goldsky.com/turbo-pipelines/cli)
+- [MCP Server](https://docs.goldsky.com/mcp-server)
 
 ## License
 
