@@ -49,6 +49,36 @@ cp -r goldsky-agent/skills/* .cursor/skills/
 | `turbo-architecture`  | Design pipeline data flows, choose streaming vs job mode, and select sinks                      |
 | `turbo-transforms`    | Write SQL, TypeScript, dynamic table, and handler transforms                                    |
 
+## Agents
+
+Specialized sub-agents for common workflows. They run in their own context with access to relevant skills.
+
+| Agent              | Model   | Description                                                                      |
+| ------------------ | ------- | -------------------------------------------------------------------------------- |
+| `pipeline-doctor`  | inherit | Diagnose pipeline issues — checks auth, status, logs, and error patterns         |
+| `pipeline-builder` | inherit | Interactive wizard to build pipelines from chain selection through deployment     |
+| `dataset-finder`   | haiku   | Quick dataset lookup — returns chain prefixes and ready-to-paste YAML snippets   |
+
+Invoke agents directly:
+
+> `@pipeline-doctor My pipeline is stuck in error state`
+
+> `@pipeline-builder I need to index ERC20 transfers from Base into PostgreSQL`
+
+> `@dataset-finder What dataset for Polygon NFTs?`
+
+## Hooks
+
+Automated guardrails that fire around pipeline deploys. No configuration needed — they activate when the plugin is installed.
+
+| Hook                  | Event        | What it does                                                              |
+| --------------------- | ------------ | ------------------------------------------------------------------------- |
+| `pre-deploy-validate` | PreToolUse   | Runs `goldsky turbo validate` before `goldsky turbo apply`, blocks if invalid |
+| `secret-check`        | PreToolUse   | Verifies all `secret_name` refs in YAML exist, blocks if missing          |
+| `post-deploy-inspect` | PostToolUse  | Suggests `goldsky turbo inspect` after a successful deploy                |
+
+Hooks require `jq` to be installed. They gracefully fall through if `jq` or the Goldsky CLI are unavailable.
+
 ## Usage
 
 You can invoke skills by name or just describe what you want in natural language:
@@ -77,6 +107,8 @@ These skills cover the full Goldsky Turbo pipeline surface:
 - **Modes** — Streaming (continuous) and Job (one-time batch with `end_block`)
 - **Lifecycle** — Deploy, list, pause, resume, restart, delete
 - **Monitoring** — Live inspect TUI, log analysis, error pattern matching
+- **Agents** — Pipeline diagnostics, interactive builder wizard, dataset lookup
+- **Hooks** — Pre-deploy validation, secret verification, post-deploy suggestions
 
 ## Prerequisites
 
