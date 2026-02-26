@@ -8,5 +8,11 @@
   "repository": "https://github.com/goldsky-io/goldsky-agent",
   "homepage": "https://docs.goldsky.com",
   "license": "MIT",
-  "keywords": ["goldsky", "blockchain", "pipelines", "turbo", "web3", "data"]
+  "keywords": ["goldsky", "blockchain", "pipelines", "turbo", "web3", "data"],
+  "mcpServers": {
+    "goldsky-docs": {
+      "type": "http",
+      "url": "https://docs.goldsky.com/mcp"
+    }
+  }
 }
