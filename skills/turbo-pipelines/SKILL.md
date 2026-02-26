@@ -457,13 +457,51 @@ sinks:
 
 | Field           | Required | Description                                     |
 | --------------- | -------- | ----------------------------------------------- |
-| `name`          | Yes      | Unique pipeline identifier (lowercase, hyphens) |
-| `resource_size` | Yes      | Worker allocation: `s`, `m`, or `l`             |
-| `description`   | No       | Human-readable description                      |
-| `job`           | No       | `true` for one-time jobs (default: `false`)     |
-| `sources`       | Yes      | Data input definitions                          |
-| `transforms`    | No       | Data processing definitions                     |
-| `sinks`         | Yes      | Data output definitions                         |
+| `name`          | Yes      | Unique pipeline identifier (lowercase, hyphens)                  |
+| `resource_size` | Yes      | Worker allocation: `s`, `m`, or `l`                              |
+| `description`   | No       | Human-readable description                                       |
+| `job`           | No       | `true` for one-time batch jobs (default: `false` = streaming)    |
+| `sources`       | Yes      | Data input definitions                                           |
+| `transforms`    | No       | Data processing definitions                                      |
+| `sinks`         | Yes      | Data output definitions                                          |
+
+### Job Mode
+
+Set `job: true` for one-time batch processing (historical backfills, data exports):
+
+```yaml
+name: backfill-usdc-history
+resource_size: l
+job: true
+
+sources:
+  logs:
+    type: dataset
+    dataset_name: ethereum.raw_logs
+    version: 1.0.0
+    start_at: earliest
+    end_block: 19000000
+    filter: >-
+      address = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
+transforms: {}
+sinks:
+  output:
+    type: s3_sink
+    from: logs
+    endpoint: https://s3.amazonaws.com
+    bucket: my-backfill-bucket
+    prefix: usdc/
+    secret_name: MY_S3
+```
+
+**Job mode rules:**
+- Runs to completion and auto-cleans up ~1 hour after finishing
+- **Must `goldsky turbo delete` before redeploying** — cannot update in-place
+- **Cannot use `restart`** — use delete + apply instead
+- Use `end_block` to bound the range (otherwise processes to chain tip and stops)
+- Best with `resource_size: l` for faster backfills
+
+> **For architecture guidance on when to use job vs streaming mode, see `/turbo-architecture`.**
 
 ### Resource Sizes
 
@@ -492,13 +530,37 @@ sources:
 
 ### Source Fields
 
-| Field          | Required | Description                            |
-| -------------- | -------- | -------------------------------------- |
-| `type`         | Yes      | `dataset` for blockchain data          |
-| `dataset_name` | Yes      | Format: `<chain>.<dataset_type>`       |
-| `version`      | Yes      | Dataset version (e.g., `1.2.0`)        |
-| `start_at`     | EVM      | `latest` or `earliest`                 |
-| `start_block`  | Solana   | Specific slot number (omit for latest) |
+| Field          | Required | Description                                              |
+| -------------- | -------- | -------------------------------------------------------- |
+| `type`         | Yes      | `dataset` for blockchain data                            |
+| `dataset_name` | Yes      | Format: `<chain>.<dataset_type>`                         |
+| `version`      | Yes      | Dataset version (e.g., `1.2.0`)                          |
+| `start_at`     | EVM      | `latest` or `earliest`                                   |
+| `start_block`  | Solana   | Specific slot number (omit for latest)                   |
+| `end_block`    | No       | Stop processing at this block (for bounded backfills)    |
+| `filter`       | No       | SQL WHERE clause to pre-filter at source level (efficient)|
+
+### Source-Level Filtering
+
+Use `filter` to reduce data volume **before** it reaches transforms. This is significantly more efficient than filtering in SQL transforms because it eliminates data at the ingestion layer:
+
+```yaml
+sources:
+  usdc_logs:
+    type: dataset
+    dataset_name: base.raw_logs
+    version: 1.0.0
+    start_at: earliest
+    filter: >-
+      address = lower('0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913')
+      AND block_number >= 10000000
+```
+
+**Best practices:**
+- Use `filter` for contract addresses and block ranges (coarse pre-filtering)
+- Use transform `WHERE` for event types, parameter values, exclusions (fine-grained)
+- `filter` uses standard SQL WHERE syntax (same as DataFusion)
+- Combine `filter` with `start_at: earliest` + `end_block` for precise bounded backfills
 
 ### Available Chains
 
@@ -516,11 +578,15 @@ sources:
 
 **Non-EVM Chains:**
 
-| Chain Prefix        | Network  | Note                                |
-| ------------------- | -------- | ----------------------------------- |
-| `solana`            | Solana   | Uses `start_block` not `start_at`   |
-| `bitcoin.raw`       | Bitcoin  | Uses `start_at` like EVM            |
-| `stellar_mainnet`   | Stellar  | Uses `start_at` like EVM, v1.1.0    |
+| Chain Prefix        | Network   | Note                                |
+| ------------------- | --------- | ----------------------------------- |
+| `solana`            | Solana    | Uses `start_block` not `start_at`   |
+| `bitcoin.raw`       | Bitcoin   | Uses `start_at` like EVM            |
+| `stellar_mainnet`   | Stellar   | Uses `start_at` like EVM, v1.1.0    |
+| `sui`               | Sui       | Uses `start_at` like EVM            |
+| `near`              | NEAR      | Uses `start_at` like EVM            |
+| `starknet`          | Starknet  | Uses `start_at` like EVM            |
+| `fogo`              | Fogo      | Uses `start_at` like EVM            |
 
 ### Common Dataset Types
 
@@ -542,6 +608,14 @@ sources:
 **Bitcoin:** `bitcoin.raw.blocks`, `bitcoin.raw.transactions`
 
 **Stellar:** `stellar_mainnet.transactions`, `stellar_mainnet.transfers`, `stellar_mainnet.events`, `stellar_mainnet.operations`, `stellar_mainnet.ledger_entries`, `stellar_mainnet.ledgers`, `stellar_mainnet.balances`
+
+**Sui:** `sui.checkpoints`, `sui.transactions`, `sui.events`, `sui.packages`, `sui.epochs`
+
+**NEAR:** `near.receipts`, `near.transactions`, `near.execution_outcomes`
+
+**Starknet:** `starknet.blocks`, `starknet.transactions`, `starknet.events`, `starknet.messages`
+
+**Fogo:** `fogo.transactions_with_instructions`, `fogo.rewards`, `fogo.blocks`
 
 ---
 
@@ -584,7 +658,7 @@ transforms:
 
 ### TypeScript Transform
 
-For complex logic that SQL can't handle:
+For complex logic that SQL can't handle (runs in WASM sandbox):
 
 ```yaml
 transforms:
@@ -609,6 +683,53 @@ transforms:
         };
       }
 ```
+
+> **For full TypeScript transform documentation, schema types, and examples, see `/turbo-transforms`.**
+
+### Dynamic Table Transform
+
+Updatable lookup tables for runtime filtering (allowlists, blocklists, enrichment):
+
+```yaml
+transforms:
+  tracked_wallets:
+    type: dynamic_table
+    primary_key: address
+    backend:
+      type: postgres        # or: in_memory
+      secret_name: MY_DB
+      table: tracked_wallets
+    columns:
+      address: string
+      label: string
+```
+
+Use with `dynamic_table_check()` in SQL transforms:
+
+```sql
+WHERE dynamic_table_check('tracked_wallets', sender)
+```
+
+> **For full dynamic table documentation, backend options, and examples, see `/turbo-transforms`.**
+
+### Handler Transform
+
+Call external HTTP APIs to enrich data:
+
+```yaml
+transforms:
+  enriched:
+    type: handler
+    primary_key: id
+    from: my_source
+    url: https://my-api.example.com/enrich
+    headers:
+      Authorization: Bearer my-token
+    batch_size: 100
+    timeout_ms: 5000
+```
+
+> **For full handler transform documentation, see `/turbo-transforms`.**
 
 ### Transform Chaining
 
@@ -1091,5 +1212,7 @@ Execution error: SSL connection is required
 - **`/goldsky-auth-setup`** - **Invoke if user is not logged in**
 - **`/goldsky-secrets`** - **Invoke if pipeline needs sink credentials**
 - **`/goldsky-datasets`** - **Invoke if user needs help finding data sources**
+- **`/turbo-transforms`** - Write SQL, TypeScript, and dynamic table transforms
+- **`/turbo-architecture`** - Pipeline architecture decisions, job vs streaming, sink selection
 - **`/turbo-monitor-debug`** - Monitor running pipelines, view logs, debug issues
-- **`/turbo-lifecycle`** - List, delete pipelines
+- **`/turbo-lifecycle`** - List, delete, pause, resume pipelines

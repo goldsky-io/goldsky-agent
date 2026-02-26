@@ -89,6 +89,48 @@
       "example": "solana.token_transfers",
       "note": "Uses start_block (slot) instead of start_at",
       "status": "production"
+    },
+    {
+      "name": "Bitcoin",
+      "prefix": "bitcoin.raw",
+      "example": "bitcoin.raw.transactions",
+      "note": "Uses start_at like EVM",
+      "status": "production"
+    },
+    {
+      "name": "Stellar",
+      "prefix": "stellar_mainnet",
+      "example": "stellar_mainnet.transfers",
+      "note": "Uses start_at like EVM, datasets use v1.1.0",
+      "status": "production"
+    },
+    {
+      "name": "Sui",
+      "prefix": "sui",
+      "example": "sui.transactions",
+      "note": "Uses start_at like EVM",
+      "status": "production"
+    },
+    {
+      "name": "NEAR",
+      "prefix": "near",
+      "example": "near.receipts",
+      "note": "Uses start_at like EVM",
+      "status": "production"
+    },
+    {
+      "name": "Starknet",
+      "prefix": "starknet",
+      "example": "starknet.events",
+      "note": "Uses start_at like EVM",
+      "status": "production"
+    },
+    {
+      "name": "Fogo",
+      "prefix": "fogo",
+      "example": "fogo.transactions_with_instructions",
+      "note": "Uses start_at like EVM",
+      "status": "production"
     }
   ],
   "commonMistakes": [

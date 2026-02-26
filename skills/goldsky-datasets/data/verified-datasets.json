@@ -113,10 +113,178 @@
       "version": "1.0.0",
       "datasetName": "solana.transactions"
     },
+    "transactions_with_instructions": {
+      "description": "Solana transactions with nested instructions",
+      "version": "1.0.0",
+      "datasetName": "solana.transactions_with_instructions",
+      "useCase": "Multi-instruction analysis, program interaction tracking"
+    },
     "blocks": {
       "description": "Solana block/slot data",
       "version": "1.0.0",
       "datasetName": "solana.blocks"
+    },
+    "native_balances": {
+      "description": "SOL balance changes",
+      "version": "1.0.0",
+      "datasetName": "solana.native_balances",
+      "useCase": "Whale tracking, SOL flow analysis"
+    },
+    "token_balances": {
+      "description": "SPL token balance changes",
+      "version": "1.0.0",
+      "datasetName": "solana.token_balances",
+      "useCase": "Portfolio tracking, token holder analysis"
+    },
+    "rewards": {
+      "description": "Validator rewards",
+      "version": "1.0.0",
+      "datasetName": "solana.rewards",
+      "useCase": "Staking analysis, validator performance"
+    }
+  },
+  "bitcoin": {
+    "blocks": {
+      "description": "Bitcoin block data (hash, difficulty, size)",
+      "version": "1.0.0",
+      "datasetName": "bitcoin.raw.blocks",
+      "useCase": "Network analysis, mining statistics"
+    },
+    "transactions": {
+      "description": "Bitcoin transactions (inputs, outputs, values)",
+      "version": "1.0.0",
+      "datasetName": "bitcoin.raw.transactions",
+      "useCase": "Payment tracking, UTXO analysis"
+    }
+  },
+  "stellar": {
+    "transactions": {
+      "description": "All Stellar network transactions",
+      "version": "1.1.0",
+      "datasetName": "stellar_mainnet.transactions",
+      "useCase": "Account monitoring"
+    },
+    "transfers": {
+      "description": "All transfer events on Stellar",
+      "version": "1.1.0",
+      "datasetName": "stellar_mainnet.transfers",
+      "useCase": "Asset tracking, payment monitoring"
+    },
+    "events": {
+      "description": "All events (contract + operation)",
+      "version": "1.1.0",
+      "datasetName": "stellar_mainnet.events",
+      "useCase": "Contract monitoring"
+    },
+    "operations": {
+      "description": "Operations within transactions",
+      "version": "1.1.0",
+      "datasetName": "stellar_mainnet.operations",
+      "useCase": "Action tracking"
+    },
+    "balances": {
+      "description": "Account balance changes",
+      "version": "1.1.0",
+      "datasetName": "stellar_mainnet.balances",
+      "useCase": "Balance tracking"
+    }
+  },
+  "sui": {
+    "checkpoints": {
+      "description": "Sui checkpoint data",
+      "version": "1.0.0",
+      "datasetName": "sui.checkpoints",
+      "useCase": "Chain analysis"
+    },
+    "transactions": {
+      "description": "Sui transaction data",
+      "version": "1.0.0",
+      "datasetName": "sui.transactions",
+      "useCase": "Activity monitoring"
+    },
+    "events": {
+      "description": "Move contract events on Sui",
+      "version": "1.0.0",
+      "datasetName": "sui.events",
+      "useCase": "dApp event tracking"
+    },
+    "packages": {
+      "description": "Deployed Move packages",
+      "version": "1.0.0",
+      "datasetName": "sui.packages",
+      "useCase": "Package discovery"
+    },
+    "epochs": {
+      "description": "Epoch data with validators",
+      "version": "1.0.0",
+      "datasetName": "sui.epochs",
+      "useCase": "Staking and validator analysis"
+    }
+  },
+  "near": {
+    "receipts": {
+      "description": "Execution receipts on NEAR",
+      "version": "1.0.0",
+      "datasetName": "near.receipts",
+      "useCase": "Contract interaction tracking"
+    },
+    "transactions": {
+      "description": "Signed NEAR transactions",
+      "version": "1.0.0",
+      "datasetName": "near.transactions",
+      "useCase": "Activity monitoring"
+    },
+    "execution_outcomes": {
+      "description": "Execution results on NEAR",
+      "version": "1.0.0",
+      "datasetName": "near.execution_outcomes",
+      "useCase": "Success/failure analysis"
+    }
+  },
+  "starknet": {
+    "blocks": {
+      "description": "Starknet block data",
+      "version": "1.0.0",
+      "datasetName": "starknet.blocks",
+      "useCase": "Chain analysis"
+    },
+    "transactions": {
+      "description": "Starknet transaction data",
+      "version": "1.0.0",
+      "datasetName": "starknet.transactions",
+      "useCase": "Activity monitoring"
+    },
+    "events": {
+      "description": "Starknet contract events",
+      "version": "1.0.0",
+      "datasetName": "starknet.events",
+      "useCase": "dApp event tracking"
+    },
+    "messages": {
+      "description": "L1 to L2 messages on Starknet",
+      "version": "1.0.0",
+      "datasetName": "starknet.messages",
+      "useCase": "Bridge monitoring"
+    }
+  },
+  "fogo": {
+    "transactions_with_instructions": {
+      "description": "Fogo transactions with instructions",
+      "version": "1.0.0",
+      "datasetName": "fogo.transactions_with_instructions",
+      "useCase": "Full activity tracking"
+    },
+    "rewards": {
+      "description": "Fogo validator rewards",
+      "version": "1.0.0",
+      "datasetName": "fogo.rewards",
+      "useCase": "Staking analysis"
+    },
+    "blocks": {
+      "description": "Fogo block data",
+      "version": "1.0.0",
+      "datasetName": "fogo.blocks",
+      "useCase": "Chain analysis"
     }
   }
 }

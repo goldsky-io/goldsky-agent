@@ -125,6 +125,10 @@ If validation fails with "Dataset not found", try alternate naming (see Verified
 | Solana    | `solana`           | Uses `start_block` not `start_at` |
 | Bitcoin   | `bitcoin.raw`      | Uses `start_at` like EVM          |
 | Stellar   | `stellar_mainnet`  | Uses `start_at` like EVM          |
+| Sui       | `sui`              | Uses `start_at` like EVM          |
+| NEAR      | `near`             | Uses `start_at` like EVM          |
+| Starknet  | `starknet`         | Uses `start_at` like EVM          |
+| Fogo      | `fogo`             | Uses `start_at` like EVM          |
 
 **See `data/chain-prefixes.json` for complete list with chain IDs.**
 
@@ -180,6 +184,41 @@ All datasets use version `1.1.0`:
 | `stellar_mainnet.ledger_entries`   | Ledger state changes              | State analysis               |
 | `stellar_mainnet.ledgers`          | Ledger metadata                   | Network analysis             |
 | `stellar_mainnet.balances`         | Account balance changes           | Balance tracking             |
+
+### Sui
+
+| Dataset Type            | Description                       | Use Case                     |
+| ----------------------- | --------------------------------- | ---------------------------- |
+| `sui.checkpoints`       | Checkpoint data                   | Chain analysis               |
+| `sui.transactions`      | Transaction data                  | Activity monitoring          |
+| `sui.events`            | Move contract events              | dApp event tracking          |
+| `sui.packages`          | Deployed Move packages            | Package discovery            |
+| `sui.epochs`            | Epoch data with validators        | Staking/validator analysis   |
+
+### NEAR
+
+| Dataset Type                 | Description                       | Use Case                     |
+| ---------------------------- | --------------------------------- | ---------------------------- |
+| `near.receipts`              | Execution receipts                | Contract interaction tracking|
+| `near.transactions`          | Signed transactions               | Activity monitoring          |
+| `near.execution_outcomes`    | Execution results                 | Success/failure analysis     |
+
+### Starknet
+
+| Dataset Type                 | Description                       | Use Case                     |
+| ---------------------------- | --------------------------------- | ---------------------------- |
+| `starknet.blocks`            | Block data                        | Chain analysis               |
+| `starknet.transactions`      | Transaction data                  | Activity monitoring          |
+| `starknet.events`            | Contract events                   | dApp event tracking          |
+| `starknet.messages`          | L1↔L2 messages                    | Bridge monitoring            |
+
+### Fogo
+
+| Dataset Type                          | Description                     | Use Case                     |
+| ------------------------------------- | ------------------------------- | ---------------------------- |
+| `fogo.transactions_with_instructions` | Transactions with instructions  | Full activity tracking       |
+| `fogo.rewards`                        | Validator rewards               | Staking analysis             |
+| `fogo.blocks`                         | Block data                      | Chain analysis               |
 
 ---
 

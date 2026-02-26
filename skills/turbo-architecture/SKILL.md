@@ -1,11 +1,11 @@
 ---
 name: turbo-architecture
-description: Design and architect Turbo pipelines. Use when choosing between source types (dataset vs kafka), designing data flow patterns (fan-in, fan-out, linear), sizing resources, planning multi-chain deployments, or deciding how to split work across pipelines.
+description: Design and architect Turbo pipelines. Use when choosing between source types (dataset vs kafka), designing data flow patterns (fan-in, fan-out, linear), sizing resources, planning multi-chain deployments, choosing between streaming and job mode, designing dynamic table lookups, selecting sink types, or deciding how to split work across pipelines.
 ---
 
 # Turbo Pipeline Architecture
 
-Help users make architecture decisions for Turbo pipelines — source types, data flow patterns, resource sizing, sink strategies, and multi-chain deployment.
+Help users make architecture decisions for Turbo pipelines — source types, data flow patterns, resource sizing, sink strategies, streaming vs job mode, dynamic table design, and multi-chain deployment.
 
 ## Triggers
 
@@ -19,6 +19,10 @@ Invoke this skill when the user:
 - Wants to split or combine pipelines
 - Asks about `parallelism`, sink performance, or throughput
 - Needs to decide between one big pipeline vs several smaller ones
+- Asks about streaming vs batch/job mode
+- Wants to design dynamic table lookups or runtime-updatable filters
+- Needs to choose the right sink type for their use case
+- Asks about real-time aggregations or running balances
 - Mentions `/turbo-architecture`
 
 ## Agent Instructions
@@ -344,10 +348,203 @@ Even though trades are a subset of activities, they're separate pipelines becaus
 
 ---
 
+## Streaming vs Job Mode
+
+Turbo pipelines have two execution modes:
+
+### Streaming Mode (Default)
+
+```yaml
+name: my-streaming-pipeline
+resource_size: s
+# job: false  (default — omit this field)
+```
+
+- Runs continuously, processing data as it arrives
+- Maintains checkpoints for exactly-once processing
+- Use for real-time feeds, dashboards, APIs
+
+### Job Mode (One-Time Batch)
+
+```yaml
+name: my-backfill-job
+resource_size: l
+job: true
+```
+
+- Runs to completion and stops automatically
+- Auto-deletes resources ~1 hour after completion
+- **Must delete before redeploying** — cannot update a job pipeline, must `goldsky turbo delete` first
+- **Cannot use `restart`** — use delete + apply instead
+- Use for historical backfills, one-time data migrations, snapshot exports
+
+### When to Use Which
+
+| Scenario                             | Mode        | Why                                            |
+| ------------------------------------ | ----------- | ---------------------------------------------- |
+| Real-time dashboard                  | Streaming   | Continuous updates needed                      |
+| Backfill 6 months of history         | Job         | One-time, stops when done                      |
+| Real-time + catch-up on deploy       | Streaming   | `start_at: earliest` does backfill then streams|
+| Export data to S3 once               | Job         | No need for continuous processing              |
+| Webhook notifications on events      | Streaming   | Needs to react as events happen                |
+| Load test with historical data       | Job         | Process and inspect, then discard              |
+
+### Job Mode with Bounded Ranges
+
+Combine job mode with `start_at: earliest` and an `end_block` to process a specific range:
+
+```yaml
+name: historical-export
+resource_size: l
+job: true
+
+sources:
+  logs:
+    type: dataset
+    dataset_name: ethereum.raw_logs
+    version: 1.0.0
+    start_at: earliest
+    end_block: 19000000
+    filter: >-
+      address = '0xdac17f958d2ee523a2206206994597c13d831ec7'
+```
+
+---
+
+## Dynamic Table Architecture
+
+Dynamic tables enable **runtime-updatable lookup data** within a pipeline. They're the Turbo answer to the "no joins in streaming SQL" limitation.
+
+### Pattern: Dynamic Allowlist/Blocklist
+
+```
+                    ┌──────────────────────┐
+                    │  External Updates     │
+                    │  (Postgres / REST)    │
+                    └──────────┬───────────┘
+                               ▼
+source ──→ sql transform ──→ [dynamic_table_check()] ──→ sink
+```
+
+The SQL transform filters records against the dynamic table. The table contents can be updated externally without pipeline restart.
+
+### Pattern: Lookup Enrichment
+
+```
+source ──→ decode ──→ filter ──→ sql (with dynamic_table_check) ──→ sink
+                                        ▲
+                              [token_metadata table]
+                              (postgres-backed)
+```
+
+Store metadata (token symbols, decimals, protocol names) in a PostgreSQL table. Reference it in transforms for enrichment.
+
+### Backend Decisions
+
+| Backend     | When to Use                                                        |
+| ----------- | ------------------------------------------------------------------ |
+| `postgres`  | Data managed by external systems, shared across pipeline restarts  |
+| `in_memory` | Auto-populated from pipeline data, ephemeral, fastest lookups      |
+
+### Sizing Considerations
+
+- Dynamic tables add memory overhead proportional to table size
+- For large lookup tables (>100K rows), use `postgres` backend
+- For small, frequently-changing lists (<10K rows), `in_memory` is faster
+- Dynamic table queries are async — they add slight latency per record
+
+> **For full dynamic table configuration syntax and examples, see `/turbo-transforms`.**
+
+---
+
+## Sink Selection Guide
+
+### Decision Flowchart
+
+```
+What's your primary use case?
+│
+├─ Application serving (REST/GraphQL API)
+│  └─ PostgreSQL ← row-level lookups, joins, strong consistency
+│
+├─ Analytics / dashboards
+│  ├─ Time-series queries → ClickHouse ← columnar, fast aggregations
+│  └─ Full-text search → Elasticsearch / OpenSearch
+│
+├─ Real-time aggregations (balances, counters)
+│  └─ PostgreSQL Aggregate ← trigger-based running totals
+│
+├─ Event-driven downstream processing
+│  ├─ Need Kafka ecosystem → Kafka
+│  └─ Serverless / simpler → S2 (s2.dev)
+│
+├─ Notifications / webhooks
+│  └─ Webhook ← HTTP POST per event
+│
+├─ Long-term archival
+│  └─ S3 ← object storage, cheapest for bulk data
+│
+├─ Just testing
+│  └─ Blackhole ← validates pipeline without writing
+│
+└─ Multiple of the above
+   └─ Use multiple sinks in the same pipeline (fan-out pattern)
+```
+
+### Sink Comparison Table
+
+| Sink                   | Latency    | Query Pattern      | Cost Profile | Good For                        |
+| ---------------------- | ---------- | ------------------ | ------------ | ------------------------------- |
+| `postgres`             | Low        | Point lookups, JOINs | Moderate   | App backends, APIs              |
+| `postgres_aggregate`   | Low        | Aggregated reads   | Moderate     | Balances, counters, totals      |
+| `clickhouse`           | Medium     | Analytical scans   | Low per-row  | Dashboards, time-series         |
+| `kafka`                | Very low   | Stream consumption | Moderate     | Event pipelines, microservices  |
+| `s2_sink`              | Very low   | Stream consumption | Low          | Serverless streaming            |
+| `webhook`              | Low        | Push notification  | Per-request  | Alerts, Lambda triggers         |
+| `s3_sink`              | High       | Batch file reads   | Very low     | Data lakes, archival            |
+| `blackhole`            | None       | N/A                | Free         | Testing and validation          |
+
+### PostgreSQL Aggregate Sink
+
+The `postgres_aggregate` sink is uniquely suited for **real-time running aggregations** (balances, counters, totals). It uses a two-table pattern:
+
+1. **Landing table** — receives raw events from the pipeline
+2. **Aggregation table** — maintained by a database trigger for instant rollups
+
+```yaml
+sinks:
+  token_balances:
+    type: postgres_aggregate
+    from: transfers
+    schema: public
+    landing_table: transfer_events        # raw events land here
+    agg_table: account_balances           # aggregated balances here
+    primary_key: id
+    secret_name: MY_POSTGRES
+    group_by:
+      account:                            # group by these columns
+        type: text
+      token_address:
+        type: text
+    aggregate:
+      balance:                            # aggregated columns
+        from: amount                      # source column
+        fn: sum                           # aggregation function
+      transfer_count:
+        from: id
+        fn: count
+```
+
+**Supported aggregation functions:** `sum`, `count`, `avg`, `min`, `max`
+
+**Best for:** Token balances, portfolio values, protocol TVL, user activity counts — any metric that needs to be queried as a current total rather than computed from raw events.
+
+---
+
 ## Related Skills
 
 - **`/turbo-pipelines`** — Build and deploy pipeline YAML configurations
-- **`/turbo-transforms`** — Write SQL transforms (filtering, decoding, UNION ALL, etc.)
+- **`/turbo-transforms`** — Write SQL, TypeScript, and dynamic table transforms
 - **`/goldsky-datasets`** — Discover available blockchain datasets and chain prefixes
 - **`/goldsky-secrets`** — Set up credentials for sinks
 - **`/turbo-monitor-debug`** — Monitor pipeline health and debug issues

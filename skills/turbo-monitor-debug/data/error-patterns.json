@@ -211,6 +211,84 @@
         "Manual checkpoint reset"
       ],
       "note": "This may be intentional if you wanted to reprocess data"
+    },
+    {
+      "id": "script_transform_error",
+      "pattern": "WASM execution failed|script transform error|transform is not a function",
+      "category": "transform",
+      "severity": "error",
+      "description": "TypeScript/WASM script transform failed during execution",
+      "causes": [
+        "Runtime error in TypeScript code (null access, type error)",
+        "Missing transform() function in script",
+        "Return value doesn't match declared schema",
+        "Script uses unsupported APIs (no network, no imports)"
+      ],
+      "solutions": [
+        "Check script defines function transform(input) { ... }",
+        "Add null checks for input fields: input.field ?? ''",
+        "Ensure returned object has all fields from schema",
+        "Remove any require/import statements (sandboxed environment)",
+        "Simplify script and add logic incrementally to isolate issue"
+      ],
+      "relatedSkill": "/turbo-transforms"
+    },
+    {
+      "id": "dynamic_table_error",
+      "pattern": "dynamic.table.*error|lookup.*failed|backend.*connection",
+      "category": "transform",
+      "severity": "error",
+      "description": "Dynamic table transform failed to connect or query backend",
+      "causes": [
+        "PostgreSQL backend unreachable",
+        "Backing table doesn't exist in database",
+        "Secret for dynamic table backend is invalid",
+        "Column names don't match between config and actual table"
+      ],
+      "solutions": [
+        "Verify secret exists: goldsky secret list",
+        "Check backing table exists in your database",
+        "Verify column names match between YAML and database table",
+        "Test database connectivity outside Goldsky"
+      ],
+      "relatedSkill": "/turbo-transforms"
+    },
+    {
+      "id": "handler_timeout",
+      "pattern": "handler.*timeout|external.*handler.*failed|HTTP.*timeout",
+      "category": "transform",
+      "severity": "error",
+      "description": "External HTTP handler transform timed out or failed",
+      "causes": [
+        "Handler endpoint is slow or unresponsive",
+        "Handler endpoint URL is incorrect",
+        "Network issue between Goldsky and handler",
+        "Handler returning malformed response"
+      ],
+      "solutions": [
+        "Increase timeout_ms in handler config",
+        "Verify handler URL is reachable",
+        "Check handler returns JSON array of same length as input",
+        "Reduce batch_size to send fewer records per request"
+      ],
+      "relatedSkill": "/turbo-transforms"
+    },
+    {
+      "id": "job_already_exists",
+      "pattern": "pipeline.*already exists|cannot update.*job",
+      "category": "configuration",
+      "severity": "error",
+      "description": "Cannot redeploy a job-mode pipeline without deleting first",
+      "causes": [
+        "Job-mode pipelines cannot be updated in place",
+        "Previous job run hasn't been cleaned up yet"
+      ],
+      "solutions": [
+        "Delete the existing job: goldsky turbo delete <name>",
+        "Then redeploy: goldsky turbo apply <file.yaml>",
+        "Wait for auto-cleanup (~1 hour after job completion)"
+      ],
+      "relatedSkill": "/turbo-lifecycle"
     }
   ],
   "healthyIndicators": [

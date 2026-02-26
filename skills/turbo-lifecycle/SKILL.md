@@ -1,11 +1,11 @@
 ---
 name: turbo-lifecycle
-description: Manage Turbo pipeline lifecycle - list, delete, pause, resume, restart pipelines. Use when listing pipelines, deleting pipelines, pausing/resuming, restarting, or managing pipeline state.
+description: Manage Turbo pipeline lifecycle - list, delete, pause, resume, restart pipelines. Use when listing pipelines, deleting pipelines, pausing/resuming, restarting, or managing pipeline state. Covers streaming and job-mode pipeline differences.
 ---
 
 # Turbo Pipeline Lifecycle Management
 
-List and delete Turbo pipelines.
+List, delete, pause, resume, and restart Turbo pipelines. Covers both streaming and job-mode pipelines.
 
 ## Triggers
 
@@ -15,6 +15,8 @@ Invoke this skill when the user:
 - Wants to delete a pipeline
 - Asks to clean up old pipelines
 - Wants to see pipeline status
+- Asks about pausing, resuming, or restarting a pipeline
+- Asks "how do I redeploy a job pipeline?"
 - Mentions `/turbo-lifecycle`
 
 ## Agent Instructions
@@ -258,13 +260,47 @@ Confirm deleted pipelines no longer appear.
 
 ## Pipeline States
 
-| State    | Description                                |
-| -------- | ------------------------------------------ |
-| running  | Pipeline is actively processing data       |
-| starting | Pipeline is initializing                   |
-| paused   | Pipeline is paused (replicas set to 0)     |
-| stopped  | Pipeline is not running (manually stopped) |
-| error    | Pipeline encountered an error              |
+| State     | Description                                  |
+| --------- | -------------------------------------------- |
+| running   | Pipeline is actively processing data         |
+| starting  | Pipeline is initializing                     |
+| paused    | Pipeline is paused (replicas set to 0)       |
+| stopped   | Pipeline is not running (manually stopped)   |
+| error     | Pipeline encountered an error                |
+| completed | Job-mode pipeline finished processing range  |
+
+## Streaming vs Job Mode Lifecycle
+
+Streaming and job-mode pipelines behave differently for lifecycle operations:
+
+| Operation     | Streaming Pipeline            | Job-Mode Pipeline (`job: true`)             |
+| ------------- | ----------------------------- | ------------------------------------------- |
+| **List**      | Shows as `running`/`paused`   | Shows as `running`/`completed`              |
+| **Pause**     | ✅ Supported                   | ❌ Not supported                             |
+| **Resume**    | ✅ Supported                   | ❌ Not supported                             |
+| **Restart**   | ✅ Supported                   | ❌ Not supported — use delete + apply        |
+| **Delete**    | ✅ Supported                   | ✅ Supported (auto-cleanup ~1hr after done)  |
+| **Apply**     | Updates in place              | Must delete first, then re-apply            |
+
+### Job-Mode Pipeline Lifecycle
+
+Job-mode pipelines (`job: true` in YAML) are one-time batch processes. They:
+
+1. **Start** — process data from `start_at` (or `earliest`) to `end_block` (or chain tip)
+2. **Run** — process the bounded data range
+3. **Complete** — automatically stop when the range is fully processed
+4. **Auto-cleanup** — ~1 hour after completion, the pipeline is automatically removed
+
+**Key rules for job-mode pipelines:**
+
+- **Cannot pause, resume, or restart** — these commands return an error for job pipelines
+- **Cannot update in place** — must delete the old job, then apply a new one
+- **Redeploying a job** — if you need to re-run:
+  ```bash
+  goldsky turbo delete my-job-pipeline
+  goldsky turbo apply my-job-pipeline.yaml
+  ```
+- **If the job errors**, it does not auto-cleanup. You must manually delete it before redeploying.
 
 ## Pause, Resume, and Restart
 
@@ -330,6 +366,13 @@ goldsky turbo restart <pipeline-name> --clear-state
 - If you recreate a pipeline with the same name, it starts fresh
 - To preserve checkpoints, use `goldsky turbo apply` to update instead of delete/recreate
 
+### Job-Mode Pipelines Cannot Be Updated In Place
+
+- Job pipelines (`job: true`) **must be deleted before redeploying**
+- Attempting `goldsky turbo apply` on an existing job returns an error: `pipeline already exists`
+- Completed jobs auto-cleanup after ~1 hour, but errored jobs do not
+- Always delete the old job first: `goldsky turbo delete <name>`, then `goldsky turbo apply <file.yaml>`
+
 ### Project Scope
 
 - `goldsky turbo list` shows pipelines in your current project only
@@ -387,12 +430,15 @@ Then clean up all test pipelines when done.
 
 ## Troubleshooting
 
-| Issue              | Action                                                |
-| ------------------ | ----------------------------------------------------- |
-| Pipeline not found | Check spelling; use `goldsky turbo list` to see names |
-| Permission denied  | Verify you have Editor or Admin role in the project   |
-| Delete failed      | Check logs for errors; pipeline may be in transition  |
-| Wrong project      | Use `goldsky project list` to verify current project  |
+| Issue                        | Action                                                        |
+| ---------------------------- | ------------------------------------------------------------- |
+| Pipeline not found           | Check spelling; use `goldsky turbo list` to see names         |
+| Permission denied            | Verify you have Editor or Admin role in the project           |
+| Delete failed                | Check logs for errors; pipeline may be in transition          |
+| Wrong project                | Use `goldsky project list` to verify current project          |
+| `pipeline already exists`    | Job-mode pipeline — delete first, then re-apply               |
+| Cannot pause/resume job      | Job-mode pipelines don't support pause/resume; use delete     |
+| Cannot restart job           | Job-mode pipelines don't support restart; delete + re-apply   |
 
 ### Error: Pipeline Not Found
 
@@ -413,5 +459,6 @@ Fix: You need Editor or Admin role. Contact a project Owner to upgrade your role
 ## Related Skills
 
 - **`/goldsky-auth-setup`** - **Invoke this if user is not logged in**
-- **`/turbo-pipelines`** - Deploy new pipelines or modify configuration
-- **`/turbo-monitor-debug`** - Monitor pipeline health and logs
+- **`/turbo-pipelines`** - Deploy new pipelines or modify configuration (includes job mode setup)
+- **`/turbo-monitor-debug`** - Monitor pipeline health and logs (includes job mode debugging)
+- **`/turbo-architecture`** - Design pipelines (streaming vs job mode decision guide)

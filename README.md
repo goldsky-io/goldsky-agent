@@ -1,58 +1,53 @@
-# Goldsky Agent Skills
+# Goldsky Agent
 
-AI skills for streaming real-time blockchain data to your infrastructure. Build, deploy, and debug data pipelines that index onchain events from 20+ chains into PostgreSQL, ClickHouse, Kafka, and more.
+AI skills for streaming real-time blockchain data to your infrastructure. Build, deploy, and debug data pipelines that index onchain events from 130+ chains into PostgreSQL, ClickHouse, Kafka, and more.
 
 ## Installation
 
-### Option 1: Claude Code Plugin
+### Option 1: Claude Code Plugin (Recommended)
 
-Add the Goldsky marketplace and install the plugin:
-
-```
-/plugin marketplace add goldsky-io/agent-skills
-/plugin install goldsky@goldsky-agent-skills
-```
-
-Skills are namespaced as `/goldsky:<skill-name>`:
+Install via the plugin marketplace for automatic updates:
 
 ```
-/goldsky:turbo-pipelines
-/goldsky:goldsky-datasets
+/plugin marketplace add goldsky-io/goldsky-agent
+/plugin install goldsky@goldsky-agent
 ```
 
-### Option 2: Copy Skills Directly
+### Option 2: Load from Local Directory
 
-Clone this repo and copy the skills into your project's skills directory. Works with any AI tool that supports the [SKILL.md](https://agentskills.io) format (Claude Code, Cursor, etc.):
+Clone the repo and point Claude Code at it directly:
 
 ```bash
-git clone https://github.com/goldsky-io/agent-skills.git
+git clone https://github.com/goldsky-io/goldsky-agent.git
+claude --plugin-dir ./goldsky-agent
+```
+
+### Option 3: Copy Skills Directly
+
+Copy the skills into your project's skills directory. Works with any AI tool that supports the [SKILL.md](https://agentskills.io) format (Claude Code, Cursor, etc.):
+
+```bash
+git clone https://github.com/goldsky-io/goldsky-agent.git
 
 # Claude Code
-cp -r agent-skills/skills/* .claude/skills/
+cp -r goldsky-agent/skills/* .claude/skills/
 
 # Cursor
-cp -r agent-skills/skills/* .cursor/skills/
-```
-
-Skills are invoked without a namespace:
-
-```
-/turbo-pipelines
-/goldsky-datasets
+cp -r goldsky-agent/skills/* .cursor/skills/
 ```
 
 ## Available Skills
 
-| Skill                 | Description                                            |
-| --------------------- | ------------------------------------------------------ |
-| `goldsky-auth-setup`  | Install CLI, login, and project setup                  |
-| `goldsky-datasets`    | Discover available blockchain datasets and chains      |
-| `goldsky-secrets`     | Manage credentials for sinks (PostgreSQL, Kafka, etc.) |
-| `turbo-pipelines`     | Create, configure, and update Turbo pipelines          |
-| `turbo-lifecycle`     | List, delete, pause, resume, and restart pipelines     |
-| `turbo-monitor-debug` | Monitor pipelines and debug issues                     |
-| `turbo-architecture`  | Design and architect pipeline data flows               |
-| `turbo-transforms`    | Write SQL transforms for pipelines                     |
+| Skill                 | Description                                                                                     |
+| --------------------- | ----------------------------------------------------------------------------------------------- |
+| `goldsky-auth-setup`  | Install CLI, login, and project setup                                                           |
+| `goldsky-datasets`    | Discover available blockchain datasets and chains (EVM, Solana, Bitcoin, Stellar, Sui, and more) |
+| `goldsky-secrets`     | Manage credentials for sinks (PostgreSQL, Kafka, ClickHouse, etc.)                              |
+| `turbo-pipelines`     | Create, configure, and deploy Turbo pipelines (streaming and job mode)                          |
+| `turbo-lifecycle`     | List, delete, pause, resume, and restart pipelines (streaming and job mode)                     |
+| `turbo-monitor-debug` | Monitor pipelines, view logs, inspect live data, and debug issues                               |
+| `turbo-architecture`  | Design pipeline data flows, choose streaming vs job mode, and select sinks                      |
+| `turbo-transforms`    | Write SQL, TypeScript, dynamic table, and handler transforms                                    |
 
 ## Usage
 
@@ -64,7 +59,24 @@ You can invoke skills by name or just describe what you want in natural language
 
 > "I'm getting an error in my pipeline logs, can you help debug?"
 
+> "I need a TypeScript transform to categorize transactions by value"
+
+> "Help me set up a dynamic table to filter by a wallet allowlist"
+
+> "Should I use streaming or job mode for my backfill?"
+
 The AI will automatically use the appropriate skill based on your request.
+
+## What's Covered
+
+These skills cover the full Goldsky Turbo pipeline surface:
+
+- **Sources** — 130+ chain datasets (EVM, Solana, Bitcoin, Stellar, Sui, NEAR, Starknet, Fogo), source-level filtering, bounded ranges
+- **Transforms** — SQL (DataFusion), TypeScript/WASM scripts, dynamic tables (postgres/in-memory), external HTTP handlers, Solana-specific decoders
+- **Sinks** — PostgreSQL, PostgreSQL Aggregate, ClickHouse, Kafka, S3, Webhook, S2, Blackhole (testing)
+- **Modes** — Streaming (continuous) and Job (one-time batch with `end_block`)
+- **Lifecycle** — Deploy, list, pause, resume, restart, delete
+- **Monitoring** — Live inspect TUI, log analysis, error pattern matching
 
 ## Prerequisites
 

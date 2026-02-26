@@ -262,13 +262,17 @@ Based on their selection, follow the appropriate debugging steps.
 
 2. **Common error patterns:**
 
-   | Error Pattern           | Likely Cause          | Fix                                    |
-   | ----------------------- | --------------------- | -------------------------------------- |
-   | `connection refused`    | Database unreachable  | Check network/firewall settings        |
-   | `authentication failed` | Wrong credentials     | Update secret with correct credentials |
-   | `secret not found`      | Missing secret        | Create secret with `goldsky-secrets`   |
-   | `SQL syntax error`      | Invalid transform SQL | Fix SQL in YAML and redeploy           |
-   | `duplicate key`         | Primary key collision | Ensure unique primary key in transform |
+   | Error Pattern             | Likely Cause               | Fix                                            |
+   | ------------------------- | -------------------------- | ---------------------------------------------- |
+   | `connection refused`      | Database unreachable       | Check network/firewall settings                |
+   | `authentication failed`   | Wrong credentials          | Update secret with correct credentials         |
+   | `secret not found`        | Missing secret             | Create secret with `goldsky-secrets`            |
+   | `SQL syntax error`        | Invalid transform SQL      | Fix SQL in YAML and redeploy                   |
+   | `duplicate key`           | Primary key collision      | Ensure unique primary key in transform          |
+   | `script transform error`  | TypeScript runtime failure | Check script logic, null handling, return types |
+   | `dynamic_table` error     | Backend connection issue   | Verify dynamic table secret/table exists        |
+   | `WASM execution failed`   | Script crash in sandbox    | Debug script — check for undefined access       |
+   | `handler timeout`         | External HTTP endpoint slow| Increase `timeout_ms` or fix handler endpoint   |
 
 3. **If SQL error, validate the pipeline:**
 
@@ -326,6 +330,70 @@ Based on their selection, follow the appropriate debugging steps.
    ```bash
    goldsky turbo logs <pipeline-name> --tail 50 | grep -i error
    ```
+
+### Debugging: Script (TypeScript) Transform Issues
+
+1. **Check logs for WASM/script errors:**
+
+   ```bash
+   goldsky turbo logs <pipeline-name> --tail 50
+   ```
+
+   Look for `WASM execution failed`, `script transform error`, or JavaScript runtime errors.
+
+2. **Common script issues:**
+
+   | Issue                        | Fix                                                    |
+   | ---------------------------- | ------------------------------------------------------ |
+   | `undefined` property access  | Add null checks: `input.field ?? ''`                   |
+   | Wrong return type            | Ensure returned object matches `schema` exactly        |
+   | Missing return fields        | All `schema` fields must be present in returned object |
+   | `transform is not a function`| Ensure script defines `function transform(input)`      |
+   | BigInt errors                | Use `BigInt()` constructor, not direct number literals  |
+
+3. **Debug by simplifying:**
+   - Start with a pass-through script that returns input unchanged
+   - Add logic incrementally and redeploy to isolate the problem
+
+### Debugging: Dynamic Table Issues
+
+1. **Verify backend connectivity:**
+
+   ```bash
+   # Check the secret exists
+   goldsky secret list
+   # Verify credentials
+   goldsky secret reveal DYNAMIC_TABLE_SECRET
+   ```
+
+2. **Check the backing table exists** in PostgreSQL:
+   - Connect to your database and verify the table name matches the YAML config
+   - Ensure the table has the expected columns
+
+3. **Common dynamic table issues:**
+
+   | Issue                      | Fix                                                    |
+   | -------------------------- | ------------------------------------------------------ |
+   | Table not found            | Create the table in PostgreSQL before deploying         |
+   | No matches from check      | Verify data exists in the backing table                 |
+   | Stale data                 | For postgres backend, verify rows are actually there    |
+   | Memory pressure            | Large in_memory tables → switch to postgres backend     |
+
+### Debugging: Job Mode Pipelines
+
+1. **Job completed but data seems missing:**
+   - Check if `end_block` was set — without it, job processes to chain tip
+   - Verify `start_at: earliest` was set (not `latest`)
+   - Check sink for the data — it may be in the table but with unexpected values
+
+2. **Job stuck / not completing:**
+   - Check logs for errors that prevent progress
+   - Increase `resource_size` for faster processing
+   - Consider adding `filter` to reduce data volume
+
+3. **Cannot redeploy job:**
+   - Jobs must be deleted before redeploying: `goldsky turbo delete <name>`
+   - Then apply again: `goldsky turbo apply <file.yaml>`
 
 ### Debugging: Pipeline Keeps Restarting
 

@@ -5,7 +5,7 @@
   "author": {
     "name": "Goldsky"
   },
-  "repository": "https://github.com/goldsky-io/agent-skills",
+  "repository": "https://github.com/goldsky-io/goldsky-agent",
   "homepage": "https://docs.goldsky.com",
   "license": "MIT",
   "keywords": ["goldsky", "blockchain", "pipelines", "turbo", "web3", "data"]
