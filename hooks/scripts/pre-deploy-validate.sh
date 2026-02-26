@@ -33,7 +33,7 @@ fi
 YAML_FILE=""
 
 if echo "$COMMAND" | grep -qE '\s+(-f|--file)\s+'; then
-  YAML_FILE=$(echo "$COMMAND" | sed -nE 's/.*(-f|--file)\s+([^ ]+).*/\2/p')
+  YAML_FILE=$(echo "$COMMAND" | sed -nE 's/.*(-f|--file)[[:space:]]+([^ ]+).*/\2/p')
 else
   # Last argument that looks like a .yaml or .yml file
   YAML_FILE=$(echo "$COMMAND" | grep -oE '[^ ]+\.(yaml|yml)' | tail -1)
@@ -59,7 +59,7 @@ if ! command -v goldsky &>/dev/null; then
 fi
 
 # Run validation
-VALIDATE_OUTPUT=$(goldsky turbo validate -f "$YAML_FILE" 2>&1) || {
+VALIDATE_OUTPUT=$(goldsky turbo validate "$YAML_FILE" 2>&1) || {
   EXIT_CODE=$?
   echo "Hook: pre-deploy-validate" >&2
   echo "Pipeline validation failed. Fix these issues before deploying:" >&2

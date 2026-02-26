@@ -44,13 +44,13 @@ PIPELINE_NAME=""
 # Try to get it from YAML file
 YAML_FILE=""
 if echo "$COMMAND" | grep -qE '\s+(-f|--file)\s+'; then
-  YAML_FILE=$(echo "$COMMAND" | sed -nE 's/.*(-f|--file)\s+([^ ]+).*/\2/p')
+  YAML_FILE=$(echo "$COMMAND" | sed -nE 's/.*(-f|--file)[[:space:]]+([^ ]+).*/\2/p')
 else
   YAML_FILE=$(echo "$COMMAND" | grep -oE '[^ ]+\.(yaml|yml)' | tail -1)
 fi
 
 if [[ -n "$YAML_FILE" && -f "$YAML_FILE" ]]; then
-  PIPELINE_NAME=$(grep -m1 -oE '^name:\s*(.+)' "$YAML_FILE" 2>/dev/null | sed 's/name:\s*//' | tr -d '"' || true)
+  PIPELINE_NAME=$(grep -m1 -oE '^name:[[:space:]]*(.+)' "$YAML_FILE" 2>/dev/null | sed -E 's/name:[[:space:]]*//' | tr -d '"' || true)
 fi
 
 # Output the suggestion

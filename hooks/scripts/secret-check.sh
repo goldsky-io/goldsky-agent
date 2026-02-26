@@ -31,7 +31,7 @@ fi
 YAML_FILE=""
 
 if echo "$COMMAND" | grep -qE '\s+(-f|--file)\s+'; then
-  YAML_FILE=$(echo "$COMMAND" | sed -nE 's/.*(-f|--file)\s+([^ ]+).*/\2/p')
+  YAML_FILE=$(echo "$COMMAND" | sed -nE 's/.*(-f|--file)[[:space:]]+([^ ]+).*/\2/p')
 else
   YAML_FILE=$(echo "$COMMAND" | grep -oE '[^ ]+\.(yaml|yml)' | tail -1)
 fi
@@ -53,8 +53,8 @@ fi
 
 # Extract secret_name values from the YAML file
 # Looks for patterns like: secret_name: my-secret or secret_name: "my-secret"
-SECRET_NAMES=$(grep -oE 'secret_name:\s*"?([a-zA-Z0-9_-]+)"?' "$YAML_FILE" 2>/dev/null \
-  | sed -E 's/secret_name:\s*"?([a-zA-Z0-9_-]+)"?/\1/' \
+SECRET_NAMES=$(grep -oE 'secret_name:[[:space:]]*"?([a-zA-Z0-9_-]+)"?' "$YAML_FILE" 2>/dev/null \
+  | sed -E 's/secret_name:[[:space:]]*"?([a-zA-Z0-9_-]+)"?/\1/' \
   | sort -u)
 
 # If no secrets referenced, allow the command
@@ -63,7 +63,10 @@ if [[ -z "$SECRET_NAMES" ]]; then
 fi
 
 # Get the list of existing secrets
-EXISTING_SECRETS=$(goldsky secret list 2>/dev/null | grep -oE '^[a-zA-Z0-9_-]+' || true)
+EXISTING_SECRETS=$(goldsky secret list 2>/dev/null \
+  | sed -n 's/^│[[:space:]]*\([A-Za-z0-9_-][A-Za-z0-9_-]*\)[[:space:]]*│.*/\1/p' \
+  | grep -v '^Name$' \
+  || true)
 
 # Check each referenced secret
 MISSING_SECRETS=()
