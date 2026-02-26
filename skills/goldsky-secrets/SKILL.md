@@ -440,7 +440,8 @@ goldsky secret update MY_SECRET --value 'postgres://correct:credentials@host:543
 
 With the structured JSON format, most special characters in passwords work without URL encoding since the password is a separate field.
 
-## Related Skills
+## Related
 
-- [goldsky-auth-setup](../goldsky-auth-setup/) - **Invoke this if user is not logged in**
-- [turbo-pipelines](../turbo-pipelines/) - Deploy pipelines that use secrets
+- **`@pipeline-builder`** — Build and deploy pipelines that use these secrets
+- **`/goldsky-auth-setup`** — Invoke this if user is not logged in
+- **`/turbo-pipelines`** — Pipeline YAML configuration reference

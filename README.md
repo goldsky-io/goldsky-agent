@@ -71,23 +71,36 @@ cp -r goldsky-agent/skills/* .cursor/skills/
 | `turbo-architecture`  | Design pipeline data flows, choose streaming vs job mode, and select sinks                      |
 | `turbo-transforms`    | Write SQL, TypeScript, dynamic table, and handler transforms                                    |
 
+## Available Agents
+
+Agents are interactive workflows that walk you through multi-step tasks. They use skills as their knowledge base.
+
+| Agent              | Description                                            | Example prompts                                                                                                    |
+| ------------------ | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| `pipeline-builder` | Build and deploy pipelines interactively               | "I want to index all Jupiter swap events on Solana into my Postgres database"                                      |
+| `dataset-finder`   | Quick dataset lookups with ready-to-paste YAML         | "What's the right dataset for tracking NFT transfers on Polygon?"                                                  |
+| `pipeline-doctor`  | Diagnose and fix broken pipelines                      | "My pipeline base-usdc-transfers is stuck in error state, can you help?"                                           |
+
+### When to use agents vs skills
+
+- **Agents** — Use when you want interactive help: building something, diagnosing a problem, or getting a quick answer.
+- **Skills** — Used automatically by agents as reference material. You can also invoke them directly for documentation lookup (e.g., "what's the YAML syntax for a postgres sink?").
+
 ## Usage
 
-You can invoke skills by name or just describe what you want in natural language:
+Describe what you want in natural language and the right agent or skill will be selected automatically:
 
-> "Help me deploy a pipeline that reads ERC20 transfers from Base and writes to PostgreSQL"
+> "I want to index all Jupiter swap events on Solana into my Postgres database" → `@pipeline-builder`
 
-> "What blockchain datasets does Goldsky support?"
+> "What's the right dataset for tracking NFT transfers on Polygon?" → `@dataset-finder`
 
-> "I'm getting an error in my pipeline logs, can you help debug?"
+> "My pipeline base-usdc-transfers is stuck in error state, can you help?" → `@pipeline-doctor`
 
-> "I need a TypeScript transform to categorize transactions by value"
+> "What's the YAML syntax for a postgres sink?" → `turbo-pipelines` skill
 
-> "Help me set up a dynamic table to filter by a wallet allowlist"
+> "How do I pause a pipeline?" → `turbo-lifecycle` skill
 
-> "Should I use streaming or job mode for my backfill?"
-
-The AI will automatically use the appropriate skill based on your request.
+> "I need a TypeScript transform to categorize transactions by value" → `turbo-transforms` skill
 
 ## What's Covered
 

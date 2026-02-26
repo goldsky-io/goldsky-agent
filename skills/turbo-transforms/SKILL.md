@@ -1359,9 +1359,11 @@ SELECT regexp_replace(address, '^0x', '') AS clean_address
 
 ---
 
-## Related Skills
+## Related
 
-- **`/turbo-pipelines`** — Full pipeline creation, deployment, and configuration
-- **`/turbo-architecture`** — Pipeline architecture decisions (source types, data flow patterns, resource sizing, dynamic tables)
-- **`/goldsky-datasets`** — Discover available datasets and their schemas
-- **`/turbo-monitor-debug`** — Inspect transform output and debug pipeline issues
+- **`@pipeline-builder`** — Build and deploy pipelines interactively using these transforms
+- **`@pipeline-doctor`** — Diagnose and fix pipeline issues (including transform errors)
+- **`/turbo-pipelines`** — Pipeline YAML configuration reference
+- **`/turbo-architecture`** — Architecture decisions (source types, data flow patterns, resource sizing)
+- **`/goldsky-datasets`** — Blockchain dataset and chain prefix reference
+- **`/turbo-monitor-debug`** — Monitoring and debugging reference

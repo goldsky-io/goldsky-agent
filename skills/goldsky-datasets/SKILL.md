@@ -1,74 +1,13 @@
 ---
 name: goldsky-datasets
-description: Discover available blockchain datasets for Turbo pipelines. Use when exploring what data Goldsky offers, finding chain prefixes, or selecting the right dataset for a pipeline.
+description: "Reference tables for Goldsky blockchain datasets — chain prefixes, dataset types, naming conventions, and versions. For quick dataset questions, use @dataset-finder instead."
 ---
 
-# Goldsky Dataset Discovery
+# Goldsky Dataset Reference
 
-Explore and discover available blockchain datasets for Turbo pipelines.
+Reference tables for blockchain datasets available in Turbo pipelines. For quick dataset questions (e.g., "what dataset for Solana transfers?"), use `@dataset-finder` instead.
 
-## Triggers
-
-Invoke this skill when the user:
-
-- Asks "what data does Goldsky have?" or "what chains are supported?"
-- Wants to know if a specific chain or dataset is available
-- Needs help finding the right dataset name format
-- Says "help me find a dataset" or "what datasets are available?"
-- Is unsure which dataset to use for their pipeline
-- Asks about ERC-20 transfers, NFT data, logs, or other blockchain data types
-- Mentions `/goldsky-datasets`
-
-## Agent Instructions
-
-> **IMPORTANT - Avoid `goldsky dataset list`:** This command is slow (30-60+ seconds) and often times out. Use the reference tables below instead. Only run the command if you need to verify a specific dataset exists or find an exact version.
-
-When this skill is invoked:
-
-### Step 1: Use the Reference Tables First
-
-**Do NOT run `goldsky dataset list` upfront.** Instead:
-
-1. Check the Verified Dataset Reference table below for exact dataset names
-2. Use `goldsky turbo validate` on a test YAML to verify a dataset exists (fast, ~3 seconds)
-3. Only run `goldsky dataset list | grep "specific_name"` if you need version info
-
-### Step 2: Match User Need to Dataset
-
-Based on what they're building, recommend directly from the reference:
-
-| User Need                | Dataset                                  | Version                   |
-| ------------------------ | ---------------------------------------- | ------------------------- |
-| Token transfers (ERC-20) | `<chain>.erc20_transfers`                | 1.0.0 (eth), 1.2.0 (base) |
-| NFT transfers (ERC-721)  | `<chain>.erc721_transfers`               | 1.0.0                     |
-| All transactions         | `<chain>.raw_transactions`               | 1.0.0                     |
-| Event logs               | `<chain>.logs` or `<chain>.raw_logs`     | 1.0.0                     |
-| Block data               | `<chain>.blocks` or `<chain>.raw_blocks` | 1.0.0                     |
-
-### Step 3: Validate Before Presenting
-
-**ALWAYS validate the dataset exists** before giving it to the user:
-
-```bash
-# Quick validation test (fast, ~3 seconds)
-goldsky turbo validate - <<'EOF'
-name: test
-resource_size: s
-sources:
-  test:
-    type: dataset
-    dataset_name: <chain>.<dataset_type>
-    version: 1.0.0
-    start_at: latest
-transforms: {}
-sinks:
-  out:
-    type: blackhole
-    from: test
-EOF
-```
-
-If validation fails with "Dataset not found", try alternate naming (see Verified Dataset Reference).
+> **Tip:** Use `goldsky turbo validate` to verify a dataset exists (fast, ~3 seconds). Avoid `goldsky dataset list` which is slow (30-60+ seconds).
 
 ---
 
@@ -338,7 +277,7 @@ Use a version that exists in the output.
 
 ---
 
-## Related Skills
+## Related
 
-- **`/turbo-pipelines`** - Create pipelines using discovered datasets
-- **`/goldsky-auth-setup`** - Set up CLI authentication first
+- **`@pipeline-builder`** - Interactive wizard to build pipelines using these datasets
+- **`@dataset-finder`** - Quick lookup agent for dataset names and YAML snippets
