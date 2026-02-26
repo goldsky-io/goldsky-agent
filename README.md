@@ -6,7 +6,7 @@ AI skills for streaming real-time blockchain data to your infrastructure. Build,
 
 ### Option 1: Claude Code Plugin (Recommended)
 
-Install via the plugin marketplace for automatic updates:
+Install via the plugin marketplace. This is the recommended method — it handles version control and delivers updates automatically so your skills stay current.
 
 ```
 /plugin marketplace add goldsky-io/goldsky-agent
@@ -15,7 +15,7 @@ Install via the plugin marketplace for automatic updates:
 
 ### Option 2: Load from Local Directory
 
-Clone the repo and point Claude Code at it directly:
+Clone the repo and point Claude Code at it directly. You'll need to `git pull` manually to get updates.
 
 ```bash
 git clone https://github.com/goldsky-io/goldsky-agent.git
@@ -24,7 +24,7 @@ claude --plugin-dir ./goldsky-agent
 
 ### Option 3: Copy Skills Directly
 
-Copy the skills into your project's skills directory. Works with any AI tool that supports the [SKILL.md](https://agentskills.io) format (Claude Code, Cursor, etc.):
+Copy the skills into your project's skills directory. Works with any AI tool that supports the [SKILL.md](https://agentskills.io) format (Claude Code, Cursor, etc.). You'll need to re-copy to get updates.
 
 ```bash
 git clone https://github.com/goldsky-io/goldsky-agent.git
