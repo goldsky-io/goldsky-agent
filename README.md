@@ -100,6 +100,32 @@ These skills cover the full Goldsky Turbo pipeline surface:
 - **Lifecycle** — Deploy, list, pause, resume, restart, delete
 - **Monitoring** — Live inspect TUI, log analysis, error pattern matching
 
+## Pre-Deploy Hooks
+
+The plugin includes hooks that run automatically before and after `goldsky turbo apply` commands to catch common issues early.
+
+| Hook | When | What It Does |
+|------|------|--------------|
+| `pre-deploy-validate` | Before deploy | Runs `goldsky turbo validate` and blocks if validation fails |
+| `secret-check` | Before deploy | Verifies all `secret_name` references exist in your project |
+| `post-deploy-inspect` | After deploy | Suggests running `goldsky turbo inspect` to verify data flow |
+
+### How It Works
+
+When you run a `goldsky turbo apply` command, the hooks automatically:
+
+1. **Validate the pipeline YAML** — Catches schema errors, invalid configurations, and typos before they reach the API
+2. **Check for missing secrets** — Scans for `secret_name` references and verifies each one exists via `goldsky secret list`
+3. **Suggest next steps** — After a successful deploy, reminds you to inspect the pipeline
+
+### Bypassing Hooks
+
+If you need to skip the hooks (e.g., for debugging), you can run commands directly without Claude Code, or temporarily disable hooks in your Claude Code settings.
+
+### Requirements
+
+The hooks require the `goldsky` CLI to be installed. If it's missing, the hooks pass through without blocking.
+
 ## Prerequisites
 
 **None required!** The skills will guide you through setup if needed.
