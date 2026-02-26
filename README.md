@@ -4,22 +4,44 @@ AI skills for streaming real-time blockchain data to your infrastructure. Build,
 
 ## Installation
 
-### Option 1: Claude Code Plugin (Recommended)
+### Option 1: Plugin Marketplace (Recommended)
 
 Install via the plugin marketplace. This is the recommended method — it handles version control and delivers updates automatically so your skills stay current.
+
+**Claude Code**
 
 ```
 /plugin marketplace add goldsky-io/goldsky-agent
 /plugin install goldsky@goldsky-agent
 ```
 
+**Cursor**
+
+> Coming soon: Install from the [Cursor plugin marketplace](https://cursor.com/marketplace).
+
 ### Option 2: Load from Local Directory
 
-Clone the repo and point Claude Code at it directly. You'll need to `git pull` manually to get updates.
+Clone the repo and point your AI tool at it directly. You'll need to `git pull` manually to get updates.
+
+**Claude Code**
 
 ```bash
 git clone https://github.com/goldsky-io/goldsky-agent.git
 claude --plugin-dir ./goldsky-agent
+```
+
+**Cursor**
+
+```bash
+git clone https://github.com/goldsky-io/goldsky-agent.git
+```
+
+Then add the path to `plugins.local` in your Cursor settings (`Settings > Cursor Settings > JSON`):
+
+```json
+{
+  "plugins.local": ["/absolute/path/to/goldsky-agent"]
+}
 ```
 
 ### Option 3: Copy Skills Directly
