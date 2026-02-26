@@ -17,7 +17,9 @@ Install via the plugin marketplace. This is the recommended method — it handle
 
 **Cursor**
 
-Install from the [Cursor plugin marketplace](https://cursor.com/marketplace), or add the GitHub repo directly as a plugin.
+Add the GitHub repo directly as a plugin.
+
+> Coming soon: Install from the [Cursor plugin marketplace](https://cursor.com/marketplace).
 
 ### Option 2: Load from Local Directory
 

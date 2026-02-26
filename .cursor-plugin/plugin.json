@@ -10,5 +10,6 @@
   "homepage": "https://docs.goldsky.com",
   "license": "MIT",
   "keywords": ["goldsky", "blockchain", "pipelines", "turbo", "web3", "data", "cursor"],
-  "logo": "assets/logo.svg"
+  "logo": "assets/logo.png",
+  "skills": "skills/"
 }
