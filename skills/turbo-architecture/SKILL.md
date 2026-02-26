@@ -541,11 +541,13 @@ sinks:
 
 ---
 
-## Related Skills
+## Related
 
-- **`/turbo-pipelines`** — Build and deploy pipeline YAML configurations
-- **`/turbo-transforms`** — Write SQL, TypeScript, and dynamic table transforms
-- **`/goldsky-datasets`** — Discover available blockchain datasets and chain prefixes
-- **`/goldsky-secrets`** — Set up credentials for sinks
-- **`/turbo-monitor-debug`** — Monitor pipeline health and debug issues
-- **`/turbo-lifecycle`** — List, delete, and manage pipeline state
+- **`@pipeline-builder`** — Build and deploy pipelines interactively using these architecture patterns
+- **`@pipeline-doctor`** — Diagnose and fix pipeline issues
+- **`/turbo-pipelines`** — Pipeline YAML configuration reference
+- **`/turbo-transforms`** — SQL, TypeScript, and dynamic table transform reference
+- **`/goldsky-datasets`** — Blockchain dataset and chain prefix reference
+- **`/goldsky-secrets`** — Sink credential management
+- **`/turbo-monitor-debug`** — Monitoring and debugging reference
+- **`/turbo-lifecycle`** — Pipeline lifecycle command reference

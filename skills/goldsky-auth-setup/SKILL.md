@@ -189,11 +189,10 @@ goldsky login
 | Permission denied | User needs role upgrade from project Owner/Admin       |
 | Session expired   | Prompt for new token and re-authenticate               |
 
-## Related Skills
+## Related
 
-After authentication is complete, suggest these skills for further development:
+After authentication is complete, suggest next steps:
 
-- **`/goldsky-secrets`** - Set up credentials for pipeline sinks (PostgreSQL, ClickHouse, Kafka, etc.)
-- **`/goldsky-skill-authoring`** - Create custom workflow skills for Goldsky CLI operations
-- **Pipeline development** - Ask "create a pipeline" or "help me build a Mirror pipeline"
-- **Subgraph deployment** - Ask "deploy a subgraph" or "help with subgraph indexing"
+- **`@pipeline-builder`** — Build and deploy a new pipeline interactively
+- **`@dataset-finder`** — Find the right dataset for your use case
+- **`/goldsky-secrets`** — Set up credentials for pipeline sinks (PostgreSQL, ClickHouse, Kafka, etc.)
