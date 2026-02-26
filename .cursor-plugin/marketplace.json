@@ -1,0 +1,17 @@
+{
+  "name": "goldsky-agent",
+  "owner": {
+    "name": "Goldsky"
+  },
+  "metadata": {
+    "description": "Stream real-time blockchain data to your infrastructure"
+  },
+  "plugins": [
+    {
+      "name": "goldsky",
+      "source": "./",
+      "description": "Stream real-time blockchain data to your infrastructure. Build, deploy, and debug data pipelines that index onchain events from 20+ chains into PostgreSQL, ClickHouse, Kafka, and more.",
+      "version": "1.0.0"
+    }
+  ]
+}
