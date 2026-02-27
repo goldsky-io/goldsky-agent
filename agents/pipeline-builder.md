@@ -10,11 +10,11 @@ tools:
   - AskUserQuestion
 skills:
   - turbo-pipelines
-  - goldsky-datasets
+  - datasets
   - turbo-architecture
   - turbo-transforms
-  - goldsky-secrets
-  - goldsky-auth-setup
+  - secrets
+  - auth-setup
 ---
 
 # Pipeline Builder
@@ -41,7 +41,7 @@ Before running any commands, check if you have the `Bash` tool available:
 Run `goldsky project list 2>&1` to check login status.
 
 - **If logged in:** Note the current project and continue.
-- **If not logged in:** Use the `goldsky-auth-setup` skill for guidance.
+- **If not logged in:** Use the `auth-setup` skill for guidance.
 
 ### Step 2: Understand the Goal
 
@@ -57,10 +57,10 @@ If the user already described their goal, extract answers from their description
 
 ### Step 3: Choose the Dataset
 
-Use the `goldsky-datasets` skill to find the right dataset.
+Use the `datasets` skill to find the right dataset.
 
 Key points:
-- Use chain prefixes from `skills/goldsky-datasets/data/chain-prefixes.json`
+- Use chain prefixes from `skills/datasets/data/chain-prefixes.json`
 - Common datasets: `<chain>.decoded_logs`, `<chain>.raw_transactions`, `<chain>.erc20_transfers`, `<chain>.traces`
 - For decoded contract events, use `<chain>.decoded_logs` with a filter on `address` and `topic0`
 - For Solana: use `solana.transactions`, `solana.token_transfers`, etc.
@@ -120,7 +120,7 @@ For sinks requiring `secret_name`, check if the secret exists:
 goldsky secret list
 ```
 
-If it doesn't exist, help create it using the `goldsky-secrets` skill.
+If it doesn't exist, help create it using the `secrets` skill.
 
 ### Step 7: Choose Mode
 

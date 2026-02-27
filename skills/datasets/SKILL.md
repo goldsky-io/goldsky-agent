@@ -1,5 +1,5 @@
 ---
-name: goldsky-datasets
+name: datasets
 description: "Reference tables for Goldsky blockchain datasets — chain prefixes, dataset types, naming conventions, and versions. For quick dataset questions, use @dataset-finder instead."
 ---
 

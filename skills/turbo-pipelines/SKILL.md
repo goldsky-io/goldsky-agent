@@ -48,7 +48,7 @@ goldsky turbo apply pipeline.yaml -i
 
 ## Discovering Available Data Sources
 
-**For dataset discovery, invoke the `goldsky-datasets` skill.**
+**For dataset discovery, invoke the `datasets` skill.**
 
 Quick reference for common datasets:
 
@@ -60,7 +60,7 @@ Quick reference for common datasets:
 | Block data                 | `<chain>.blocks`           |
 | Transaction data           | `<chain>.transactions`     |
 
-For full chain prefixes, dataset types, and version discovery, use `/goldsky-datasets`.
+For full chain prefixes, dataset types, and version discovery, use `/datasets`.
 
 ---
 
@@ -862,8 +862,8 @@ Execution error: SSL connection is required
 | **CLI hangs / no output**      | Run with `GOLDSKY_NO_UPDATE_NOTIFIER=1 goldsky <command>`         |
 | **Turbo binary not installed** | Run `curl https://install-turbo.goldsky.com \| sh`                |
 | **"turbo binary not found"**   | Same as above - Turbo is a separate binary that must be installed |
-| Not logged in                  | Invoke `goldsky-auth-setup` skill                                 |
-| Secret not found               | Invoke `goldsky-secrets` skill to create it                       |
+| Not logged in                  | Invoke `auth-setup` skill                                 |
+| Secret not found               | Invoke `secrets` skill to create it                       |
 | Dataset not found              | Use `raw_transactions` not `transactions`. Validate first         |
 | Validation failed              | Review error message and fix YAML syntax                          |
 | Pipeline name exists           | Use different name or delete existing pipeline                    |

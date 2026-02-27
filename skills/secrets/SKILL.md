@@ -1,5 +1,5 @@
 ---
-name: goldsky-secrets
+name: secrets
 description: Manage Goldsky secrets for pipeline sink credentials. Use when creating secrets for PostgreSQL, ClickHouse, Kafka, or other sinks, or when managing existing secrets.
 ---
 
@@ -17,7 +17,7 @@ Invoke this skill when the user:
 - Says "help me create a goldsky sink"
 - Wants to update or rotate credentials
 - Asks to list, reveal, or delete secrets
-- Mentions `/goldsky-secrets`
+- Mentions `/secrets`
 
 ## Agent Instructions
 
@@ -27,7 +27,7 @@ When this skill is invoked, follow this streamlined workflow:
 
 Run `goldsky secret list` to confirm authentication and show existing secrets.
 
-**If authentication fails:** Invoke the `goldsky-auth-setup` skill first.
+**If authentication fails:** Invoke the `auth-setup` skill first.
 
 ### Step 2: Determine Intent Quickly
 
@@ -443,5 +443,5 @@ With the structured JSON format, most special characters in passwords work witho
 ## Related
 
 - **`@pipeline-builder`** — Build and deploy pipelines that use these secrets
-- **`/goldsky-auth-setup`** — Invoke this if user is not logged in
+- **`/auth-setup`** — Invoke this if user is not logged in
 - **`/turbo-pipelines`** — Pipeline YAML configuration reference

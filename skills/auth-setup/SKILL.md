@@ -1,5 +1,5 @@
 ---
-name: goldsky-auth-setup
+name: auth-setup
 description: Set up Goldsky CLI authentication and project configuration. Use when installing the CLI, logging in, switching projects, or troubleshooting authentication issues.
 ---
 
@@ -15,7 +15,7 @@ Set up the Goldsky CLI, authenticate your account, and configure projects for yo
 - Switching between projects
 - Checking authentication status
 - Troubleshooting login issues
-- User invokes `/goldsky-auth-setup`
+- User invokes `/auth-setup`
 
 ## Prerequisites
 
@@ -131,7 +131,7 @@ After successful setup, provide a summary to the user:
 [List projects from goldsky project list output]
 
 **Next steps - try these skills:**
-- `/goldsky-secrets` - Set up credentials for pipeline sinks (PostgreSQL, ClickHouse, Kafka)
+- `/secrets` - Set up credentials for pipeline sinks (PostgreSQL, ClickHouse, Kafka)
 - Ask "create a pipeline" to start building data pipelines
 - Ask "deploy a subgraph" to deploy a subgraph to Goldsky
 ```
@@ -195,4 +195,4 @@ After authentication is complete, suggest next steps:
 
 - **`@pipeline-builder`** — Build and deploy a new pipeline interactively
 - **`@dataset-finder`** — Find the right dataset for your use case
-- **`/goldsky-secrets`** — Set up credentials for pipeline sinks (PostgreSQL, ClickHouse, Kafka, etc.)
+- **`/secrets`** — Set up credentials for pipeline sinks (PostgreSQL, ClickHouse, Kafka, etc.)

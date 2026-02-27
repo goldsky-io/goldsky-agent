@@ -1,42 +1,36 @@
 # Goldsky Agent
 
-AI skills for streaming real-time blockchain data to your infrastructure. Build, deploy, and debug data pipelines that index onchain events from 130+ chains into PostgreSQL, ClickHouse, Kafka, and more.
+AI-powered tools for streaming real-time blockchain data. Build, deploy, and debug Turbo pipelines that index onchain events from 130+ chains into PostgreSQL, ClickHouse, Kafka, and more.
+
+## Quick Start
+
+| I want to...                          | Use                  |
+| ------------------------------------- | -------------------- |
+| Build a new pipeline                  | `@pipeline-builder`  |
+| Fix a broken pipeline                 | `@pipeline-doctor`   |
+| Find the right dataset name           | `@dataset-finder`    |
+| Look up YAML syntax                   | `turbo-pipelines`    |
+| Check error patterns                  | `turbo-monitor-debug`|
+
+Just describe what you need in natural language — the right agent or skill is selected automatically.
 
 ## Installation
 
-### Option 1: Plugin Marketplace (Recommended)
-
-Install via the plugin marketplace. This is the recommended method — it handles version control and delivers updates automatically so your skills stay current.
-
 **Claude Code**
 
 ```
-/plugin marketplace add goldsky-io/goldsky-agent
-/plugin install goldsky@goldsky-agent
+/install goldsky-io/goldsky-agent
 ```
 
 **Cursor**
 
-> Coming soon: Install from the [Cursor plugin marketplace](https://cursor.com/marketplace).
-
-### Option 2: Load from Local Directory
-
-Clone the repo and point your AI tool at it directly. You'll need to `git pull` manually to get updates.
-
-**Claude Code**
-
-```bash
-git clone https://github.com/goldsky-io/goldsky-agent.git
-claude --plugin-dir ./goldsky-agent
-```
-
-**Cursor**
+Clone the repo and add it as a local plugin:
 
 ```bash
 git clone https://github.com/goldsky-io/goldsky-agent.git
 ```
 
-Then add the path to `plugins.local` in your Cursor settings (`Settings > Cursor Settings > JSON`):
+Then add the path to your Cursor settings (`Settings > Cursor Settings > JSON`):
 
 ```json
 {
@@ -44,116 +38,116 @@ Then add the path to `plugins.local` in your Cursor settings (`Settings > Cursor
 }
 ```
 
-### Option 3: Copy Skills Directly
+<details>
+<summary>Other installation methods</summary>
 
-Copy the skills into your project's skills directory. Works with any AI tool that supports the [SKILL.md](https://agentskills.io) format (Claude Code, Cursor, etc.). You'll need to re-copy to get updates.
+**Claude Code — load from local directory**
 
 ```bash
 git clone https://github.com/goldsky-io/goldsky-agent.git
-
-# Claude Code
-cp -r goldsky-agent/skills/* .claude/skills/
-
-# Cursor
-cp -r goldsky-agent/skills/* .cursor/skills/
+claude --plugin-dir ./goldsky-agent
 ```
 
-## Available Skills
+**Copy skills directly (any tool)**
 
-| Skill                 | Description                                                                                     |
-| --------------------- | ----------------------------------------------------------------------------------------------- |
-| `goldsky-auth-setup`  | Install CLI, login, and project setup                                                           |
-| `goldsky-datasets`    | Discover available blockchain datasets and chains (EVM, Solana, Bitcoin, Stellar, Sui, and more) |
-| `goldsky-secrets`     | Manage credentials for sinks (PostgreSQL, Kafka, ClickHouse, etc.)                              |
-| `turbo-pipelines`     | Create, configure, and deploy Turbo pipelines (streaming and job mode)                          |
-| `turbo-lifecycle`     | List, delete, pause, resume, and restart pipelines (streaming and job mode)                     |
-| `turbo-monitor-debug` | Monitor pipelines, view logs, inspect live data, and debug issues                               |
-| `turbo-architecture`  | Design pipeline data flows, choose streaming vs job mode, and select sinks                      |
-| `turbo-transforms`    | Write SQL, TypeScript, dynamic table, and handler transforms                                    |
+```bash
+git clone https://github.com/goldsky-io/goldsky-agent.git
+cp -r goldsky-agent/skills/* .claude/skills/    # Claude Code
+cp -r goldsky-agent/skills/* .cursor/skills/    # Cursor
+```
 
-## Available Agents
+</details>
 
-Agents are interactive workflows that walk you through multi-step tasks. They use skills as their knowledge base.
+## Repository Structure
 
-| Agent              | Description                                            | Example prompts                                                                                                    |
-| ------------------ | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
-| `pipeline-builder` | Build and deploy pipelines interactively               | "I want to index all Jupiter swap events on Solana into my Postgres database"                                      |
-| `dataset-finder`   | Quick dataset lookups with ready-to-paste YAML         | "What's the right dataset for tracking NFT transfers on Polygon?"                                                  |
-| `pipeline-doctor`  | Diagnose and fix broken pipelines                      | "My pipeline base-usdc-transfers is stuck in error state, can you help?"                                           |
+```
+goldsky-agent/
+├── agents/              # Interactive workflows (call with @agent-name)
+│   ├── pipeline-builder.md    # Step-by-step pipeline creation wizard
+│   ├── pipeline-doctor.md     # Diagnose and fix pipeline issues
+│   └── dataset-finder.md      # Quick dataset lookups
+├── skills/              # Reference documentation (auto-loaded by agents)
+│   ├── turbo-pipelines/       # YAML configuration reference
+│   ├── turbo-transforms/      # SQL, TypeScript, dynamic tables
+│   ├── turbo-monitor-debug/   # Error patterns, CLI commands
+│   ├── turbo-lifecycle/       # List, pause, resume, delete
+│   ├── turbo-architecture/    # Design patterns, sink selection
+│   ├── datasets/              # Chain prefixes, dataset types
+│   ├── secrets/               # Credential management
+│   └── auth-setup/            # CLI installation, login
+├── hooks/               # Pre/post deploy automation
+│   └── scripts/               # Validation, secret checking
+└── .claude-plugin/      # Plugin manifest
+```
 
-### When to use agents vs skills
+## How It Works
 
-- **Agents** — Use when you want interactive help: building something, diagnosing a problem, or getting a quick answer.
-- **Skills** — Used automatically by agents as reference material. You can also invoke them directly for documentation lookup (e.g., "what's the YAML syntax for a postgres sink?").
+**Agents** are interactive workflows that walk you through multi-step tasks. Call them with `@agent-name` or just describe what you need.
 
-## Usage
+**Skills** are reference documentation that agents read to answer your questions. They contain YAML syntax, error patterns, CLI commands, and troubleshooting guides.
 
-Describe what you want in natural language and the right agent or skill will be selected automatically:
+```
+User: "Build me a pipeline for USDC transfers on Base"
+  ↓
+@pipeline-builder (agent)
+  ↓ reads
+turbo-pipelines + datasets + secrets (skills)
+  ↓
+Generated pipeline.yaml + deployment
+```
 
-> "I want to index all Jupiter swap events on Solana into my Postgres database" → `@pipeline-builder`
+## Agents
 
-> "What's the right dataset for tracking NFT transfers on Polygon?" → `@dataset-finder`
+| Agent | What it does | Example |
+| ----- | ------------ | ------- |
+| `@pipeline-builder` | Interactive wizard: chain → dataset → transforms → sink → deploy | "Index all Jupiter swaps on Solana into Postgres" |
+| `@pipeline-doctor` | Systematic diagnosis: auth → status → logs → error patterns → fix | "My pipeline is stuck in error state" |
+| `@dataset-finder` | Quick lookup returning dataset name + YAML snippet | "What dataset for Polygon NFTs?" |
 
-> "My pipeline base-usdc-transfers is stuck in error state, can you help?" → `@pipeline-doctor`
+## Skills (Reference)
 
-> "What's the YAML syntax for a postgres sink?" → `turbo-pipelines` skill
-
-> "How do I pause a pipeline?" → `turbo-lifecycle` skill
-
-> "I need a TypeScript transform to categorize transactions by value" → `turbo-transforms` skill
-
-## What's Covered
-
-These skills cover the full Goldsky Turbo pipeline surface:
-
-- **Sources** — 130+ chain datasets (EVM, Solana, Bitcoin, Stellar, Sui, NEAR, Starknet, Fogo), source-level filtering, bounded ranges
-- **Transforms** — SQL (DataFusion), TypeScript/WASM scripts, dynamic tables (postgres/in-memory), external HTTP handlers, Solana-specific decoders
-- **Sinks** — PostgreSQL, PostgreSQL Aggregate, ClickHouse, Kafka, S3, Webhook, S2, Blackhole (testing)
-- **Modes** — Streaming (continuous) and Job (one-time batch with `end_block`)
-- **Lifecycle** — Deploy, list, pause, resume, restart, delete
-- **Monitoring** — Live inspect TUI, log analysis, error pattern matching
+| Skill | Contents |
+| ----- | -------- |
+| `turbo-pipelines` | YAML configuration reference — sources, transforms, sinks, troubleshooting |
+| `turbo-transforms` | SQL (DataFusion), TypeScript/WASM, dynamic tables, HTTP handlers |
+| `turbo-monitor-debug` | Error patterns, log analysis, TUI shortcuts, debugging guides |
+| `turbo-lifecycle` | List, pause, resume, restart, delete — streaming vs job mode rules |
+| `turbo-architecture` | Design patterns, streaming vs job mode, sink selection |
+| `datasets` | Chain prefixes, dataset types, naming conventions |
+| `secrets` | Credential formats for each sink type |
+| `auth-setup` | CLI installation and login flow |
 
 ## Pre-Deploy Hooks
 
-The plugin includes hooks that run automatically before and after `goldsky turbo apply` commands to catch common issues early.
+The plugin runs hooks automatically on `goldsky turbo apply` commands:
 
-| Hook | When | What It Does |
-|------|------|--------------|
-| `pre-deploy-validate` | Before deploy | Runs `goldsky turbo validate` and blocks if validation fails |
-| `secret-check` | Before deploy | Verifies all `secret_name` references exist in your project |
-| `post-deploy-inspect` | After deploy | Suggests running `goldsky turbo inspect` to verify data flow |
+| Hook | What it does |
+| ---- | ------------ |
+| `pre-deploy-validate` | Runs `goldsky turbo validate`, blocks on failure |
+| `secret-check` | Verifies all `secret_name` references exist |
+| `post-deploy-inspect` | Suggests `goldsky turbo inspect` after deploy |
 
-### How It Works
+## Coverage
 
-When you run a `goldsky turbo apply` command, the hooks automatically:
+These tools cover the full Turbo pipeline surface:
 
-1. **Validate the pipeline YAML** — Catches schema errors, invalid configurations, and typos before they reach the API
-2. **Check for missing secrets** — Scans for `secret_name` references and verifies each one exists via `goldsky secret list`
-3. **Suggest next steps** — After a successful deploy, reminds you to inspect the pipeline
+- **Sources** — 130+ chains (EVM, Solana, Bitcoin, Stellar, Sui, NEAR, Starknet), source filtering, bounded ranges
+- **Transforms** — SQL, TypeScript/WASM, dynamic tables, HTTP handlers
+- **Sinks** — PostgreSQL, ClickHouse, Kafka, S3, Webhook, S2
+- **Modes** — Streaming (continuous) and Job (batch with `end_block`)
+- **Lifecycle** — Deploy, pause, resume, restart, delete
+- **Monitoring** — Live inspect TUI, log analysis, error matching
 
-### Bypassing Hooks
+## MCP Server
 
-If you need to skip the hooks (e.g., for debugging), you can run commands directly without Claude Code, or temporarily disable hooks in your Claude Code settings.
+The plugin bundles the [Goldsky docs MCP server](https://docs.goldsky.com/mcp-server), providing real-time search across Goldsky documentation.
 
-### Requirements
+When installed as a plugin, the MCP server starts automatically.
 
-The hooks require the `goldsky` CLI to be installed. If it's missing, the hooks pass through without blocking.
+<details>
+<summary>Manual MCP setup</summary>
 
-## Prerequisites
-
-**None required!** The skills will guide you through setup if needed.
-
-The `goldsky-auth-setup` skill helps you install the Goldsky CLI, log in, and select a project.
-
-## Goldsky Docs MCP Server
-
-The plugin bundles the [Goldsky docs MCP server](https://docs.goldsky.com/mcp-server), giving the AI real-time search access to the full Goldsky documentation — Subgraphs, Mirror, Turbo, and Compose — so it can look up product details, configuration references, and examples while helping you build pipelines.
-
-When installed as a Claude Code plugin, the MCP server starts automatically. No extra setup is needed.
-
-For standalone use, or in other tools, you can connect the MCP server manually:
-
-**Claude Code (CLI)**
+**Claude Code**
 
 ```bash
 claude mcp add --transport http goldsky-docs https://docs.goldsky.com/mcp
@@ -161,7 +155,7 @@ claude mcp add --transport http goldsky-docs https://docs.goldsky.com/mcp
 
 **Cursor / VS Code**
 
-Add to your MCP settings (`.cursor/mcp.json` or `.vscode/mcp.json`):
+Add to `.cursor/mcp.json` or `.vscode/mcp.json`:
 
 ```json
 {
@@ -174,12 +168,13 @@ Add to your MCP settings (`.cursor/mcp.json` or `.vscode/mcp.json`):
 }
 ```
 
+</details>
+
 ## Documentation
 
 - [Goldsky Docs](https://docs.goldsky.com)
 - [Turbo Pipelines Guide](https://docs.goldsky.com/turbo-pipelines/introduction)
 - [CLI Reference](https://docs.goldsky.com/turbo-pipelines/cli)
-- [MCP Server](https://docs.goldsky.com/mcp-server)
 
 ## License
 
