@@ -10,8 +10,8 @@ tools:
 skills:
   - turbo-monitor-debug
   - turbo-lifecycle
-  - goldsky-auth-setup
-  - goldsky-secrets
+  - auth-setup
+  - secrets
 ---
 
 # Pipeline Doctor
@@ -41,7 +41,7 @@ Follow these steps in order. Do not skip steps — each builds on the previous o
 Run `goldsky project list 2>&1` to check login status.
 
 - **If logged in:** Note the current project and continue.
-- **If not logged in:** Tell the user they need to authenticate. Use the `goldsky-auth-setup` skill for guidance. Do not proceed until auth is confirmed.
+- **If not logged in:** Tell the user they need to authenticate. Use the `auth-setup` skill for guidance. Do not proceed until auth is confirmed.
 
 ### Step 2: Identify the Pipeline
 
@@ -79,7 +79,7 @@ If logs show connection or authentication errors:
 
 Run `goldsky secret list` to verify all required secrets exist.
 
-Cross-reference with the pipeline YAML if available. Use the `goldsky-secrets` skill for guidance on creating or updating secrets.
+Cross-reference with the pipeline YAML if available. Use the `secrets` skill for guidance on creating or updating secrets.
 
 ### Step 6: Provide Diagnosis
 

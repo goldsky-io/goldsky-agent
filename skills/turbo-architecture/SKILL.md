@@ -50,7 +50,7 @@ Use the patterns and decision guides below to recommend a pipeline architecture.
 After the architecture is decided, direct the user to:
 - **`/turbo-pipelines`** — To build and deploy the YAML
 - **`/turbo-transforms`** — To write the SQL transforms
-- **`/goldsky-secrets`** — To set up sink credentials
+- **`/secrets`** — To set up sink credentials
 
 ---
 
@@ -547,7 +547,7 @@ sinks:
 - **`@pipeline-doctor`** — Diagnose and fix pipeline issues
 - **`/turbo-pipelines`** — Pipeline YAML configuration reference
 - **`/turbo-transforms`** — SQL, TypeScript, and dynamic table transform reference
-- **`/goldsky-datasets`** — Blockchain dataset and chain prefix reference
-- **`/goldsky-secrets`** — Sink credential management
+- **`/datasets`** — Blockchain dataset and chain prefix reference
+- **`/secrets`** — Sink credential management
 - **`/turbo-monitor-debug`** — Monitoring and debugging reference
 - **`/turbo-lifecycle`** — Pipeline lifecycle command reference

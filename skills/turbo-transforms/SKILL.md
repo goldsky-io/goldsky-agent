@@ -1365,5 +1365,5 @@ SELECT regexp_replace(address, '^0x', '') AS clean_address
 - **`@pipeline-doctor`** — Diagnose and fix pipeline issues (including transform errors)
 - **`/turbo-pipelines`** — Pipeline YAML configuration reference
 - **`/turbo-architecture`** — Architecture decisions (source types, data flow patterns, resource sizing)
-- **`/goldsky-datasets`** — Blockchain dataset and chain prefix reference
+- **`/datasets`** — Blockchain dataset and chain prefix reference
 - **`/turbo-monitor-debug`** — Monitoring and debugging reference

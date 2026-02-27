@@ -19,7 +19,7 @@
         "Update secret: goldsky secret update SECRET_NAME --value '...'",
         "Check username spelling in secret JSON"
       ],
-      "relatedSkill": "/goldsky-secrets"
+      "relatedSkill": "/secrets"
     },
     {
       "id": "connection_refused",
@@ -39,7 +39,7 @@
         "Whitelist Goldsky IP ranges in firewall",
         "Enable remote connections in database config"
       ],
-      "relatedSkill": "/goldsky-secrets"
+      "relatedSkill": "/secrets"
     },
     {
       "id": "secret_not_found",
@@ -57,7 +57,7 @@
         "Create secret: goldsky secret create --name NAME --value '...'",
         "Check secret_name spelling in pipeline YAML"
       ],
-      "relatedSkill": "/goldsky-secrets"
+      "relatedSkill": "/secrets"
     },
     {
       "id": "storage_limit",
@@ -109,7 +109,7 @@
         "Use raw_transactions not transactions",
         "Validate YAML: goldsky turbo validate pipeline.yaml"
       ],
-      "relatedSkill": "/goldsky-datasets"
+      "relatedSkill": "/datasets"
     },
     {
       "id": "sql_syntax_error",

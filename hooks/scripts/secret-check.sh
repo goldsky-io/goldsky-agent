@@ -86,7 +86,7 @@ if [[ ${#MISSING_SECRETS[@]} -gt 0 ]]; then
     echo "  goldsky secret create $secret --value <connection-string>" >&2
   done
   echo "" >&2
-  echo "Or use the /goldsky-secrets skill for help." >&2
+  echo "Or use the /secrets skill for help." >&2
   exit 2
 fi
 
