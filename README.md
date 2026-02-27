@@ -19,7 +19,8 @@ Just describe what you need in natural language — the right agent or skill is 
 **Claude Code**
 
 ```
-/install goldsky-io/goldsky-agent
+/plugin marketplace add goldsky-io/goldsky-agent
+/plugin install goldsky@goldsky-agent
 ```
 
 **Cursor**

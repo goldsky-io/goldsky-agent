@@ -1,7 +1,7 @@
 {
   "name": "goldsky",
   "displayName": "Goldsky",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Stream real-time blockchain data to your infrastructure. Build, deploy, and debug data pipelines that index onchain events from 20+ chains into PostgreSQL, ClickHouse, Kafka, and more.",
   "author": {
     "name": "Goldsky"
