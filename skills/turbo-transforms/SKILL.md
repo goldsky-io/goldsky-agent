@@ -1,6 +1,6 @@
 ---
 name: turbo-transforms
-description: Write and understand SQL, TypeScript, and dynamic table transforms for Turbo pipelines. Use this skill whenever the user needs to decode EVM or Solana event logs, filter or reshape blockchain data, chain transforms together, combine event types with UNION ALL, write TypeScript/WASM logic, configure dynamic lookup tables, or debug a transform that isn't producing expected output.
+description: "Write SQL, TypeScript, and dynamic table transforms for Goldsky Turbo pipelines. Use this skill for: decoding EVM event logs with _gs_log_decode (requires ABI) or transaction inputs with _gs_tx_decode, filtering and casting blockchain data in SQL, combining multiple decoded event types into one table with UNION ALL, writing TypeScript/WASM transforms using the invoke(data) function signature, setting up dynamic lookup tables to filter transfers by a wallet list you update at runtime (dynamic_table_check), chaining SQL and TypeScript steps together, or debugging null values in decoded fields. For full pipeline YAML structure, use /turbo-pipelines instead. For building an entire pipeline end-to-end, use /turbo-builder instead."
 ---
 
 # Turbo Transforms

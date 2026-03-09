@@ -1,6 +1,6 @@
 ---
 name: turbo-architecture
-description: Design and architect Turbo pipelines. Use this skill whenever the user is thinking about how to structure their pipeline — choosing between dataset vs kafka sources, fan-in/fan-out vs linear data flow, resource sizing (xs/s/m/l/xl/xxl), multi-chain deployments, streaming vs job mode, dynamic table lookups, the right sink type, or whether to split logic across pipelines. When the user is unsure how to design their pipeline, start here.
+description: "Design and architect Goldsky Turbo pipelines. Use this skill for 'should I use X or Y' decisions: kafka source vs dataset source, streaming vs job mode, which resource size (xs/s/m/l/xl/xxl) for my workload, postgres vs clickhouse vs kafka sink, fan-in vs fan-out data flow, one pipeline vs many, dynamic table vs SQL join, how to handle multi-chain deployments. Also use when the user asks 'what's the best way to...' for a pipeline design problem, or is unsure how to structure their pipeline before building it."
 ---
 
 # Turbo Pipeline Architecture

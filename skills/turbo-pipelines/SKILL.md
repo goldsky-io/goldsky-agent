@@ -1,6 +1,6 @@
 ---
 name: turbo-pipelines
-description: "YAML configuration reference for Turbo pipelines — sources, transforms, sinks, and troubleshooting. Use this skill whenever you need to look up pipeline YAML syntax, field names, sink configurations, checkpoint behavior, or validation errors. Also essential when constructing or reviewing pipeline YAML. For interactive step-by-step pipeline building, use /turbo-builder instead."
+description: "Goldsky Turbo pipeline YAML reference — the authoritative source for field names, required vs optional fields, and valid values. Use whenever the user asks about specific YAML fields: what does `start_at: earliest` vs `latest` do, what fields does a postgres/clickhouse/kafka sink require, what is the `from:` field in a sink, how does `checkpoint` work, what's the syntax for `batch_size` or `primary_key`. Also use for validation errors like 'unknown field' or 'missing required field'. For interactive pipeline building end-to-end, use /turbo-builder instead."
 ---
 
 # Turbo Pipeline Configuration Reference
