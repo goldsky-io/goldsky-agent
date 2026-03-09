@@ -1,5 +1,9 @@
 # Goldsky Agent
 
+[![Install with npx](https://img.shields.io/badge/install-npx%20skills%20add-blue)](https://github.com/goldsky-io/goldsky-agent#installation)
+[![Skills](https://img.shields.io/badge/skills-10-green)](#skills)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 AI-powered tools for streaming real-time blockchain data. Build, deploy, and debug Turbo pipelines that index onchain events from 130+ chains into PostgreSQL, ClickHouse, Kafka, and more.
 
 ## Quick Start
@@ -16,16 +20,27 @@ Just describe what you need in natural language — the right skill is selected 
 
 ## Installation
 
-**Claude Code**
+**Recommended: Universal Skills Installer**
+
+```bash
+npx skills add goldsky-io/goldsky-agent -a claude-code
+```
+
+Works with Claude Code, Cursor, OpenCode, Codex, and 30+ other AI agents.
+
+**Claude Code (Plugin Marketplace)**
 
 ```
 /plugin marketplace add goldsky-io/goldsky-agent
 /plugin install goldsky@goldsky-agent
 ```
 
-**Cursor**
+<details>
+<summary>Other installation methods</summary>
 
-Clone the repo and add it as a local plugin:
+**Cursor (Local Plugin)**
+
+Clone and add to Cursor settings:
 
 ```bash
 git clone https://github.com/goldsky-io/goldsky-agent.git
@@ -38,9 +53,6 @@ Then add the path to your Cursor settings (`Settings > Cursor Settings > JSON`):
   "plugins.local": ["/absolute/path/to/goldsky-agent"]
 }
 ```
-
-<details>
-<summary>Other installation methods</summary>
 
 **Claude Code — load from local directory**
 
