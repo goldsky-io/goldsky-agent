@@ -1,0 +1,17 @@
+[
+  {"query": "how do i pause my pipeline while i do maintenance on my database?", "should_trigger": true},
+  {"query": "will deleting my pipeline lose the data already in my postgres table?", "should_trigger": true},
+  {"query": "how do i restart my pipeline from block zero? i want to reprocess all historical data", "should_trigger": true},
+  {"query": "can i update a running streaming pipeline in place or do i have to delete and redeploy?", "should_trigger": true},
+  {"query": "job-mode pipeline rules — can i pause or restart a job pipeline? what happens when it finishes?", "should_trigger": true},
+  {"query": "how do i resume a paused pipeline? will it pick up where it left off?", "should_trigger": true},
+  {"query": "i want to delete my test pipeline, how do i do that and what happens to checkpoint state?", "should_trigger": true},
+  {"query": "my job pipeline finished but i need to re-run it from the beginning, how?", "should_trigger": true},
+  {"query": "my pipeline is in error state and not processing data, help me diagnose the root cause", "should_trigger": false},
+  {"query": "what's the exact syntax for goldsky turbo restart with the --clear-state flag? i keep getting an error", "should_trigger": false},
+  {"query": "pipeline keeps crashing with OOM errors, help me figure out why and how to fix it", "should_trigger": false},
+  {"query": "what are all the turbo CLI commands? i need a reference for inspect, logs, etc.", "should_trigger": false},
+  {"query": "how do i watch the live data flowing through my pipeline?", "should_trigger": false},
+  {"query": "i want to build a brand new pipeline to index ethereum transactions", "should_trigger": false},
+  {"query": "what resource size should i use for my pipeline?", "should_trigger": false}
+]

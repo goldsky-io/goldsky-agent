@@ -1,0 +1,17 @@
+[
+  {"query": "what are all the flags for goldsky turbo logs? i want to follow the output in real time", "should_trigger": true},
+  {"query": "what keyboard shortcuts work in the goldsky turbo inspect TUI?", "should_trigger": true},
+  {"query": "what does 'backpressure detected on sink' error mean and how do i fix it?", "should_trigger": true},
+  {"query": "how do i tail the last 100 lines of logs for a specific pipeline?", "should_trigger": true},
+  {"query": "what does the error 'checkpoint deserialization failed' mean?", "should_trigger": true},
+  {"query": "how do i use goldsky turbo inspect to see what's flowing through my pipeline in real time?", "should_trigger": true},
+  {"query": "where is the analyze-logs.sh script and how do i use it to search error patterns?", "should_trigger": true},
+  {"query": "what flags does goldsky turbo inspect support? can i filter to a specific node?", "should_trigger": true},
+  {"query": "my pipeline is broken and throwing connection errors, help me walk through diagnosing and fixing it", "should_trigger": false},
+  {"query": "help me debug — base-erc20 pipeline has been in error state for 2 hours and i need to fix it", "should_trigger": false},
+  {"query": "how do i pause my pipeline while i migrate my database?", "should_trigger": false},
+  {"query": "i want to restart my pipeline from scratch, what command do i use?", "should_trigger": false},
+  {"query": "help me build a new pipeline for ethereum NFT transfers", "should_trigger": false},
+  {"query": "what's the syntax for pausing vs stopping a turbo pipeline?", "should_trigger": false},
+  {"query": "how do i delete a pipeline that's in error state?", "should_trigger": false}
+]

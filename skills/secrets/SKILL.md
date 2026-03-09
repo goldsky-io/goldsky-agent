@@ -1,23 +1,11 @@
 ---
 name: secrets
-description: Manage Goldsky secrets for pipeline sink credentials. Use when creating secrets for PostgreSQL, ClickHouse, Kafka, or other sinks, or when managing existing secrets.
+description: "Use this skill when a user wants to store, manage, or work with Goldsky secrets — the named credential objects used by pipeline sinks. This includes: creating a new secret from a connection string or credentials, listing or inspecting existing secrets, updating or rotating credentials after a password change, and deleting secrets that are no longer needed. Trigger for any query where the user mentions 'goldsky secret', wants to securely store database credentials for a pipeline, or is working with sink authentication for PostgreSQL, Neon, Supabase, ClickHouse, Kafka, S3, Elasticsearch, DynamoDB, SQS, OpenSearch, or webhooks."
 ---
 
 # Goldsky Secrets Management
 
 Create and manage secrets for pipeline sink credentials.
-
-## Triggers
-
-Invoke this skill when the user:
-
-- Says "create a secret" or "add credentials"
-- Wants to set up a new sink (PostgreSQL, ClickHouse, Kafka, S3, etc.)
-- Asks to configure pipeline credentials
-- Says "help me create a goldsky sink"
-- Wants to update or rotate credentials
-- Asks to list, reveal, or delete secrets
-- Mentions `/secrets`
 
 ## Agent Instructions
 
@@ -212,85 +200,6 @@ Pipelines that write to external sinks (PostgreSQL, ClickHouse, Kafka, S3) need 
 - Pipeline configs can be shared without exposing secrets
 - Credentials can be rotated without modifying pipelines
 
-## Workflow Steps
-
-### Step 1: Gather Your Credentials
-
-Before creating a secret, collect the connection details for your sink. The CLI requires specific JSON schemas for each type.
-
-### Step 2: Create the Secret
-
-**Interactive mode (recommended):**
-
-```bash
-goldsky secret create --name MY_SECRET
-```
-
-The CLI will prompt for the secret type and values interactively.
-
-**Non-interactive mode (for CI/CD or scripting):**
-
-All secrets require JSON format with a `type` field:
-
-```bash
-goldsky secret create \
-  --name MY_POSTGRES_SECRET \
-  --value '{"type":"jdbc","protocol":"postgres","host":"db.example.com","port":5432,"databaseName":"mydb","user":"admin","password":"secret"}' \
-  --description "Production PostgreSQL database"
-```
-
-**Expected output:**
-
-```
-✔ Validated secret schema
-✔ Created secret
-```
-
-### Step 3: Reference Secret in Pipeline
-
-Use the secret name in your pipeline YAML:
-
-**PostgreSQL sink:**
-
-```yaml
-sinks:
-  postgres_output:
-    type: postgres
-    from: my_transform
-    schema: public
-    table: my_table
-    secret_name: MY_POSTGRES_SECRET
-    primary_key: id
-```
-
-**ClickHouse sink:**
-
-```yaml
-sinks:
-  clickhouse_output:
-    type: clickhouse
-    from: my_transform
-    table: my_table
-    secret_name: MY_CLICKHOUSE_SECRET
-    primary_key: id
-```
-
-### Step 4: Verify Secret Exists
-
-```bash
-goldsky secret list
-```
-
-**Expected output:**
-
-```
-┌─────────────────────┬─────────────────────────────────┬─────────────────────┐
-│ Name                │ Description                     │ Created At          │
-├─────────────────────┼─────────────────────────────────┼─────────────────────┤
-│ MY_POSTGRES_SECRET  │ Production PostgreSQL database  │ 2024-01-15 10:30:00 │
-└─────────────────────┴─────────────────────────────────┴─────────────────────┘
-```
-
 ## Command Reference
 
 | Command                        | Purpose             | Key Flags                            |
@@ -442,6 +351,6 @@ With the structured JSON format, most special characters in passwords work witho
 
 ## Related
 
-- **`@pipeline-builder`** — Build and deploy pipelines that use these secrets
+- **`/turbo-builder`** — Build and deploy pipelines that use these secrets
 - **`/auth-setup`** — Invoke this if user is not logged in
 - **`/turbo-pipelines`** — Pipeline YAML configuration reference

@@ -1,11 +1,11 @@
 ---
 name: turbo-monitor-debug
-description: "Reference for Turbo pipeline monitoring and debugging — CLI commands, error patterns, and troubleshooting guides. For interactive pipeline diagnosis, use @pipeline-doctor instead."
+description: "Use this skill when the user needs to look up goldsky turbo CLI syntax — flags and options for `inspect`, `logs`, or `list` commands — or wants to know keyboard shortcuts for the `turbo inspect` TUI. Also use for: decoding what a specific error message means (backpressure, connection refused, auth failures, etc.), using the analyze-logs.sh script, or understanding how inspect/logs commands work. Distinguishing factor: this skill provides reference information and explanations. If the user has a broken pipeline and wants step-by-step interactive diagnosis, use /turbo-doctor instead."
 ---
 
 # Turbo Pipeline Monitoring & Debugging Reference
 
-CLI commands, error patterns, and troubleshooting reference for Turbo pipelines. For interactive pipeline diagnosis (running commands, checking logs, walking through fixes), use `@pipeline-doctor` instead.
+CLI commands, error patterns, and troubleshooting reference for Turbo pipelines. For interactive pipeline diagnosis (running commands, checking logs, walking through fixes), use `/turbo-doctor` instead.
 
 ## Quick Reference
 
@@ -86,7 +86,7 @@ The script checks for common error patterns and reports findings with recommenda
 | `undefined` property access  | Add null checks: `input.field ?? ''`                   |
 | Wrong return type            | Ensure returned object matches `schema` exactly        |
 | Missing return fields        | All `schema` fields must be present in returned object |
-| `transform is not a function`| Ensure script defines `function transform(input)`      |
+| `invoke is not a function`   | Ensure script defines `function invoke(data)`          |
 | BigInt errors                | Use `BigInt()` constructor, not direct number literals  |
 
 ## Dynamic Table Issues
@@ -119,5 +119,5 @@ The script checks for common error patterns and reports findings with recommenda
 
 ## Related
 
-- **`@pipeline-doctor`** - Interactive diagnostic agent that uses this reference to troubleshoot pipelines
-- **`@pipeline-builder`** - Build and deploy new pipelines
+- **`/turbo-doctor`** — Interactive diagnostic skill that uses this reference to troubleshoot pipelines
+- **`/turbo-builder`** — Build and deploy new pipelines

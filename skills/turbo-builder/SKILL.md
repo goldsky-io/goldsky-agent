@@ -1,31 +1,17 @@
 ---
-name: pipeline-builder
-description: "Build and deploy Goldsky Turbo pipelines interactively. Use when the user wants to create, set up, or deploy a pipeline, or says 'walk me through', 'help me build', or 'I want to index X to Y'. Generates YAML, validates, and deploys. For YAML syntax reference, use the turbo-pipelines skill instead."
-tools:
-  - Bash
-  - Read
-  - Write
-  - Glob
-  - Grep
-  - AskUserQuestion
-skills:
-  - turbo-pipelines
-  - datasets
-  - turbo-architecture
-  - turbo-transforms
-  - secrets
-  - auth-setup
+name: turbo-builder
+description: "Use this skill when the user wants to build, create, or set up a new Goldsky Turbo pipeline from scratch. Triggers when someone describes data they want to move — specifying a source (chain, dataset, contract) and a destination (postgres, clickhouse, kafka, s3, webhook) — or asks to be walked through pipeline creation. Also triggers for phrases like 'help me build', 'I want to index', 'set up a pipeline', or 'track X on Y chain'. Covers the full workflow: gathering requirements, selecting datasets, generating YAML, validating, and deploying. Do NOT use for debugging existing pipelines (use /turbo-doctor), YAML syntax lookups (use /turbo-pipelines), or questions about specific fields/configuration options without intent to build."
 ---
 
 # Pipeline Builder
 
 ## Boundaries
 
-- You build NEW pipelines. You do not diagnose broken pipelines — that belongs to `@pipeline-doctor`.
-- You do not serve as a YAML reference. If the user only needs to look up a field or syntax, load the `turbo-pipelines` skill instead.
-- You do not do quick dataset lookups on their own — that belongs to `@dataset-finder`.
+- Build NEW pipelines. Do not diagnose broken pipelines — that belongs to `/turbo-doctor`.
+- Do not serve as a YAML reference. If the user only needs to look up a field or syntax, use the `/turbo-pipelines` skill instead.
+- For dataset lookups, use `/datasets`.
 
-You are a Goldsky Turbo pipeline builder. Your job is to walk the user through building a complete pipeline from scratch, step by step. Generate a valid YAML configuration, validate it, and deploy it.
+Walk the user through building a complete pipeline from scratch, step by step. Generate a valid YAML configuration, validate it, and deploy it.
 
 ## Mode Detection
 
@@ -41,7 +27,7 @@ Before running any commands, check if you have the `Bash` tool available:
 Run `goldsky project list 2>&1` to check login status.
 
 - **If logged in:** Note the current project and continue.
-- **If not logged in:** Use the `auth-setup` skill for guidance.
+- **If not logged in:** Use the `/auth-setup` skill for guidance.
 
 ### Step 2: Understand the Goal
 
@@ -57,11 +43,10 @@ If the user already described their goal, extract answers from their description
 
 ### Step 3: Choose the Dataset
 
-Use the `datasets` skill to find the right dataset.
+Use the `/datasets` skill to find the right dataset.
 
 Key points:
-- Use chain prefixes from `skills/datasets/data/chain-prefixes.json`
-- Common datasets: `<chain>.decoded_logs`, `<chain>.raw_transactions`, `<chain>.erc20_transfers`, `<chain>.traces`
+- Common datasets: `<chain>.decoded_logs`, `<chain>.raw_transactions`, `<chain>.erc20_transfers`, `<chain>.raw_traces`
 - For decoded contract events, use `<chain>.decoded_logs` with a filter on `address` and `topic0`
 - For Solana: use `solana.transactions`, `solana.token_transfers`, etc.
 
@@ -73,7 +58,8 @@ Build the source section of the YAML:
 
 ```yaml
 sources:
-  - type: dataset
+  my_source:
+    type: dataset
     dataset_name: <chain>.<dataset>
     version: 1.0.0
     start_at: earliest  # or a specific block number
@@ -86,7 +72,7 @@ Ask about:
 
 ### Step 5: Configure Transforms (if needed)
 
-If the user needs transforms, use the `turbo-transforms` skill to help:
+If the user needs transforms, use the `/turbo-transforms` skill to help:
 
 - **SQL transforms** — filter, aggregate, join, or reshape data using DataFusion SQL
 - **TypeScript transforms** — custom logic, external API calls, complex processing
@@ -96,15 +82,17 @@ Build the transforms section:
 
 ```yaml
 transforms:
-  - type: sql
+  my_transform:
+    type: sql
+    primary_key: id
     sql: |
-      SELECT * FROM <source>
+      SELECT * FROM my_source
       WHERE <conditions>
 ```
 
 ### Step 6: Configure the Sink
 
-Ask where the data should go. Use the `turbo-pipelines` skill for sink configuration:
+Ask where the data should go. Use the `/turbo-pipelines` skill for sink configuration:
 
 | Sink | Key config |
 |------|-----------|
@@ -120,11 +108,11 @@ For sinks requiring `secret_name`, check if the secret exists:
 goldsky secret list
 ```
 
-If it doesn't exist, help create it using the `secrets` skill.
+If it doesn't exist, help create it using the `/secrets` skill.
 
 ### Step 7: Choose Mode
 
-Use the `turbo-architecture` skill to decide:
+Use the `/turbo-architecture` skill to decide:
 
 - **Streaming** (default) — continuous processing, no `end_block`, runs indefinitely
 - **Job mode** — one-time backfill, set `job: true` and `end_block`
@@ -187,7 +175,7 @@ Present a summary:
 **Next steps:**
 - Monitor with `goldsky turbo inspect <name>`
 - Check logs with `goldsky turbo logs <name>`
-- Use @pipeline-doctor if you run into issues
+- Use /turbo-doctor if you run into issues
 ```
 
 ## Important Rules
@@ -199,3 +187,12 @@ Present a summary:
 - If the user wants to modify an existing pipeline, check if it's streaming (update in place) or job-mode (must delete first).
 - Default to `start_at: earliest` unless the user specifies otherwise.
 - Always include `version: 1.0.0` on dataset sources.
+
+## Related
+
+- **`/turbo-pipelines`** — YAML syntax reference for sources, transforms, and sinks
+- **`/turbo-doctor`** — Diagnose and fix pipeline issues
+- **`/turbo-architecture`** — Pipeline design patterns and architecture decisions
+- **`/turbo-transforms`** — SQL and TypeScript transform reference
+- **`/datasets`** — Dataset names and chain prefixes
+- **`/secrets`** — Sink credential management

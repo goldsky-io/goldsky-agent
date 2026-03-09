@@ -1,0 +1,17 @@
+[
+  {"query": "what's the full YAML syntax for a postgres sink? what fields are required vs optional?", "should_trigger": true},
+  {"query": "what does the checkpoint field do in a turbo pipeline config?", "should_trigger": true},
+  {"query": "what are all the top-level fields in a turbo pipeline YAML file?", "should_trigger": true},
+  {"query": "how do i configure a clickhouse sink with the order_by field? what's the syntax?", "should_trigger": true},
+  {"query": "getting 'unknown field: primary_keys' validation error, what's the correct field name?", "should_trigger": true},
+  {"query": "what's the difference between start_at: earliest vs start_at: latest in a dataset source?", "should_trigger": true},
+  {"query": "how do i set up a kafka sink? what fields does it need — topic, partitions, etc?", "should_trigger": true},
+  {"query": "what's the correct way to reference a transform output in a sink's `from:` field?", "should_trigger": true},
+  {"query": "walk me through building and deploying a complete pipeline for base erc20 transfers", "should_trigger": false},
+  {"query": "how do i write a SQL transform to decode EVM event logs?", "should_trigger": false},
+  {"query": "my pipeline is throwing schema mismatch errors, help me debug and fix it", "should_trigger": false},
+  {"query": "what's the dataset name for polygon raw transactions?", "should_trigger": false},
+  {"query": "how do i write a typescript transform to filter records by amount?", "should_trigger": false},
+  {"query": "what resource size should i use for a backfill pipeline?", "should_trigger": false},
+  {"query": "how do i create a secret for my postgres connection?", "should_trigger": false}
+]

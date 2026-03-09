@@ -1,11 +1,11 @@
 ---
 name: turbo-lifecycle
-description: "Reference for Turbo pipeline lifecycle commands — list, delete, pause, resume, restart syntax and rules. For interactive pipeline troubleshooting, use @pipeline-doctor instead."
+description: "Pipeline state management for Goldsky Turbo — pause, resume, restart, and delete commands with their rules and safety behavior. Use this skill when the user asks: will deleting my pipeline lose the data already in my postgres/clickhouse table, how do I pause a pipeline while doing database maintenance, how do I restart from block zero to reprocess all historical data, can I update a running streaming pipeline in place or do I have to delete and redeploy, will resuming a paused pipeline pick up from where it left off (checkpoint), how do I re-run a completed job pipeline from the beginning, can I pause or restart a job-mode pipeline. Also covers what happens to checkpoint state on delete, and job auto-deletion 1 hour after termination. For actively diagnosing why a pipeline is broken or erroring, use /turbo-doctor instead."
 ---
 
 # Turbo Pipeline Lifecycle Reference
 
-CLI commands for managing pipeline lifecycle. Covers streaming and job-mode differences. For interactive pipeline troubleshooting, use `@pipeline-doctor` instead.
+CLI commands for managing pipeline lifecycle. Covers streaming and job-mode differences. For interactive pipeline troubleshooting, use `/turbo-doctor` instead.
 
 ## Quick Reference
 
@@ -61,7 +61,7 @@ Job-mode pipelines (`job: true` in YAML) are one-time batch processes. They:
   goldsky turbo delete my-job-pipeline
   goldsky turbo apply my-job-pipeline.yaml
   ```
-- **If the job errors**, it does not auto-cleanup. You must manually delete it before redeploying.
+- **If the job errors**, it still auto-deletes ~1 hour after termination — same as successful jobs.
 
 ## Pause, Resume, and Restart
 
@@ -131,8 +131,8 @@ goldsky turbo restart <pipeline-name> --clear-state
 
 - Job pipelines (`job: true`) **must be deleted before redeploying**
 - Attempting `goldsky turbo apply` on an existing job returns an error: `pipeline already exists`
-- Completed jobs auto-cleanup after ~1 hour, but errored jobs do not
-- Always delete the old job first: `goldsky turbo delete <name>`, then `goldsky turbo apply <file.yaml>`
+- Jobs auto-cleanup ~1 hour after termination regardless of success or failure
+- Always delete the old job first if redeploying: `goldsky turbo delete <name>`, then `goldsky turbo apply <file.yaml>`
 
 ### Project Scope
 
@@ -219,5 +219,5 @@ Fix: You need Editor or Admin role. Contact a project Owner to upgrade your role
 
 ## Related
 
-- **`@pipeline-doctor`** - Interactive diagnostic agent for pipeline issues
-- **`@pipeline-builder`** - Build and deploy new pipelines
+- **`/turbo-doctor`** — Interactive diagnostic skill for pipeline issues
+- **`/turbo-builder`** — Build and deploy new pipelines

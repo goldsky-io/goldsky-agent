@@ -1,0 +1,17 @@
+[
+  {"query": "how do i decode EVM event logs from raw_logs using _gs_log_decode? i have the ABI", "should_trigger": true},
+  {"query": "i want to write a SQL transform that filters only USDC transfers and casts the amount to a decimal", "should_trigger": true},
+  {"query": "how do i combine 5 different decoded event types into one table using UNION ALL?", "should_trigger": true},
+  {"query": "how do i write a TypeScript/WASM transform to categorize transfers by amount size?", "should_trigger": true},
+  {"query": "how do i set up a dynamic lookup table so i can filter transfers by a list of wallets i update at runtime?", "should_trigger": true},
+  {"query": "my SQL transform is producing null values for the decoded fields — how do i debug this?", "should_trigger": true},
+  {"query": "how do i chain a SQL decode step followed by a TypeScript enrichment step?", "should_trigger": true},
+  {"query": "how do i use _gs_tx_decode to decode transaction input data?", "should_trigger": true},
+  {"query": "what are all the required YAML fields for a postgres sink? primary_key, schema, table?", "should_trigger": false},
+  {"query": "walk me through creating and deploying a complete pipeline for solana token transfers", "should_trigger": false},
+  {"query": "what's the top-level YAML syntax for a turbo pipeline? show me all the fields", "should_trigger": false},
+  {"query": "my pipeline keeps erroring out, help me diagnose and fix it step by step", "should_trigger": false},
+  {"query": "what dataset should i use for ethereum decoded events?", "should_trigger": false},
+  {"query": "how do i configure a clickhouse sink to use append-only mode?", "should_trigger": false},
+  {"query": "what resource size do i need for heavy SQL join operations?", "should_trigger": false}
+]

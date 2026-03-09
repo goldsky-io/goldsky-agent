@@ -6,13 +6,13 @@ AI-powered tools for streaming real-time blockchain data. Build, deploy, and deb
 
 | I want to...                          | Use                  |
 | ------------------------------------- | -------------------- |
-| Build a new pipeline                  | `@pipeline-builder`  |
-| Fix a broken pipeline                 | `@pipeline-doctor`   |
-| Find the right dataset name           | `@dataset-finder`    |
-| Look up YAML syntax                   | `turbo-pipelines`    |
-| Check error patterns                  | `turbo-monitor-debug`|
+| Build a new pipeline                  | `/turbo-builder`     |
+| Fix a broken pipeline                 | `/turbo-doctor`      |
+| Find the right dataset name           | `/datasets`          |
+| Look up YAML syntax                   | `/turbo-pipelines`   |
+| Check error patterns                  | `/turbo-monitor-debug`|
 
-Just describe what you need in natural language — the right agent or skill is selected automatically.
+Just describe what you need in natural language — the right skill is selected automatically.
 
 ## Installation
 
@@ -63,11 +63,9 @@ cp -r goldsky-agent/skills/* .cursor/skills/    # Cursor
 
 ```
 goldsky-agent/
-├── agents/              # Interactive workflows (call with @agent-name)
-│   ├── pipeline-builder.md    # Step-by-step pipeline creation wizard
-│   ├── pipeline-doctor.md     # Diagnose and fix pipeline issues
-│   └── dataset-finder.md      # Quick dataset lookups
-├── skills/              # Reference documentation (auto-loaded by agents)
+├── skills/              # All skills (auto-triggered by description matching)
+│   ├── turbo-builder/         # Step-by-step pipeline creation wizard
+│   ├── turbo-doctor/          # Diagnose and fix pipeline issues
 │   ├── turbo-pipelines/       # YAML configuration reference
 │   ├── turbo-transforms/      # SQL, TypeScript, dynamic tables
 │   ├── turbo-monitor-debug/   # Error patterns, CLI commands
@@ -83,40 +81,43 @@ goldsky-agent/
 
 ## How It Works
 
-**Agents** are interactive workflows that walk you through multi-step tasks. Call them with `@agent-name` or just describe what you need.
-
-**Skills** are reference documentation that agents read to answer your questions. They contain YAML syntax, error patterns, CLI commands, and troubleshooting guides.
+**Skills** auto-trigger based on what you describe. Interactive workflow skills (like `turbo-builder` and `turbo-doctor`) walk you through multi-step tasks. Reference skills contain YAML syntax, error patterns, CLI commands, and troubleshooting guides.
 
 ```
 User: "Build me a pipeline for USDC transfers on Base"
   ↓
-@pipeline-builder (agent)
-  ↓ reads
-turbo-pipelines + datasets + secrets (skills)
+turbo-builder (skill — auto-triggered)
+  ↓ references
+turbo-pipelines + datasets + secrets
   ↓
 Generated pipeline.yaml + deployment
 ```
 
-## Agents
+## Skills
 
-| Agent | What it does | Example |
-| ----- | ------------ | ------- |
-| `@pipeline-builder` | Interactive wizard: chain → dataset → transforms → sink → deploy | "Index all Jupiter swaps on Solana into Postgres" |
-| `@pipeline-doctor` | Systematic diagnosis: auth → status → logs → error patterns → fix | "My pipeline is stuck in error state" |
-| `@dataset-finder` | Quick lookup returning dataset name + YAML snippet | "What dataset for Polygon NFTs?" |
+### Interactive Skills
 
-## Skills (Reference)
+These walk you through multi-step tasks end-to-end:
 
-| Skill | Contents |
-| ----- | -------- |
-| `turbo-pipelines` | YAML configuration reference — sources, transforms, sinks, troubleshooting |
-| `turbo-transforms` | SQL (DataFusion), TypeScript/WASM, dynamic tables, HTTP handlers |
-| `turbo-monitor-debug` | Error patterns, log analysis, TUI shortcuts, debugging guides |
-| `turbo-lifecycle` | List, pause, resume, restart, delete — streaming vs job mode rules |
-| `turbo-architecture` | Design patterns, streaming vs job mode, sink selection |
-| `datasets` | Chain prefixes, dataset types, naming conventions |
-| `secrets` | Credential formats for each sink type |
-| `auth-setup` | CLI installation and login flow |
+| Skill | When to use | What it does |
+| ----- | ----------- | ------------ |
+| `turbo-builder` | "I want to build a pipeline for X" | Guides you chain → dataset → transforms → sink → validate → deploy |
+| `turbo-doctor` | "My pipeline is broken / not getting data / output looks wrong" | Diagnoses the problem step-by-step and offers to run fixes |
+
+### Reference Skills
+
+Look up syntax, rules, and examples without a guided workflow:
+
+| Skill | When to use | What's inside |
+| ----- | ----------- | ------------- |
+| `turbo-pipelines` | "What's the YAML syntax for X?" | Complete source/transform/sink field reference |
+| `turbo-transforms` | "How do I decode EVM logs / write a SQL transform?" | SQL, TypeScript/WASM, dynamic tables, HTTP handlers |
+| `turbo-monitor-debug` | "How do I view logs? What does this error mean? TUI shortcuts?" | CLI commands, log flags, TUI keys, error pattern lookup |
+| `turbo-lifecycle` | "How do I pause / restart / delete? Will delete lose my data?" | Pause/resume/restart/delete rules, streaming vs job-mode differences |
+| `turbo-architecture` | "Should I use dataset or Kafka source? Fan-in or fan-out?" | Design patterns, source types, resource sizing, sink selection |
+| `datasets` | "What's the dataset name for Polygon NFTs?" | Chain prefixes, dataset types, naming conventions |
+| `secrets` | "How do I create credentials for PostgreSQL / ClickHouse?" | Credential formats for each sink type |
+| `auth-setup` | "How do I install the CLI / log in?" | CLI installation and login flow |
 
 ## Pre-Deploy Hooks
 
