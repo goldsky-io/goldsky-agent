@@ -1,11 +1,11 @@
 ---
 name: turbo-monitor-debug
-description: "Reference for Turbo pipeline monitoring and debugging — CLI commands, error patterns, and troubleshooting guides. For interactive pipeline diagnosis, use @pipeline-doctor instead."
+description: "CLI command syntax and error pattern reference for Turbo pipelines. Use this skill when the user asks HOW TO do something — 'how do I view logs?', 'what flags does goldsky turbo logs support?', 'what are the TUI keyboard shortcuts?', 'what does X error message mean?'. Also use for the analyze-logs.sh script. For hands-on diagnosis of a specific broken pipeline, use /turbo-doctor instead."
 ---
 
 # Turbo Pipeline Monitoring & Debugging Reference
 
-CLI commands, error patterns, and troubleshooting reference for Turbo pipelines. For interactive pipeline diagnosis (running commands, checking logs, walking through fixes), use `@pipeline-doctor` instead.
+CLI commands, error patterns, and troubleshooting reference for Turbo pipelines. For interactive pipeline diagnosis (running commands, checking logs, walking through fixes), use `/turbo-doctor` instead.
 
 ## Quick Reference
 
@@ -119,5 +119,5 @@ The script checks for common error patterns and reports findings with recommenda
 
 ## Related
 
-- **`@pipeline-doctor`** - Interactive diagnostic agent that uses this reference to troubleshoot pipelines
-- **`@pipeline-builder`** - Build and deploy new pipelines
+- **`/turbo-doctor`** — Interactive diagnostic skill that uses this reference to troubleshoot pipelines
+- **`/turbo-builder`** — Build and deploy new pipelines

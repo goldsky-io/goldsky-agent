@@ -1,11 +1,11 @@
 ---
 name: turbo-lifecycle
-description: "Reference for Turbo pipeline lifecycle commands — list, delete, pause, resume, restart syntax and rules. For interactive pipeline troubleshooting, use @pipeline-doctor instead."
+description: "Pipeline state management commands — pause, resume, restart, delete, and the rules for each. Use this skill when the user asks about managing pipeline state: 'how do I pause/stop a pipeline?', 'how do I restart from scratch?', 'will deleting lose my sink data?', 'can I update a running pipeline?', 'job-mode pipeline rules', or 'how do I re-run a completed job?'. For actively diagnosing why a pipeline is broken, use /turbo-doctor instead."
 ---
 
 # Turbo Pipeline Lifecycle Reference
 
-CLI commands for managing pipeline lifecycle. Covers streaming and job-mode differences. For interactive pipeline troubleshooting, use `@pipeline-doctor` instead.
+CLI commands for managing pipeline lifecycle. Covers streaming and job-mode differences. For interactive pipeline troubleshooting, use `/turbo-doctor` instead.
 
 ## Quick Reference
 
@@ -219,5 +219,5 @@ Fix: You need Editor or Admin role. Contact a project Owner to upgrade your role
 
 ## Related
 
-- **`@pipeline-doctor`** - Interactive diagnostic agent for pipeline issues
-- **`@pipeline-builder`** - Build and deploy new pipelines
+- **`/turbo-doctor`** — Interactive diagnostic skill for pipeline issues
+- **`/turbo-builder`** — Build and deploy new pipelines

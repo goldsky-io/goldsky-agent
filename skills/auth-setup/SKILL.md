@@ -1,21 +1,11 @@
 ---
 name: auth-setup
-description: Set up Goldsky CLI authentication and project configuration. Use when installing the CLI, logging in, switching projects, or troubleshooting authentication issues.
+description: Set up Goldsky CLI authentication and project configuration. Use this skill whenever the user needs to install the CLI, log in, switch projects, check auth status, or troubleshoot authentication — and if any other Goldsky skill fails due to auth, redirect here first.
 ---
 
 # Goldsky Authentication & Project Setup
 
 Set up the Goldsky CLI, authenticate your account, and configure projects for your pipelines and subgraphs.
-
-## When to Use This Skill
-
-- First-time Goldsky CLI setup
-- User says "install goldsky" or "set up goldsky"
-- Logging in or out of Goldsky
-- Switching between projects
-- Checking authentication status
-- Troubleshooting login issues
-- User invokes `/auth-setup`
 
 ## Prerequisites
 
@@ -193,6 +183,6 @@ goldsky login
 
 After authentication is complete, suggest next steps:
 
-- **`@pipeline-builder`** — Build and deploy a new pipeline interactively
-- **`@dataset-finder`** — Find the right dataset for your use case
+- **`/turbo-builder`** — Build and deploy a new pipeline interactively
+- **`/datasets`** — Find the right dataset for your use case
 - **`/secrets`** — Set up credentials for pipeline sinks (PostgreSQL, ClickHouse, Kafka, etc.)

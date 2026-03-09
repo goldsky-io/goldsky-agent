@@ -1,11 +1,22 @@
 ---
 name: datasets
-description: "Reference tables for Goldsky blockchain datasets — chain prefixes, dataset types, naming conventions, and versions. For quick dataset questions, use @dataset-finder instead."
+description: "Reference tables for Goldsky blockchain datasets — chain prefixes, dataset types, naming conventions, and versions. Use this skill whenever you need to look up the correct dataset name for a chain or data type, verify a chain prefix (e.g., Polygon → \"matic\"), understand available versions, or browse the full reference. For quick questions like 'what dataset for Solana transfers?', answer directly with a ready-to-paste YAML snippet."
 ---
 
 # Goldsky Dataset Reference
 
-Reference tables for blockchain datasets available in Turbo pipelines. For quick dataset questions (e.g., "what dataset for Solana transfers?"), use `@dataset-finder` instead.
+Reference tables for blockchain datasets available in Turbo pipelines.
+
+For quick dataset questions (e.g., "what dataset for Solana transfers?"), answer directly: identify the chain prefix (see Popular Chain Prefixes below), identify the dataset type (see Common Datasets), and return a YAML snippet like:
+
+```yaml
+sources:
+  my_source:
+    type: dataset
+    dataset_name: <chain>.<dataset>
+    version: 1.0.0
+    start_at: earliest
+```
 
 > **Tip:** Use `goldsky turbo validate` to verify a dataset exists (fast, ~3 seconds). Avoid `goldsky dataset list` which is slow (30-60+ seconds).
 
@@ -279,5 +290,4 @@ Use a version that exists in the output.
 
 ## Related
 
-- **`@pipeline-builder`** - Interactive wizard to build pipelines using these datasets
-- **`@dataset-finder`** - Quick lookup agent for dataset names and YAML snippets
+- **`/turbo-builder`** — Interactive wizard to build pipelines using these datasets

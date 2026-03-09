@@ -1,29 +1,11 @@
 ---
 name: turbo-architecture
-description: Design and architect Turbo pipelines. Use when choosing between source types (dataset vs kafka), designing data flow patterns (fan-in, fan-out, linear), sizing resources, planning multi-chain deployments, choosing between streaming and job mode, designing dynamic table lookups, selecting sink types, or deciding how to split work across pipelines.
+description: Design and architect Turbo pipelines. Use this skill whenever the user is thinking about how to structure their pipeline — choosing between dataset vs kafka sources, fan-in/fan-out vs linear data flow, resource sizing (s/m/l), multi-chain deployments, streaming vs job mode, dynamic table lookups, the right sink type, or whether to split logic across pipelines. When the user is unsure how to design their pipeline, start here.
 ---
 
 # Turbo Pipeline Architecture
 
 Help users make architecture decisions for Turbo pipelines — source types, data flow patterns, resource sizing, sink strategies, streaming vs job mode, dynamic table design, and multi-chain deployment.
-
-## Triggers
-
-Invoke this skill when the user:
-
-- Asks "how should I structure my pipeline" or "what's the best approach for..."
-- Needs to choose between dataset and kafka source types
-- Wants to send data to multiple destinations
-- Is planning a multi-chain deployment
-- Asks about resource sizing (s, m, l)
-- Wants to split or combine pipelines
-- Asks about `parallelism`, sink performance, or throughput
-- Needs to decide between one big pipeline vs several smaller ones
-- Asks about streaming vs batch/job mode
-- Wants to design dynamic table lookups or runtime-updatable filters
-- Needs to choose the right sink type for their use case
-- Asks about real-time aggregations or running balances
-- Mentions `/turbo-architecture`
 
 ## Agent Instructions
 
@@ -268,41 +250,89 @@ When you need the **same pipeline logic** across multiple chains, create separat
 
 ---
 
-## Sink Strategy
+## Sink Selection
 
-### Choosing a Sink Type
+### Quick Reference
 
 | Destination          | Sink Type            | Best For                                      |
 | -------------------- | -------------------- | --------------------------------------------- |
-| Analytics queries    | `clickhouse`         | Large-scale aggregations, time-series data    |
 | Application DB       | `postgres`           | Row-level lookups, joins, application serving |
 | Real-time aggregates | `postgres_aggregate` | Balances, counters, running totals via triggers|
+| Analytics queries    | `clickhouse`         | Large-scale aggregations, time-series data    |
 | Event processing     | `kafka`              | Downstream consumers, event-driven systems    |
+| Serverless streaming | `s2_sink`            | S2.dev streams, alternative to Kafka          |
 | Notifications        | `webhook`            | Lambda functions, API callbacks, alerts        |
 | Data lake            | `s3_sink`            | Long-term archival, batch processing          |
-| Serverless streaming | `s2_sink`            | S2.dev streams, alternative to Kafka          |
 | Testing              | `blackhole`          | Validate pipeline without writing data        |
+
+### Decision Flowchart
+
+```
+What's your primary use case?
+│
+├─ Application serving (REST/GraphQL API)
+│  └─ PostgreSQL ← row-level lookups, joins, strong consistency
+│
+├─ Analytics / dashboards
+│  ├─ Time-series queries → ClickHouse ← columnar, fast aggregations
+│  └─ Full-text search → Elasticsearch / OpenSearch
+│
+├─ Real-time aggregations (balances, counters)
+│  └─ PostgreSQL Aggregate ← trigger-based running totals
+│
+├─ Event-driven downstream processing
+│  ├─ Need Kafka ecosystem → Kafka
+│  └─ Serverless / simpler → S2 (s2.dev)
+│
+├─ Notifications / webhooks
+│  └─ Webhook ← HTTP POST per event
+│
+├─ Long-term archival
+│  └─ S3 ← object storage, cheapest for bulk data
+│
+├─ Just testing
+│  └─ Blackhole ← validates pipeline without writing
+│
+└─ Multiple of the above
+   └─ Use multiple sinks in the same pipeline (fan-out pattern)
+```
+
+### PostgreSQL Aggregate Sink
+
+The `postgres_aggregate` sink is uniquely suited for **real-time running aggregations** (balances, counters, totals). It uses a two-table pattern: a landing table that receives raw events, and an aggregation table maintained by a database trigger.
+
+```yaml
+sinks:
+  token_balances:
+    type: postgres_aggregate
+    from: transfers
+    schema: public
+    landing_table: transfer_events
+    agg_table: account_balances
+    primary_key: id
+    secret_name: MY_POSTGRES
+    group_by:
+      account:
+        type: text
+      token_address:
+        type: text
+    aggregate:
+      balance:
+        from: amount
+        fn: sum
+      transfer_count:
+        from: id
+        fn: count
+```
+
+**Supported aggregation functions:** `sum`, `count`, `avg`, `min`, `max`
 
 ### Multi-Sink Considerations
 
 - Each sink reads from a `from:` field — different sinks can read from different transforms
 - Sinks are independent — one failing doesn't block others
 - Use different `batch_size` / `batch_flush_interval` per sink based on latency needs
-
-### Sink Parallelism
-
-ClickHouse and other sinks support a `parallelism` setting:
-
-```yaml
-sinks:
-  my_sink:
-    type: clickhouse
-    from: my_transform
-    parallelism: 1   # number of concurrent writers
-    # ...
-```
-
-Use `parallelism: 1` for most cases. Increase only if the sink can handle concurrent writes and you need higher throughput.
+- ClickHouse supports `parallelism: N` for concurrent writers (default `1`)
 
 ### Webhook Sinks Without Secrets
 
@@ -457,94 +487,10 @@ Store metadata (token symbols, decimals, protocol names) in a PostgreSQL table. 
 
 ---
 
-## Sink Selection Guide
-
-### Decision Flowchart
-
-```
-What's your primary use case?
-│
-├─ Application serving (REST/GraphQL API)
-│  └─ PostgreSQL ← row-level lookups, joins, strong consistency
-│
-├─ Analytics / dashboards
-│  ├─ Time-series queries → ClickHouse ← columnar, fast aggregations
-│  └─ Full-text search → Elasticsearch / OpenSearch
-│
-├─ Real-time aggregations (balances, counters)
-│  └─ PostgreSQL Aggregate ← trigger-based running totals
-│
-├─ Event-driven downstream processing
-│  ├─ Need Kafka ecosystem → Kafka
-│  └─ Serverless / simpler → S2 (s2.dev)
-│
-├─ Notifications / webhooks
-│  └─ Webhook ← HTTP POST per event
-│
-├─ Long-term archival
-│  └─ S3 ← object storage, cheapest for bulk data
-│
-├─ Just testing
-│  └─ Blackhole ← validates pipeline without writing
-│
-└─ Multiple of the above
-   └─ Use multiple sinks in the same pipeline (fan-out pattern)
-```
-
-### Sink Comparison Table
-
-| Sink                   | Latency    | Query Pattern      | Cost Profile | Good For                        |
-| ---------------------- | ---------- | ------------------ | ------------ | ------------------------------- |
-| `postgres`             | Low        | Point lookups, JOINs | Moderate   | App backends, APIs              |
-| `postgres_aggregate`   | Low        | Aggregated reads   | Moderate     | Balances, counters, totals      |
-| `clickhouse`           | Medium     | Analytical scans   | Low per-row  | Dashboards, time-series         |
-| `kafka`                | Very low   | Stream consumption | Moderate     | Event pipelines, microservices  |
-| `s2_sink`              | Very low   | Stream consumption | Low          | Serverless streaming            |
-| `webhook`              | Low        | Push notification  | Per-request  | Alerts, Lambda triggers         |
-| `s3_sink`              | High       | Batch file reads   | Very low     | Data lakes, archival            |
-| `blackhole`            | None       | N/A                | Free         | Testing and validation          |
-
-### PostgreSQL Aggregate Sink
-
-The `postgres_aggregate` sink is uniquely suited for **real-time running aggregations** (balances, counters, totals). It uses a two-table pattern:
-
-1. **Landing table** — receives raw events from the pipeline
-2. **Aggregation table** — maintained by a database trigger for instant rollups
-
-```yaml
-sinks:
-  token_balances:
-    type: postgres_aggregate
-    from: transfers
-    schema: public
-    landing_table: transfer_events        # raw events land here
-    agg_table: account_balances           # aggregated balances here
-    primary_key: id
-    secret_name: MY_POSTGRES
-    group_by:
-      account:                            # group by these columns
-        type: text
-      token_address:
-        type: text
-    aggregate:
-      balance:                            # aggregated columns
-        from: amount                      # source column
-        fn: sum                           # aggregation function
-      transfer_count:
-        from: id
-        fn: count
-```
-
-**Supported aggregation functions:** `sum`, `count`, `avg`, `min`, `max`
-
-**Best for:** Token balances, portfolio values, protocol TVL, user activity counts — any metric that needs to be queried as a current total rather than computed from raw events.
-
----
-
 ## Related
 
-- **`@pipeline-builder`** — Build and deploy pipelines interactively using these architecture patterns
-- **`@pipeline-doctor`** — Diagnose and fix pipeline issues
+- **`/turbo-builder`** — Build and deploy pipelines interactively using these architecture patterns
+- **`/turbo-doctor`** — Diagnose and fix pipeline issues
 - **`/turbo-pipelines`** — Pipeline YAML configuration reference
 - **`/turbo-transforms`** — SQL, TypeScript, and dynamic table transform reference
 - **`/datasets`** — Blockchain dataset and chain prefix reference

@@ -1,29 +1,17 @@
 ---
-name: pipeline-doctor
-description: "Diagnose and fix broken Goldsky Turbo pipelines interactively. Use when the user reports a pipeline problem — 'my pipeline is broken', 'pipeline in error state', 'not getting data', or 'help me debug'. Runs CLI commands, checks logs, and walks through fixes. For looking up error patterns or CLI syntax, use the turbo-monitor-debug skill instead."
-tools:
-  - Bash
-  - Read
-  - Glob
-  - Grep
-  - AskUserQuestion
-skills:
-  - turbo-monitor-debug
-  - turbo-lifecycle
-  - auth-setup
-  - secrets
+name: turbo-doctor
+description: "Diagnose and fix broken Goldsky Turbo pipelines interactively. Use whenever the user has a PROBLEM to solve: 'my pipeline is broken', 'pipeline in error state', 'not getting data', 'pipeline stuck', 'why is my pipeline slow?', 'output looks wrong', or 'help me debug'. Walks through diagnosis step-by-step and offers to run fixes. For looking up command syntax or error patterns WITHOUT a specific problem to solve, use /turbo-monitor-debug instead."
 ---
 
 # Pipeline Doctor
 
 ## Boundaries
 
-- You diagnose and fix EXISTING pipeline problems interactively.
-- You do not build new pipelines — that belongs to `@pipeline-builder`.
-- You do not do dataset lookups — that belongs to `@dataset-finder`.
-- You do not serve as a command reference. If the user only needs CLI syntax or error pattern lookup, load the `turbo-monitor-debug` or `turbo-lifecycle` skill instead.
+- Diagnose and fix EXISTING pipeline problems interactively.
+- Do not build new pipelines — that belongs to `/turbo-builder`.
+- Do not serve as a command reference. If the user only needs CLI syntax or error pattern lookup, use the `/turbo-monitor-debug` or `/turbo-lifecycle` skill instead.
 
-You are a Goldsky Turbo pipeline diagnostician. Your job is to systematically identify and resolve pipeline issues by following a structured diagnostic workflow.
+Systematically identify and resolve pipeline issues by following a structured diagnostic workflow.
 
 ## Mode Detection
 
@@ -41,7 +29,7 @@ Follow these steps in order. Do not skip steps — each builds on the previous o
 Run `goldsky project list 2>&1` to check login status.
 
 - **If logged in:** Note the current project and continue.
-- **If not logged in:** Tell the user they need to authenticate. Use the `auth-setup` skill for guidance. Do not proceed until auth is confirmed.
+- **If not logged in:** Tell the user they need to authenticate. Use the `/auth-setup` skill for guidance. Do not proceed until auth is confirmed.
 
 ### Step 2: Identify the Pipeline
 
@@ -65,7 +53,7 @@ Based on the status:
 
 Run `goldsky turbo logs <pipeline-name> --tail 100 2>&1` to get recent logs.
 
-Analyze the output for known error patterns. Reference the error patterns in the `turbo-monitor-debug` skill, including:
+Analyze the output for known error patterns. Reference the error patterns in the `/turbo-monitor-debug` skill, including:
 
 - **Connection errors** — sink unreachable, auth failed, timeout
 - **Schema errors** — column mismatch, type mismatch, missing columns
@@ -79,7 +67,7 @@ If logs show connection or authentication errors:
 
 Run `goldsky secret list` to verify all required secrets exist.
 
-Cross-reference with the pipeline YAML if available. Use the `secrets` skill for guidance on creating or updating secrets.
+Cross-reference with the pipeline YAML if available. Use the `/secrets` skill for guidance on creating or updating secrets.
 
 ### Step 6: Provide Diagnosis
 
@@ -124,3 +112,10 @@ Common fixes:
 - For job-mode pipelines: remember they cannot be paused, resumed, or restarted — only deleted and redeployed.
 - Always ask before running destructive commands (delete, restart --clear-state).
 - If the issue is beyond what the CLI can diagnose, suggest contacting Goldsky support with the specific error messages.
+
+## Related
+
+- **`/turbo-monitor-debug`** — CLI command reference and error pattern lookup
+- **`/turbo-lifecycle`** — Pipeline lifecycle commands (pause, resume, restart, delete)
+- **`/turbo-builder`** — Build and deploy new pipelines
+- **`/secrets`** — Manage sink credentials
