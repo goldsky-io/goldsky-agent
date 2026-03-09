@@ -23,10 +23,16 @@ Just describe what you need in natural language — the right skill is selected 
 **Recommended: Universal Skills Installer**
 
 ```bash
-npx skills add goldsky-io/goldsky-agent -a claude-code
+npx skills add goldsky-io/goldsky-agent
 ```
 
-Works with Claude Code, Cursor, OpenCode, Codex, and 30+ other AI agents.
+The installer will prompt you to select your AI agent, or specify directly:
+
+```bash
+npx skills add goldsky-io/goldsky-agent -a claude-code  # or cursor, opencode, etc.
+```
+
+Works with 30+ AI agents including Claude Code, Cursor, OpenCode, and Codex.
 
 **Claude Code (Plugin Marketplace)**
 

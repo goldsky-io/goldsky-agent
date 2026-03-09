@@ -24,10 +24,10 @@ AI-powered tools for building, deploying, and debugging Turbo pipelines that str
 
 ```bash
 # Install all skills
-npx skills add goldsky-io/goldsky-agent -a claude-code
+npx skills add goldsky-io/goldsky-agent
 
-# Verify installation
-claude  # then ask "Build me a pipeline for USDC transfers"
+# The installer will prompt you to select your AI agent
+# Or specify directly: npx skills add goldsky-io/goldsky-agent -a <agent-name>
 ```
 
 ## Examples
