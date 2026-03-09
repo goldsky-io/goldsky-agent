@@ -1,0 +1,10 @@
+# Local skills installation artifacts
+.agents/
+.claude/
+skills-lock.json
+
+# Dependencies
+node_modules/
+
+# OS files
+.DS_Store

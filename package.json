@@ -1,0 +1,28 @@
+{
+  "name": "@goldsky/agent-skills",
+  "version": "1.2.0",
+  "description": "AI-powered tools for streaming real-time blockchain data. Build, deploy, and debug Turbo pipelines.",
+  "keywords": [
+    "goldsky",
+    "blockchain",
+    "pipelines",
+    "turbo",
+    "web3",
+    "data",
+    "skills",
+    "ai-agent"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/goldsky-io/goldsky-agent.git"
+  },
+  "homepage": "https://docs.goldsky.com",
+  "license": "MIT",
+  "author": {
+    "name": "Goldsky",
+    "url": "https://goldsky.com"
+  },
+  "scripts": {
+    "validate": "npx skills add . --list"
+  }
+}
