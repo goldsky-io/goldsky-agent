@@ -81,7 +81,7 @@ goldsky-agent/
 
 ## How It Works
 
-**Skills** auto-trigger based on what you describe. Interactive workflow skills (like `turbo-builder` and `turbo-doctor`) walk you through multi-step tasks. Reference skills contain YAML syntax, error patterns, CLI commands, and troubleshooting guides.
+**Skills** auto-trigger based on what you describe. Interactive skills guide you through processes, help make decisions, or walk you through multi-step tasks. Reference skills provide syntax lookups, command references, and documentation.
 
 ```
 User: "Build me a pipeline for USDC transfers on Base"
@@ -97,16 +97,19 @@ Generated pipeline.yaml + deployment
 
 ### Interactive Skills
 
-These walk you through multi-step tasks end-to-end:
+These guide you through processes, help make decisions, or walk you through multi-step tasks:
 
 | Skill | When to use | What it does |
 | ----- | ----------- | ------------ |
 | `turbo-builder` | "I want to build a pipeline for X" | Guides you chain → dataset → transforms → sink → validate → deploy |
 | `turbo-doctor` | "My pipeline is broken / not getting data / output looks wrong" | Diagnoses the problem step-by-step and offers to run fixes |
+| `auth-setup` | "How do I install the CLI / log in?" | Walks through CLI installation and authentication setup |
+| `turbo-architecture` | "Should I use dataset or Kafka source? Fan-in or fan-out?" | Helps make design decisions and choose architecture patterns |
+| `secrets` | "How do I create credentials for PostgreSQL / ClickHouse?" | Guides credential creation and secret management |
 
 ### Reference Skills
 
-Look up syntax, rules, and examples without a guided workflow:
+Look up syntax, commands, and information without a guided workflow:
 
 | Skill | When to use | What's inside |
 | ----- | ----------- | ------------- |
@@ -114,10 +117,7 @@ Look up syntax, rules, and examples without a guided workflow:
 | `turbo-transforms` | "How do I decode EVM logs / write a SQL transform?" | SQL, TypeScript/WASM, dynamic tables, HTTP handlers |
 | `turbo-monitor-debug` | "How do I view logs? What does this error mean? TUI shortcuts?" | CLI commands, log flags, TUI keys, error pattern lookup |
 | `turbo-lifecycle` | "How do I pause / restart / delete? Will delete lose my data?" | Pause/resume/restart/delete rules, streaming vs job-mode differences |
-| `turbo-architecture` | "Should I use dataset or Kafka source? Fan-in or fan-out?" | Design patterns, source types, resource sizing, sink selection |
 | `datasets` | "What's the dataset name for Polygon NFTs?" | Chain prefixes, dataset types, naming conventions |
-| `secrets` | "How do I create credentials for PostgreSQL / ClickHouse?" | Credential formats for each sink type |
-| `auth-setup` | "How do I install the CLI / log in?" | CLI installation and login flow |
 
 ## Pre-Deploy Hooks
 
