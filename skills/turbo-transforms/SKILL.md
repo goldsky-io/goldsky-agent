@@ -749,7 +749,7 @@ sinks:
 
 For logic SQL can't express: custom parsing, BigInt arithmetic, stateful processing, or complex conditionals. Schema types: `string`, `uint64`, `int64`, `float64`, `boolean`, `bytes`.
 
-Key rules: export `function transform(input)`, return `null` to filter a record, return an object matching the schema, no async/await or external imports.
+Key rules: define `function invoke(data)`, return `null` to filter a record, return an object matching the schema, no async/await or external imports.
 
 See `references/typescript-transforms.md` for full docs, schema field reference, examples, and the when-to-use-script-vs-SQL table. Also includes Handler transforms for HTTP enrichment via external APIs.
 

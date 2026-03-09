@@ -293,12 +293,12 @@ transforms:
       amount: string
       processed_at: string
     script: |
-      function transform(input) {
-        if (input.amount < 1000) return null;  // Filter out
+      function invoke(data) {
+        if (data.amount < 1000) return null;  // Filter out
         return {
-          id: input.id,
-          sender: input.sender,
-          amount: input.amount,
+          id: data.id,
+          sender: data.sender,
+          amount: data.amount,
           processed_at: new Date().toISOString()
         };
       }
@@ -314,14 +314,9 @@ Updatable lookup tables for runtime filtering (allowlists, blocklists, enrichmen
 transforms:
   tracked_wallets:
     type: dynamic_table
-    primary_key: address
-    backend:
-      type: postgres        # or: in_memory
-      secret_name: MY_DB
-      table: tracked_wallets
-    columns:
-      address: string
-      label: string
+    backend_type: Postgres        # or: InMemory
+    backend_entity_name: tracked_wallets
+    secret_name: MY_DB            # required for Postgres
 ```
 
 Use with `dynamic_table_check()` in SQL transforms:

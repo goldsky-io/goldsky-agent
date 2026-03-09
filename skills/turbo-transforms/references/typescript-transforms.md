@@ -20,16 +20,16 @@ transforms:
       amount: string
       label: string
     script: |
-      function transform(input) {
+      function invoke(data) {
         // Return null to filter out a record
-        if (input.amount === '0') return null;
+        if (data.amount === '0') return null;
 
         return {
-          id: input.id,
-          block_number: input.block_number,
-          sender: input.sender,
-          amount: input.amount,
-          label: categorize(input.amount)
+          id: data.id,
+          block_number: data.block_number,
+          sender: data.sender,
+          amount: data.amount,
+          label: categorize(data.amount)
         };
       }
 
@@ -50,7 +50,7 @@ transforms:
 | `language`   | Yes      | `typescript` (transpiled to JS, runs in WASM sandbox)    |
 | `from`       | Yes      | Source or transform to read from                         |
 | `schema`     | Yes      | Output schema — map of column names to types             |
-| `script`     | Yes      | TypeScript code with a `transform(input)` function       |
+| `script`     | Yes      | TypeScript code with an `invoke(data)` function          |
 
 ### Schema Types
 
@@ -65,7 +65,7 @@ transforms:
 
 ### Script Rules
 
-1. **Must export a `transform(input)` function** — called once per record
+1. **Must define an `invoke(data)` function** — called once per record
 2. **Return `null` to filter out a record** — the record is dropped
 3. **Return an object matching the `schema`** — all declared fields must be present
 4. **No async/await** — execution is synchronous within the WASM sandbox
@@ -111,24 +111,24 @@ transforms:
         '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2': { symbol: 'WETH', decimals: 18 },
       };
 
-      function transform(input: any) {
-        const addr = input.address?.toLowerCase() ?? '';
+      function invoke(data: any) {
+        const addr = data.address?.toLowerCase() ?? '';
         const token = KNOWN_TOKENS[addr];
-        const raw = BigInt(input.amount || '0');
+        const raw = BigInt(data.amount || '0');
 
-        let amountHuman = input.amount;
+        let amountHuman = data.amount;
         if (token) {
           const divisor = BigInt(10 ** token.decimals);
           amountHuman = (Number(raw) / Number(divisor)).toFixed(4);
         }
 
         return {
-          id: input.id,
-          block_number: input.block_number,
-          sender: input.sender,
-          recipient: input.recipient,
+          id: data.id,
+          block_number: data.block_number,
+          sender: data.sender,
+          recipient: data.recipient,
           token_address: addr,
-          amount_raw: input.amount,
+          amount_raw: data.amount,
           amount_human: amountHuman,
           transfer_size: classifySize(raw),
         };
@@ -168,12 +168,12 @@ transforms:
       category: string
       risk_score: float64
     script: |
-      function transform(input) {
+      function invoke(data) {
         return {
-          id: input.id,
-          block_number: input.block_number,
-          category: assessCategory(input),
-          risk_score: computeRisk(input)
+          id: data.id,
+          block_number: data.block_number,
+          category: assessCategory(data),
+          risk_score: computeRisk(data)
         };
       }
       // ... helper functions

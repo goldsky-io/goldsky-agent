@@ -86,7 +86,7 @@ The script checks for common error patterns and reports findings with recommenda
 | `undefined` property access  | Add null checks: `input.field ?? ''`                   |
 | Wrong return type            | Ensure returned object matches `schema` exactly        |
 | Missing return fields        | All `schema` fields must be present in returned object |
-| `transform is not a function`| Ensure script defines `function transform(input)`      |
+| `invoke is not a function`   | Ensure script defines `function invoke(data)`          |
 | BigInt errors                | Use `BigInt()` constructor, not direct number literals  |
 
 ## Dynamic Table Issues

@@ -61,7 +61,7 @@ Job-mode pipelines (`job: true` in YAML) are one-time batch processes. They:
   goldsky turbo delete my-job-pipeline
   goldsky turbo apply my-job-pipeline.yaml
   ```
-- **If the job errors**, it does not auto-cleanup. You must manually delete it before redeploying.
+- **If the job errors**, it still auto-deletes ~1 hour after termination — same as successful jobs.
 
 ## Pause, Resume, and Restart
 
@@ -131,8 +131,8 @@ goldsky turbo restart <pipeline-name> --clear-state
 
 - Job pipelines (`job: true`) **must be deleted before redeploying**
 - Attempting `goldsky turbo apply` on an existing job returns an error: `pipeline already exists`
-- Completed jobs auto-cleanup after ~1 hour, but errored jobs do not
-- Always delete the old job first: `goldsky turbo delete <name>`, then `goldsky turbo apply <file.yaml>`
+- Jobs auto-cleanup ~1 hour after termination regardless of success or failure
+- Always delete the old job first if redeploying: `goldsky turbo delete <name>`, then `goldsky turbo apply <file.yaml>`
 
 ### Project Scope
 

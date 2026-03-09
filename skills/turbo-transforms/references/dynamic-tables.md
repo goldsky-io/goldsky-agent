@@ -15,22 +15,19 @@ Dynamic tables are **updatable lookup tables** that can be used for joins, allow
 transforms:
   tracked_wallets:
     type: dynamic_table
-    primary_key: address
-    backend:
-      type: postgres                # or: in_memory
-      secret_name: MY_POSTGRES
-      table: tracked_wallets        # existing table in your database
-    columns:
-      address: string
-      label: string
+    backend_type: Postgres        # or: InMemory
+    backend_entity_name: tracked_wallets  # table name in your database
+    secret_name: MY_POSTGRES      # required for Postgres
 ```
 
 ## Backend Types
 
-| Backend      | Persistence         | Use Case                                    |
-| ------------ | ------------------- | ------------------------------------------- |
-| `postgres`   | Durable (database)  | Shared across restarts, externally updatable |
-| `in_memory`  | Ephemeral           | Auto-populated from SQL, fast lookups        |
+| Backend      | `backend_type` | Persistence         | Use Case                                    |
+| ------------ | -------------- | ------------------- | ------------------------------------------- |
+| PostgreSQL   | `Postgres`     | Durable (database)  | Shared across restarts, externally updatable |
+| In-memory    | `InMemory`     | Ephemeral           | Auto-populated from SQL, fast lookups        |
+
+> Note: `Postgres` and `InMemory` are case-sensitive. Use the exact values shown above.
 
 ## Auto-Populating with SQL
 
@@ -40,12 +37,8 @@ Populate a dynamic table from another source or transform using the `sql` field:
 transforms:
   whale_addresses:
     type: dynamic_table
-    primary_key: address
-    backend:
-      type: in_memory
-    columns:
-      address: string
-      total_volume: string
+    backend_type: InMemory
+    backend_entity_name: whale_addresses
     sql: |
       SELECT address, SUM(CAST(amount AS DOUBLE)) AS total_volume
       FROM erc20_transfers
@@ -62,14 +55,9 @@ transforms:
   # The dynamic table (lookup data)
   tracked_wallets:
     type: dynamic_table
-    primary_key: address
-    backend:
-      type: postgres
-      secret_name: MY_POSTGRES
-      table: tracked_wallets
-    columns:
-      address: string
-      label: string
+    backend_type: Postgres
+    backend_entity_name: tracked_wallets
+    secret_name: MY_POSTGRES
 
   # SQL transform that filters using the dynamic table
   tracked_transfers:
@@ -82,21 +70,13 @@ transforms:
          OR dynamic_table_check('tracked_wallets', recipient)
 ```
 
+`dynamic_table_check(table_name, value)` returns `true` if the value exists in the dynamic table, `false` otherwise.
+
 ## Updating Dynamic Tables at Runtime
 
 **Postgres-backed tables** can be updated externally — just INSERT/UPDATE/DELETE rows in the backing PostgreSQL table. The pipeline picks up changes automatically without restart.
 
-**REST API updates** (for in-memory tables) use the Goldsky API:
-
-```bash
-# Add an entry
-curl -X POST https://api.goldsky.com/turbo/v1/pipelines/<name>/dynamic-tables/tracked_wallets \
-  -H "Authorization: Bearer <token>" \
-  -d '{"address": "0xabc...", "label": "whale"}'
-
-# Remove an entry
-curl -X DELETE https://api.goldsky.com/turbo/v1/pipelines/<name>/dynamic-tables/tracked_wallets/0xabc...
-```
+By default, the table is created in the `streamling` schema: `streamling.<backend_entity_name>`.
 
 ## Full Example — Wallet Tracking Pipeline
 
@@ -115,14 +95,9 @@ transforms:
   # Dynamic table backed by your PostgreSQL
   tracked_wallets:
     type: dynamic_table
-    primary_key: address
-    backend:
-      type: postgres
-      secret_name: TRACKING_DB
-      table: tracked_wallets
-    columns:
-      address: string
-      label: string
+    backend_type: Postgres
+    backend_entity_name: tracked_wallets
+    secret_name: TRACKING_DB
 
   # Only pass through transfers involving tracked wallets
   relevant_transfers:

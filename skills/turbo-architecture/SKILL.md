@@ -1,6 +1,6 @@
 ---
 name: turbo-architecture
-description: Design and architect Turbo pipelines. Use this skill whenever the user is thinking about how to structure their pipeline — choosing between dataset vs kafka sources, fan-in/fan-out vs linear data flow, resource sizing (s/m/l), multi-chain deployments, streaming vs job mode, dynamic table lookups, the right sink type, or whether to split logic across pipelines. When the user is unsure how to design their pipeline, start here.
+description: Design and architect Turbo pipelines. Use this skill whenever the user is thinking about how to structure their pipeline — choosing between dataset vs kafka sources, fan-in/fan-out vs linear data flow, resource sizing (xs/s/m/l/xl/xxl), multi-chain deployments, streaming vs job mode, dynamic table lookups, the right sink type, or whether to split logic across pipelines. When the user is unsure how to design their pipeline, start here.
 ---
 
 # Turbo Pipeline Architecture
@@ -235,18 +235,24 @@ When you need the **same pipeline logic** across multiple chains, create separat
 
 ## Resource Sizing
 
-| Size | Workers | When to Use                                                    |
-| ---- | ------- | -------------------------------------------------------------- |
-| `s`  | 1       | Testing, simple filters, single source/sink, low volume        |
-| `m`  | 2       | Multiple sinks, Kafka streaming, moderate transform complexity |
-| `l`  | 4       | Multi-event decoding with UNION ALL, high-volume historical backfill, complex processing |
+Each size doubles the previous tier's CPU and memory:
+
+| Size  | Workers | CPU Request | Memory | When to Use                                                    |
+| ----- | ------- | ----------- | ------ | -------------------------------------------------------------- |
+| `xs`  | —       | 0.4         | 0.5 Gi | Small datasets, light testing                                  |
+| `s`   | 1       | 0.8         | 1.0 Gi | Testing, simple filters, single source/sink, low volume (default) |
+| `m`   | 4       | 1.6         | 2.0 Gi | Multiple sinks, Kafka streaming, moderate transform complexity  |
+| `l`   | 10      | 3.2         | 4.0 Gi | Multi-event decoding with UNION ALL, high-volume historical backfill |
+| `xl`  | 20      | 6.4         | 8.0 Gi | Large chain backfills, complex JOINs (e.g. Solana accounts+transactions) |
+| `xxl` | 40      | 12.8        | 16.0 Gi | Highest throughput needs; up to 6.3M rows/min                 |
 
 **Rules of thumb from production pipelines:**
 
-- Simple filter + single sink → `s`
+- Simple filter + single sink → `s` (default, try this first)
 - Kafka source + multiple sinks OR multiple transforms → `m`
 - Raw log decoding + 5+ event types + UNION ALL → `l`
-- Historical backfill of high-volume data → `l` (can downsize after catch-up)
+- Historical backfill of high-volume data → `l` or `xl` (can downsize after catch-up)
+- Start small and scale up — defensive sizing avoids wasted resources
 
 ---
 
@@ -471,16 +477,16 @@ Store metadata (token symbols, decimals, protocol names) in a PostgreSQL table. 
 
 ### Backend Decisions
 
-| Backend     | When to Use                                                        |
-| ----------- | ------------------------------------------------------------------ |
-| `postgres`  | Data managed by external systems, shared across pipeline restarts  |
-| `in_memory` | Auto-populated from pipeline data, ephemeral, fastest lookups      |
+| Backend     | `backend_type` | When to Use                                                       |
+| ----------- | -------------- | ----------------------------------------------------------------- |
+| PostgreSQL  | `Postgres`     | Data managed by external systems, shared across pipeline restarts |
+| In-memory   | `InMemory`     | Auto-populated from pipeline data, ephemeral, fastest lookups     |
 
 ### Sizing Considerations
 
 - Dynamic tables add memory overhead proportional to table size
-- For large lookup tables (>100K rows), use `postgres` backend
-- For small, frequently-changing lists (<10K rows), `in_memory` is faster
+- For large lookup tables (>100K rows), use `Postgres` backend
+- For small, frequently-changing lists (<10K rows), `InMemory` is faster
 - Dynamic table queries are async — they add slight latency per record
 
 > **For full dynamic table configuration syntax and examples, see `/turbo-transforms`.**

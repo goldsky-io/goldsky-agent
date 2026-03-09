@@ -214,18 +214,18 @@
     },
     {
       "id": "script_transform_error",
-      "pattern": "WASM execution failed|script transform error|transform is not a function",
+      "pattern": "WASM execution failed|script transform error|invoke is not a function",
       "category": "transform",
       "severity": "error",
       "description": "TypeScript/WASM script transform failed during execution",
       "causes": [
         "Runtime error in TypeScript code (null access, type error)",
-        "Missing transform() function in script",
+        "Missing invoke() function in script",
         "Return value doesn't match declared schema",
         "Script uses unsupported APIs (no network, no imports)"
       ],
       "solutions": [
-        "Check script defines function transform(input) { ... }",
+        "Check script defines function invoke(data) { ... }",
         "Add null checks for input fields: input.field ?? ''",
         "Ensure returned object has all fields from schema",
         "Remove any require/import statements (sandboxed environment)",
