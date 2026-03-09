@@ -1,6 +1,6 @@
 ---
 name: datasets
-description: "Reference tables for Goldsky blockchain datasets — chain prefixes, dataset types, naming conventions, and versions. Use this skill whenever you need to look up the correct dataset name for a chain or data type, verify a chain prefix (e.g., Polygon → \"matic\"), understand available versions, or browse the full reference. For quick questions like 'what dataset for Solana transfers?', answer directly with a ready-to-paste YAML snippet."
+description: "Use this skill when the user needs to look up or verify Goldsky blockchain dataset names, chain prefixes, dataset types, or versions. Triggers on questions like 'what\\'s the dataset name for X?', 'what prefix does Goldsky use for chain Y?', 'what version should I use for Z?', or 'what datasets are available for Solana/Stellar/Arbitrum/etc?'. Also use for chain-specific dataset questions (e.g., polygon vs matic prefix, stellarnet balance datasets, solana token transfer dataset names). Do NOT trigger for questions about CLI commands, pipeline setup, or general Goldsky architecture unless the core question is about finding the right dataset name or chain prefix."
 ---
 
 # Goldsky Dataset Reference

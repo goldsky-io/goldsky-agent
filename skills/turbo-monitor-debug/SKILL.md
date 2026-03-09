@@ -1,6 +1,6 @@
 ---
 name: turbo-monitor-debug
-description: "CLI command syntax and error pattern reference for Turbo pipelines. Use this skill when the user asks HOW TO do something — 'how do I view logs?', 'what flags does goldsky turbo logs support?', 'what are the TUI keyboard shortcuts?', 'what does X error message mean?'. Also use for the analyze-logs.sh script. For hands-on diagnosis of a specific broken pipeline, use /turbo-doctor instead."
+description: "Use this skill when the user needs to look up goldsky turbo CLI syntax — flags and options for `inspect`, `logs`, or `list` commands — or wants to know keyboard shortcuts for the `turbo inspect` TUI. Also use for: decoding what a specific error message means (backpressure, connection refused, auth failures, etc.), using the analyze-logs.sh script, or understanding how inspect/logs commands work. Distinguishing factor: this skill provides reference information and explanations. If the user has a broken pipeline and wants step-by-step interactive diagnosis, use /turbo-doctor instead."
 ---
 
 # Turbo Pipeline Monitoring & Debugging Reference

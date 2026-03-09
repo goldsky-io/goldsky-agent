@@ -1,6 +1,6 @@
 ---
 name: secrets
-description: Manage Goldsky secrets for pipeline sink credentials. Use this skill whenever a user needs to create, update, rotate, or delete credentials for any pipeline sink — PostgreSQL, ClickHouse, Kafka, S3, Elasticsearch, DynamoDB, SQS, OpenSearch, or webhooks. Also use when a pipeline fails with auth or connection errors and you need to check or fix the underlying secret.
+description: "Use this skill when a user wants to store, manage, or work with Goldsky secrets — the named credential objects used by pipeline sinks. This includes: creating a new secret from a connection string or credentials, listing or inspecting existing secrets, updating or rotating credentials after a password change, and deleting secrets that are no longer needed. Trigger for any query where the user mentions 'goldsky secret', wants to securely store database credentials for a pipeline, or is working with sink authentication for PostgreSQL, Neon, Supabase, ClickHouse, Kafka, S3, Elasticsearch, DynamoDB, SQS, OpenSearch, or webhooks."
 ---
 
 # Goldsky Secrets Management

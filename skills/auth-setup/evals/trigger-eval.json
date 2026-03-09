@@ -1,0 +1,17 @@
+[
+  {"query": "how do i install the goldsky CLI on my mac?", "should_trigger": true},
+  {"query": "goldsky login isn't working — it opens a browser but then says 'authentication failed'", "should_trigger": true},
+  {"query": "how do i switch between different goldsky projects in the CLI?", "should_trigger": true},
+  {"query": "i just installed goldsky but when i run goldsky project list it says i'm not logged in", "should_trigger": true},
+  {"query": "how do i check which goldsky project i'm currently authenticated to?", "should_trigger": true},
+  {"query": "getting 'unauthorized' when running goldsky turbo apply — is this an auth issue?", "should_trigger": true},
+  {"query": "can you walk me through setting up goldsky CLI from scratch for the first time?", "should_trigger": true},
+  {"query": "what's the goldsky CLI install command? i see different options online and want the official one", "should_trigger": true},
+  {"query": "my pipeline is failing with permission denied errors — it's deployed but the pipeline itself keeps crashing", "should_trigger": false},
+  {"query": "what flags does goldsky turbo logs support? i want to see real-time output", "should_trigger": false},
+  {"query": "help me build a pipeline — i'm already logged in and ready to deploy", "should_trigger": false},
+  {"query": "what's the goldsky CLI command to list all my pipelines?", "should_trigger": false},
+  {"query": "my pipeline is in error state, help me diagnose what's wrong with it", "should_trigger": false},
+  {"query": "how do i create a secret for my postgres database connection?", "should_trigger": false},
+  {"query": "what chain prefix should i use for avalanche in my pipeline YAML?", "should_trigger": false}
+]
