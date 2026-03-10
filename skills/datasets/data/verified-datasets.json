@@ -19,11 +19,14 @@
         "id": "string",
         "sender": "string",
         "recipient": "string",
-        "amount": "string",
-        "address": "string (token contract)",
+        "amount": "decimal",
+        "address": "string (token contract address)",
         "block_number": "integer",
-        "block_timestamp": "integer",
-        "transaction_hash": "string"
+        "block_timestamp": "integer (unix)",
+        "block_hash": "string",
+        "transaction_hash": "string",
+        "transaction_index": "integer",
+        "log_index": "integer"
       }
     },
     "erc721_transfers": {
@@ -38,21 +41,48 @@
         "id": "string",
         "from_address": "string",
         "to_address": "string",
-        "token_id": "string",
-        "address": "string (NFT contract)",
+        "token_id": "decimal",
+        "address": "string (NFT contract address)",
         "block_number": "integer",
-        "block_timestamp": "integer",
-        "transaction_hash": "string"
+        "block_timestamp": "integer (unix)",
+        "block_hash": "string",
+        "transaction_hash": "string",
+        "transaction_index": "integer",
+        "log_index": "integer"
       }
     },
     "raw_transactions": {
-      "description": "Raw transaction data (NOT 'transactions')",
+      "description": "Enriched transaction data including receipt fields (NOT 'transactions')",
       "useCase": "Wallet activity, gas analysis, transaction monitoring",
       "warning": "Use 'raw_transactions' not 'transactions'",
       "chains": {
         "ethereum": { "version": "1.0.0", "startAtSupport": true },
         "base": { "version": "1.0.0", "startAtSupport": true },
         "matic": { "version": "1.0.0", "startAtSupport": true }
+      },
+      "schema": {
+        "id": "string",
+        "hash": "string",
+        "nonce": "integer",
+        "block_hash": "string",
+        "block_number": "integer",
+        "transaction_index": "integer",
+        "from_address": "string",
+        "to_address": "string",
+        "value": "decimal",
+        "gas": "decimal",
+        "gas_price": "decimal",
+        "input": "string (hex)",
+        "max_fee_per_gas": "decimal",
+        "max_priority_fee_per_gas": "decimal",
+        "transaction_type": "integer",
+        "block_timestamp": "integer (unix)",
+        "receipt_cumulative_gas_used": "decimal",
+        "receipt_gas_used": "decimal",
+        "receipt_contract_address": "string | null",
+        "receipt_status": "integer (1=success)",
+        "receipt_effective_gas_price": "decimal",
+        "_note": "L2 chains also include receipt_l1_fee, receipt_l1_gas_used, receipt_l1_gas_price"
       }
     },
     "logs": {
@@ -61,13 +91,37 @@
       "chains": {
         "ethereum": { "version": "1.0.0", "startAtSupport": true },
         "base": { "version": "1.0.0", "startAtSupport": true }
+      },
+      "schema": {
+        "id": "string",
+        "block_number": "integer",
+        "block_hash": "string",
+        "transaction_hash": "string",
+        "transaction_index": "integer",
+        "log_index": "integer",
+        "address": "string (contract address)",
+        "data": "string (hex encoded event data)",
+        "topics": "string (comma-separated hex topic hashes)",
+        "block_timestamp": "integer (unix)"
       }
     },
     "raw_logs": {
-      "description": "Raw event logs (alternative to 'logs')",
-      "useCase": "Same as logs, check availability per chain",
+      "description": "Raw event logs — same schema as logs, check availability per chain",
+      "useCase": "Custom event filtering, contract monitoring",
       "chains": {
         "ethereum": { "version": "1.0.0", "startAtSupport": true }
+      },
+      "schema": {
+        "id": "string",
+        "block_number": "integer",
+        "block_hash": "string",
+        "transaction_hash": "string",
+        "transaction_index": "integer",
+        "log_index": "integer",
+        "address": "string (contract address)",
+        "data": "string (hex encoded event data)",
+        "topics": "string (comma-separated hex topic hashes)",
+        "block_timestamp": "integer (unix)"
       }
     },
     "blocks": {
@@ -76,11 +130,27 @@
       "chains": {
         "ethereum": { "version": "1.0.0", "startAtSupport": true },
         "base": { "version": "1.0.0", "startAtSupport": true }
+      },
+      "schema": {
+        "id": "string",
+        "number": "integer",
+        "hash": "string",
+        "parent_hash": "string",
+        "nonce": "string",
+        "miner": "string",
+        "difficulty": "double",
+        "total_difficulty": "double",
+        "size": "integer",
+        "gas_limit": "integer",
+        "gas_used": "integer",
+        "timestamp": "integer (unix)",
+        "transaction_count": "integer",
+        "base_fee_per_gas": "integer"
       }
     },
     "raw_blocks": {
-      "description": "Raw block data (alternative to 'blocks')",
-      "useCase": "Same as blocks, check availability per chain",
+      "description": "Raw block data — same schema as blocks, check availability per chain",
+      "useCase": "Same as blocks",
       "chains": {
         "ethereum": { "version": "1.0.0", "startAtSupport": true }
       }
@@ -90,6 +160,28 @@
       "useCase": "MEV analysis, contract interactions, deep transaction analysis",
       "chains": {
         "ethereum": { "version": "1.0.0", "startAtSupport": true }
+      },
+      "schema": {
+        "id": "string",
+        "block_number": "integer",
+        "block_hash": "string",
+        "transaction_hash": "string",
+        "transaction_index": "integer",
+        "from_address": "string",
+        "to_address": "string",
+        "value": "decimal",
+        "input": "string",
+        "output": "string",
+        "trace_type": "string",
+        "call_type": "string",
+        "gas": "integer",
+        "gas_used": "integer",
+        "subtraces": "integer",
+        "trace_address": "string",
+        "error": "string | null",
+        "status": "integer",
+        "trace_id": "string",
+        "block_timestamp": "integer (unix)"
       }
     },
     "decoded_logs": {
@@ -106,41 +198,140 @@
       "version": "1.0.0",
       "datasetName": "solana.token_transfers",
       "useCase": "Token tracking on Solana",
-      "note": "Uses start_block (slot number) instead of start_at"
+      "note": "Uses start_block (slot number) instead of start_at",
+      "schema": {
+        "id": "string",
+        "token_mint_address": "string",
+        "from_token_account": "string",
+        "to_token_account": "string",
+        "amount": "number",
+        "decimals": "integer",
+        "block_slot": "integer",
+        "block_timestamp": "timestamp",
+        "signature": "string"
+      }
     },
     "transactions": {
-      "description": "Solana transactions",
+      "description": "Solana transactions with accounts and balances",
       "version": "1.0.0",
-      "datasetName": "solana.transactions"
+      "datasetName": "solana.transactions",
+      "useCase": "Wallet activity, transaction monitoring",
+      "schema": {
+        "id": "string",
+        "index": "integer",
+        "block_slot": "integer",
+        "block_hash": "string",
+        "block_timestamp": "timestamp",
+        "accounts": "string[] (all accounts involved in tx)",
+        "balance_changes": "object[] {account: string, before: integer, after: integer}",
+        "recent_block_hash": "string",
+        "signature": "string",
+        "err": "string | null",
+        "status": "integer (1=success)",
+        "compute_units_consumed": "integer",
+        "fee": "integer (lamports)",
+        "log_messages": "string[]"
+      }
     },
     "transactions_with_instructions": {
-      "description": "Solana transactions with nested instructions",
+      "description": "Solana transactions with nested instructions array",
       "version": "1.0.0",
       "datasetName": "solana.transactions_with_instructions",
-      "useCase": "Multi-instruction analysis, program interaction tracking"
+      "useCase": "Multi-instruction analysis, program interaction tracking",
+      "schema": {
+        "id": "string",
+        "index": "integer",
+        "block_slot": "integer",
+        "block_hash": "string",
+        "block_timestamp": "timestamp",
+        "accounts": "string[] (all accounts involved in tx)",
+        "balance_changes": "object[] {account: string, before: integer, after: integer}",
+        "pre_token_balances": "object[]",
+        "post_token_balances": "object[]",
+        "recent_block_hash": "string",
+        "signature": "string",
+        "err": "string | null",
+        "status": "integer (1=success)",
+        "compute_units_consumed": "integer",
+        "fee": "integer (lamports)",
+        "log_messages": "string[]",
+        "instructions": "object[] {id, index, parent_index, block_slot, block_timestamp, block_hash, tx_fee, tx_index, program_id, data (base58), accounts: string[], status, err}"
+      }
+    },
+    "instructions": {
+      "description": "Individual Solana instructions (one row per instruction)",
+      "version": "1.0.0",
+      "datasetName": "solana.instructions",
+      "useCase": "Program-specific analysis, instruction-level filtering",
+      "schema": {
+        "id": "string",
+        "index": "integer",
+        "parent_index": "integer | null",
+        "block_slot": "integer",
+        "block_timestamp": "timestamp",
+        "block_hash": "string",
+        "program_id": "string",
+        "data": "string (base58 encoded instruction data)",
+        "accounts": "string[]",
+        "status": "integer",
+        "err": "string | null"
+      }
     },
     "blocks": {
-      "description": "Solana block/slot data",
+      "description": "Solana block/slot data with leader info",
       "version": "1.0.0",
-      "datasetName": "solana.blocks"
+      "datasetName": "solana.blocks",
+      "useCase": "Chain analysis, slot timing",
+      "schema": {
+        "id": "string",
+        "slot": "integer",
+        "parent_slot": "integer",
+        "hash": "string",
+        "timestamp": "timestamp",
+        "height": "integer",
+        "previous_block_hash": "string",
+        "transaction_count": "integer",
+        "leader_reward": "integer (lamports)",
+        "leader": "string (validator pubkey)",
+        "skipped": "boolean"
+      }
     },
     "native_balances": {
-      "description": "SOL balance changes",
+      "description": "SOL balance changes per transaction",
       "version": "1.0.0",
       "datasetName": "solana.native_balances",
-      "useCase": "Whale tracking, SOL flow analysis"
+      "useCase": "Whale tracking, SOL flow analysis",
+      "schema": {
+        "id": "string",
+        "account": "string",
+        "amount_before": "integer (lamports)",
+        "amount_after": "integer (lamports)",
+        "block_slot": "integer"
+      }
     },
     "token_balances": {
       "description": "SPL token balance changes",
       "version": "1.0.0",
       "datasetName": "solana.token_balances",
-      "useCase": "Portfolio tracking, token holder analysis"
+      "useCase": "Portfolio tracking, token holder analysis",
+      "schema": "NOT FULLY DOCUMENTED — use 'goldsky dataset list | grep solana.token_balances' to inspect actual fields before writing transforms"
     },
     "rewards": {
-      "description": "Validator rewards",
+      "description": "Validator rewards per block",
       "version": "1.0.0",
       "datasetName": "solana.rewards",
-      "useCase": "Staking analysis, validator performance"
+      "useCase": "Staking analysis, validator performance",
+      "schema": {
+        "id": "string",
+        "block_slot": "integer",
+        "block_hash": "string",
+        "block_timestamp": "timestamp",
+        "commission": "integer",
+        "lamports": "integer",
+        "post_balance": "integer",
+        "pub_key": "string (validator pubkey)",
+        "reward_type": "string"
+      }
     }
   },
   "bitcoin": {

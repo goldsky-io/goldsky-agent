@@ -172,6 +172,202 @@ All datasets use version `1.1.0`:
 
 ---
 
+## Dataset Schemas
+
+> **Source:** [docs.goldsky.com](https://docs.goldsky.com/turbo-pipelines/sources/solana.md). Do not use field names not listed here — ask the user to run `goldsky dataset list` to inspect unknown schemas.
+
+### Solana
+
+#### `solana.transactions`
+| Field | Type | Notes |
+| ----- | ---- | ----- |
+| `id` | string | |
+| `index` | integer | tx position in block |
+| `block_slot` | integer | slot number |
+| `block_hash` | string | |
+| `block_timestamp` | timestamp | |
+| `signature` | string | transaction signature |
+| `recent_block_hash` | string | |
+| `fee` | integer | in lamports |
+| `status` | integer | 1 = success |
+| `err` | string \| null | error if failed |
+| `accounts` | string[] | **all** involved accounts |
+| `balance_changes` | object[] | `{account, before, after}` in lamports |
+| `log_messages` | string[] | program execution logs |
+| `compute_units_consumed` | integer | |
+
+> **No `from_address` or `to_address` on Solana transactions** — use `accounts` array instead.
+
+#### `solana.transactions_with_instructions`
+All fields from `solana.transactions` plus:
+
+| Field | Type | Notes |
+| ----- | ---- | ----- |
+| `pre_token_balances` | object[] | token balances before tx |
+| `post_token_balances` | object[] | token balances after tx |
+| `instructions` | object[] | see below |
+
+**Instruction object fields:** `id`, `index`, `parent_index`, `block_slot`, `block_timestamp`, `block_hash`, `tx_fee`, `tx_index`, `program_id`, `data` (base58), `accounts` (string[]), `status`, `err`
+
+#### `solana.instructions`
+| Field | Type | Notes |
+| ----- | ---- | ----- |
+| `id` | string | |
+| `index` | integer | position in tx |
+| `parent_index` | integer \| null | for inner instructions |
+| `block_slot` | integer | |
+| `block_timestamp` | timestamp | |
+| `block_hash` | string | |
+| `program_id` | string | executing program address |
+| `data` | string | base58 encoded |
+| `accounts` | string[] | instruction accounts |
+| `status` | integer | |
+| `err` | string \| null | |
+
+#### `solana.token_transfers`
+| Field | Type | Notes |
+| ----- | ---- | ----- |
+| `id` | string | |
+| `token_mint_address` | string | mint address |
+| `from_token_account` | string | source token account |
+| `to_token_account` | string | dest token account |
+| `amount` | number | raw amount |
+| `decimals` | integer | token decimals |
+| `block_slot` | integer | |
+| `block_timestamp` | timestamp | |
+| `signature` | string | tx signature |
+
+#### `solana.native_balances`
+| Field | Type | Notes |
+| ----- | ---- | ----- |
+| `id` | string | |
+| `account` | string | account pubkey |
+| `amount_before` | integer | lamports |
+| `amount_after` | integer | lamports |
+| `block_slot` | integer | |
+
+#### `solana.blocks`
+| Field | Type | Notes |
+| ----- | ---- | ----- |
+| `id` | string | |
+| `slot` | integer | |
+| `parent_slot` | integer | |
+| `hash` | string | |
+| `timestamp` | timestamp | |
+| `height` | integer | |
+| `previous_block_hash` | string | |
+| `transaction_count` | integer | |
+| `leader` | string | validator pubkey |
+| `leader_reward` | integer | lamports |
+| `skipped` | boolean | |
+
+#### `solana.rewards`
+| Field | Type | Notes |
+| ----- | ---- | ----- |
+| `id` | string | |
+| `block_slot` | integer | |
+| `block_hash` | string | |
+| `block_timestamp` | timestamp | |
+| `pub_key` | string | validator pubkey |
+| `lamports` | integer | reward amount |
+| `post_balance` | integer | balance after reward |
+| `reward_type` | string | |
+| `commission` | integer | |
+
+#### `solana.token_balances`
+> **Schema not fully documented** — do not guess field names. Inspect with `goldsky dataset list | grep solana.token_balances`.
+
+---
+
+### EVM Chains
+
+#### `<chain>.raw_logs` / `<chain>.logs`
+| Field | Type | Notes |
+| ----- | ---- | ----- |
+| `id` | string | |
+| `block_number` | integer | |
+| `block_hash` | string | |
+| `transaction_hash` | string | |
+| `transaction_index` | integer | |
+| `log_index` | integer | |
+| `address` | string | contract address (lowercase) |
+| `data` | string | hex encoded event data |
+| `topics` | string | comma-separated hex topic hashes |
+| `block_timestamp` | integer | unix timestamp |
+
+> `topics` is a comma-separated string, not an array. Topic 0 is the event signature hash.
+
+#### `<chain>.raw_transactions`
+| Field | Type | Notes |
+| ----- | ---- | ----- |
+| `id` | string | |
+| `hash` | string | |
+| `nonce` | integer | |
+| `block_hash` | string | |
+| `block_number` | integer | |
+| `transaction_index` | integer | |
+| `from_address` | string | |
+| `to_address` | string | |
+| `value` | decimal | ETH value in wei |
+| `gas` | decimal | |
+| `gas_price` | decimal | |
+| `input` | string | hex calldata |
+| `transaction_type` | integer | |
+| `block_timestamp` | integer | unix timestamp |
+| `receipt_gas_used` | decimal | |
+| `receipt_contract_address` | string \| null | if contract creation |
+| `receipt_status` | integer | 1 = success |
+| `receipt_effective_gas_price` | decimal | |
+
+> L2 chains also include: `receipt_l1_fee`, `receipt_l1_gas_used`, `receipt_l1_gas_price`, `receipt_l1_fee_scalar`
+
+#### `<chain>.blocks`
+| Field | Type | Notes |
+| ----- | ---- | ----- |
+| `id` | string | |
+| `number` | integer | block number |
+| `hash` | string | |
+| `parent_hash` | string | |
+| `miner` | string | |
+| `gas_limit` | integer | |
+| `gas_used` | integer | |
+| `timestamp` | integer | unix timestamp |
+| `transaction_count` | integer | |
+| `base_fee_per_gas` | integer | |
+| `difficulty` | double | |
+
+#### `<chain>.erc20_transfers`
+| Field | Type | Notes |
+| ----- | ---- | ----- |
+| `id` | string | |
+| `sender` | string | from address |
+| `recipient` | string | to address |
+| `amount` | decimal | token amount |
+| `address` | string | token contract address |
+| `block_number` | integer | |
+| `block_timestamp` | integer | unix timestamp |
+| `block_hash` | string | |
+| `transaction_hash` | string | |
+| `transaction_index` | integer | |
+| `log_index` | integer | |
+
+#### `<chain>.erc721_transfers`
+| Field | Type | Notes |
+| ----- | ---- | ----- |
+| `id` | string | |
+| `from_address` | string | |
+| `to_address` | string | |
+| `token_id` | decimal | |
+| `address` | string | NFT contract address |
+| `block_number` | integer | |
+| `block_timestamp` | integer | unix timestamp |
+| `block_hash` | string | |
+| `transaction_hash` | string | |
+| `transaction_index` | integer | |
+| `log_index` | integer | |
+
+---
+
 ## Dataset Name Format
 
 All datasets follow the pattern: `<chain_prefix>.<dataset_type>`
