@@ -241,10 +241,15 @@ All fields from `solana.transactions` plus:
 | Field | Type | Notes |
 | ----- | ---- | ----- |
 | `id` | string | |
+| `block_slot` | integer | slot number |
+| `block_hash` | string | |
+| `block_timestamp` | timestamp | |
+| `tx_index` | integer | transaction position in block |
+| `signature` | string | transaction signature |
 | `account` | string | account pubkey |
 | `amount_before` | integer | lamports |
 | `amount_after` | integer | lamports |
-| `block_slot` | integer | |
+| `_gs_op` | string | Goldsky internal operation type |
 
 #### `solana.blocks`
 | Field | Type | Notes |
