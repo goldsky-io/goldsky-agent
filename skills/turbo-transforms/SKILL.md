@@ -7,11 +7,13 @@ description: "Write SQL, TypeScript, and dynamic table transforms for Goldsky Tu
 
 Write, understand, and debug SQL, TypeScript, and dynamic table transforms for Turbo pipeline configurations.
 
-Identify what the user needs (decode, filter, reshape, combine, custom logic, or lookup joins), then use the relevant section below. After writing transforms, always validate the full pipeline YAML:
+Identify what the user needs (decode, filter, reshape, combine, custom logic, or lookup joins), then use the relevant section below. After writing transforms, always validate the full pipeline YAML before presenting it to the user:
 
 ```bash
 goldsky turbo validate <pipeline.yaml>
 ```
+
+If generating a complete pipeline YAML (not just a transform snippet), always validate with `goldsky turbo validate` before presenting it to the user.
 
 **Reference files for specialized topics:**
 - `references/typescript-transforms.md` — TypeScript/WASM script transforms and handler transforms

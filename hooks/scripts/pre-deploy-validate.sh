@@ -64,4 +64,5 @@ VALIDATE_OUTPUT=$(goldsky turbo validate "$YAML_FILE" 2>&1) || {
 }
 
 # Validation passed — allow the deploy
+echo "Hook: pre-deploy-validate — Validation passed for $YAML_FILE"
 exit 0

@@ -7,7 +7,7 @@ description: "Goldsky Turbo pipeline YAML reference — the authoritative source
 
 YAML configuration reference for Turbo pipelines. This is a lookup reference — for interactive pipeline building, use `/turbo-builder`. For pipeline troubleshooting, use `/turbo-doctor`.
 
-> **CRITICAL:** Always validate YAML with `goldsky turbo validate <file.yaml>` before deploying.
+> **CRITICAL:** Always validate YAML with `goldsky turbo validate <file.yaml>` before showing complete pipeline YAML to the user or deploying.
 
 ---
 
@@ -32,6 +32,10 @@ sinks:
 ```
 
 ```bash
+# Validate first:
+goldsky turbo validate pipeline.yaml
+
+# Then deploy:
 goldsky turbo apply pipeline.yaml -i
 ```
 
