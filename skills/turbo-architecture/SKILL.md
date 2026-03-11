@@ -34,6 +34,8 @@ After the architecture is decided, direct the user to:
 - **`/turbo-transforms`** — To write the SQL transforms
 - **`/secrets`** — To set up sink credentials
 
+**Reminder:** When presenting complete pipeline YAML as part of architecture recommendations, validate it first with `goldsky turbo validate`. Templates in `templates/` are structural patterns — any customized version must be validated before presenting to the user.
+
 ---
 
 ## Source Types

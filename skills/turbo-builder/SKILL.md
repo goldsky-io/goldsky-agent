@@ -117,29 +117,34 @@ Use the `/turbo-architecture` skill to decide:
 - **Streaming** (default) — continuous processing, no `end_block`, runs indefinitely
 - **Job mode** — one-time backfill, set `job: true` and `end_block`
 
-### Step 8: Generate YAML
+### Step 8: Generate, Validate, and Present
 
 Assemble the complete pipeline YAML. Use a descriptive name following the convention: `<chain>-<data>-<sink>` (e.g., `base-erc20-transfers-postgres`).
 
-Write the YAML file to disk (e.g., `<pipeline-name>.yaml`).
+**CLI mode (Bash available):**
 
-Present the full YAML to the user for review before proceeding.
-
-### Step 9: Validate
-
-Run validation:
+1. Write the YAML file to disk (e.g., `<pipeline-name>.yaml`).
+2. Run validation BEFORE showing the YAML to the user:
 
 ```bash
 goldsky turbo validate -f <pipeline-name>.yaml
 ```
 
-If validation fails, fix the issues and re-validate. Common fixes:
-- Missing `version` field on dataset source
-- Invalid dataset name (check chain prefix)
-- Missing `secret_name` for database sinks
-- SQL syntax errors in transforms
+3. If validation fails, fix the issues and re-validate. Do NOT present the YAML until validation passes. Common fixes:
+   - Missing `version` field on dataset source
+   - Invalid dataset name (check chain prefix)
+   - Missing `secret_name` for database sinks
+   - SQL syntax errors in transforms
 
-### Step 10: Deploy
+4. Once validation passes, present the full YAML to the user for review.
+
+**Reference mode (no Bash):**
+
+1. Perform the structural self-check from `turbo-pipelines/references/validation-checklist.md`.
+2. Present the YAML with the checklist results.
+3. Instruct the user to run `goldsky turbo validate -f <file>.yaml` before deploying.
+
+### Step 9: Deploy
 
 After user confirms the YAML looks good:
 
@@ -147,7 +152,7 @@ After user confirms the YAML looks good:
 goldsky turbo apply <pipeline-name>.yaml
 ```
 
-### Step 11: Verify
+### Step 10: Verify
 
 After deployment:
 
@@ -180,6 +185,7 @@ Present a summary:
 
 ## Important Rules
 
+- Always validate before presenting complete YAML to the user. Never show unvalidated complete pipeline YAML.
 - Always validate before deploying.
 - Always show the user the complete YAML before deploying.
 - For job-mode pipelines, remind the user they auto-cleanup ~1hr after completion.
