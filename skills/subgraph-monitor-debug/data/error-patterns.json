@@ -1,0 +1,186 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Common error patterns in Goldsky subgraph logs and their solutions",
+  "lastUpdated": "2026-03-18",
+  "patterns": [
+    {
+      "id": "column_conflict",
+      "pattern": "column.*specified more than once",
+      "category": "configuration",
+      "severity": "error",
+      "description": "Duplicate column names in instant subgraph generated schema",
+      "causes": [
+        "Multiple ABIs with events that have the same field names",
+        "ABI name conflicts in instant subgraph config"
+      ],
+      "solutions": [
+        "Rename ABI entries in the instant config to use distinct names",
+        "Use separate subgraphs for conflicting contracts",
+        "Switch to source code subgraph with custom entity names"
+      ],
+      "relatedSkill": "/subgraph-config"
+    },
+    {
+      "id": "ipfs_timeout",
+      "pattern": "524|IPFS.*timeout|failed to fetch",
+      "category": "deployment",
+      "severity": "error",
+      "description": "Timeout when fetching subgraph from IPFS during migration",
+      "causes": [
+        "IPFS gateway is slow or unreachable",
+        "Invalid or expired IPFS hash",
+        "Large subgraph deployment package"
+      ],
+      "solutions": [
+        "Retry the deployment command",
+        "Try a different IPFS gateway: --ipfs-gateway https://ipfs.io",
+        "Verify the IPFS hash is correct on TheGraph Explorer",
+        "If persistent, contact Goldsky support"
+      ],
+      "relatedSkill": "/subgraph-migrate"
+    },
+    {
+      "id": "mapping_crash",
+      "pattern": "wasm trap|unreachable|handler.*error|mapping.*failed",
+      "category": "runtime",
+      "severity": "error",
+      "description": "AssemblyScript mapping handler crashed during execution",
+      "causes": [
+        "Null entity access without null check",
+        "Integer overflow (using i32 for large numbers)",
+        "Accessing non-existent entity fields",
+        "Division by zero",
+        "Event parameter type mismatch"
+      ],
+      "solutions": [
+        "Add null checks: if (entity != null) before accessing",
+        "Use BigInt type for large numbers",
+        "Verify event signatures match ABI exactly",
+        "Add try-catch or defensive checks in handlers",
+        "Check logs for the specific block/tx that caused the crash"
+      ]
+    },
+    {
+      "id": "store_error",
+      "pattern": "store error|entity.*conflict|store.*write.*failed",
+      "category": "runtime",
+      "severity": "error",
+      "description": "Failed to write entity to the subgraph store",
+      "causes": [
+        "Duplicate entity IDs being created",
+        "Schema mismatch between entity definition and store operation",
+        "Concurrent writes to the same entity"
+      ],
+      "solutions": [
+        "Ensure entity IDs are unique (use tx hash + log index pattern)",
+        "Verify entity field types match schema.graphql exactly",
+        "Load existing entity before modifying to avoid conflicts"
+      ]
+    },
+    {
+      "id": "graft_error",
+      "pattern": "graft.*error|graft.*failed|incompatible.*graft",
+      "category": "deployment",
+      "severity": "error",
+      "description": "Grafting from an existing subgraph failed",
+      "causes": [
+        "Graft source subgraph doesn't exist",
+        "Schema incompatibility between graft source and new subgraph",
+        "Graft source is from a different project"
+      ],
+      "solutions": [
+        "Verify graft source exists: goldsky subgraph list",
+        "Use --remove-graft flag to deploy without grafting",
+        "Ensure schemas are compatible between versions"
+      ],
+      "relatedSkill": "/subgraph-config"
+    },
+    {
+      "id": "subgraph_stalled",
+      "pattern": "stalled|no progress|indexing.*stopped",
+      "category": "runtime",
+      "severity": "warning",
+      "description": "Subgraph stopped making indexing progress",
+      "causes": [
+        "Handler error on a specific block causing repeated retries",
+        "RPC issues for the chain (usually transient)",
+        "Memory limit exceeded",
+        "Bug in mapping code that causes infinite loop or deadlock"
+      ],
+      "solutions": [
+        "Check logs for the block number where indexing stopped",
+        "Investigate the specific transaction/event at that block",
+        "Fix handler code and redeploy",
+        "If auto-paused, fix the issue then resume: goldsky subgraph start name/version"
+      ]
+    },
+    {
+      "id": "rpc_error",
+      "pattern": "rpc.*error|eth_call.*failed|provider.*error",
+      "category": "network",
+      "severity": "warning",
+      "description": "RPC call failed during indexing",
+      "causes": [
+        "Upstream RPC node issue (usually transient)",
+        "Rate limiting on RPC endpoint",
+        "Network congestion"
+      ],
+      "solutions": [
+        "Usually resolves automatically — Goldsky's load balancer retries",
+        "If persistent, contact Goldsky support",
+        "For custom chains, verify RPC endpoint is healthy"
+      ]
+    },
+    {
+      "id": "auth_error",
+      "pattern": "unauthorized|401|api key.*invalid",
+      "category": "authentication",
+      "severity": "error",
+      "description": "Authentication failed when querying the subgraph endpoint",
+      "causes": [
+        "Missing or invalid API key in Authorization header",
+        "Expired API key",
+        "Querying a private endpoint without authentication"
+      ],
+      "solutions": [
+        "Use Bearer token: Authorization: Bearer <api-key>",
+        "Generate a new API key from Project Settings",
+        "Enable public endpoint: goldsky subgraph update name/version --public-endpoint true"
+      ],
+      "relatedSkill": "/auth-setup"
+    },
+    {
+      "id": "build_failure",
+      "pattern": "build.*failed|compilation.*error|AssemblyScript.*error",
+      "category": "deployment",
+      "severity": "error",
+      "description": "Subgraph source code failed to compile",
+      "causes": [
+        "AssemblyScript syntax errors in mapping files",
+        "Type errors in entity handling code",
+        "Missing imports or dependencies",
+        "Incompatible graph-ts version"
+      ],
+      "solutions": [
+        "Fix compilation errors shown in the build output",
+        "Run graph codegen and graph build locally before deploying",
+        "Ensure graph-ts version is compatible",
+        "Check entity types match schema.graphql definitions"
+      ]
+    }
+  ],
+  "healthyIndicators": [
+    {
+      "pattern": "Processing block",
+      "meaning": "Subgraph is actively indexing blocks"
+    },
+    {
+      "pattern": "Synced",
+      "meaning": "Subgraph is caught up to chain tip"
+    },
+    {
+      "pattern": "Handling event",
+      "meaning": "Event handlers are executing successfully"
+    }
+  ]
+}

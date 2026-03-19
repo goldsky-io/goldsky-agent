@@ -1,0 +1,17 @@
+[
+  {"query": "I want to create a subgraph to index my NFT contract on Ethereum", "should_trigger": true},
+  {"query": "help me deploy a no-code subgraph for tracking USDC transfers on Base", "should_trigger": true},
+  {"query": "walk me through setting up an instant subgraph with my contract ABI", "should_trigger": true},
+  {"query": "I have a smart contract on Polygon and want a GraphQL API for its events", "should_trigger": true},
+  {"query": "deploy a subgraph for me — I want to index Uniswap V3 swaps on Arbitrum", "should_trigger": true},
+  {"query": "can you help me set up a low-code subgraph with enrichments for my ERC20 token?", "should_trigger": true},
+  {"query": "I want to index this contract's events and serve them via GraphQL endpoint", "should_trigger": true},
+  {"query": "create a subgraph that tracks all Transfer events from this contract address", "should_trigger": true},
+  {"query": "help me build a subgraph for my DeFi protocol on multiple chains", "should_trigger": true},
+  {"query": "my subgraph is stuck and not syncing, can you help me figure out what's wrong?", "should_trigger": false},
+  {"query": "what's the JSON config field for setting startBlock in an instant subgraph?", "should_trigger": false},
+  {"query": "how do I migrate my subgraph from TheGraph to Goldsky?", "should_trigger": false},
+  {"query": "how do I create a tag for my subgraph to do a zero-downtime upgrade?", "should_trigger": false},
+  {"query": "what does the 'column specified more than once' error mean in my subgraph?", "should_trigger": false},
+  {"query": "help me build a turbo pipeline for streaming blockchain data to postgres", "should_trigger": false}
+]

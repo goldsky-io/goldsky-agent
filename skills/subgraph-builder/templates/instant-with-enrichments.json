@@ -1,0 +1,26 @@
+{
+  "version": "1",
+  "abis": {
+    "ERC20": {
+      "path": "./erc20-abi.json"
+    }
+  },
+  "instances": [
+    {
+      "abi": "ERC20",
+      "address": "0xYOUR_TOKEN_ADDRESS",
+      "chain": "mainnet",
+      "startBlock": 0,
+      "enrichments": [
+        {
+          "function": "totalSupply()",
+          "target": "0xYOUR_TOKEN_ADDRESS"
+        },
+        {
+          "function": "decimals()",
+          "target": "0xYOUR_TOKEN_ADDRESS"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "version": "1",
+  "abis": {
+    "MyContract": {
+      "path": "./abi.json"
+    }
+  },
+  "instances": [
+    {
+      "abi": "MyContract",
+      "address": "0xYOUR_CONTRACT_ADDRESS",
+      "chain": "mainnet",
+      "startBlock": 0
+    }
+  ]
+}

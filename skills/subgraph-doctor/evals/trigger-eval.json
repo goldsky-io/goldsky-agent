@@ -1,0 +1,17 @@
+[
+  {"query": "my subgraph stopped syncing and I can't figure out why", "should_trigger": true},
+  {"query": "my subgraph is in error state, can you help me diagnose what went wrong?", "should_trigger": true},
+  {"query": "the GraphQL endpoint for my subgraph is returning stale data from hours ago", "should_trigger": true},
+  {"query": "my subgraph got auto-paused and I received a stall notification, what do I do?", "should_trigger": true},
+  {"query": "I'm getting store errors in my subgraph logs, help me fix it", "should_trigger": true},
+  {"query": "my subgraph deployed but it's been stuck at block 1234567 for 30 minutes", "should_trigger": true},
+  {"query": "my nouns-subgraph keeps crashing with a mapping handler error", "should_trigger": true},
+  {"query": "subgraph is showing 524 timeout errors when I query the GraphQL endpoint", "should_trigger": true},
+  {"query": "my subgraph was working fine yesterday but now it's paused and not indexing", "should_trigger": true},
+  {"query": "I want to create a new subgraph to index my smart contract", "should_trigger": false},
+  {"query": "what does the goldsky subgraph log command do and what flags does it accept?", "should_trigger": false},
+  {"query": "how do I migrate my existing TheGraph subgraph to Goldsky?", "should_trigger": false},
+  {"query": "how do I set up a tag for zero-downtime subgraph upgrades?", "should_trigger": false},
+  {"query": "my turbo pipeline is stuck in error state, help me debug it", "should_trigger": false},
+  {"query": "what's the chain slug for Ethereum subgraphs — mainnet or ethereum?", "should_trigger": false}
+]

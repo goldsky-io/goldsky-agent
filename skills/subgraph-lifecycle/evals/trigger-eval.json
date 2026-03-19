@@ -1,0 +1,17 @@
+[
+  {"query": "how do I pause my subgraph while I investigate an issue?", "should_trigger": true},
+  {"query": "how do I create a tag for my subgraph so I can do zero-downtime upgrades?", "should_trigger": true},
+  {"query": "how do I delete an old subgraph version I no longer need?", "should_trigger": true},
+  {"query": "how do I resume a paused subgraph?", "should_trigger": true},
+  {"query": "I want to set up a webhook that fires whenever a new Transfer entity is indexed", "should_trigger": true},
+  {"query": "how do tags work for subgraph versioning and what's the CLI command?", "should_trigger": true},
+  {"query": "how do I toggle my subgraph endpoint between public and private?", "should_trigger": true},
+  {"query": "how do I list the available webhook entities for my subgraph?", "should_trigger": true},
+  {"query": "I want to promote my subgraph from staging to production using tags", "should_trigger": true},
+  {"query": "help me deploy a new subgraph from scratch for my NFT contract", "should_trigger": false},
+  {"query": "my subgraph is stuck and returning stale data, help me diagnose it", "should_trigger": false},
+  {"query": "what's the JSON config format for an instant subgraph?", "should_trigger": false},
+  {"query": "how do I migrate my TheGraph subgraph to Goldsky?", "should_trigger": false},
+  {"query": "how do I pause a turbo pipeline?", "should_trigger": false},
+  {"query": "what does the 'mapping handler error' mean in my subgraph logs?", "should_trigger": false}
+]

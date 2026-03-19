@@ -1,0 +1,243 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Chain slugs supported for Goldsky subgraphs. Note: subgraph slugs may differ from Turbo dataset prefixes.",
+  "lastUpdated": "2026-03-18",
+  "commonChains": [
+    {
+      "name": "Ethereum",
+      "slug": "mainnet",
+      "note": "Not 'ethereum' — differs from Turbo dataset prefix"
+    },
+    {
+      "name": "Base",
+      "slug": "base"
+    },
+    {
+      "name": "Polygon",
+      "slug": "matic",
+      "note": "Not 'polygon'"
+    },
+    {
+      "name": "Arbitrum One",
+      "slug": "arbitrum-one",
+      "note": "Not 'arbitrum' — differs from Turbo"
+    },
+    {
+      "name": "Arbitrum Nova",
+      "slug": "arbitrum-nova"
+    },
+    {
+      "name": "Optimism",
+      "slug": "optimism"
+    },
+    {
+      "name": "BNB Chain",
+      "slug": "bsc"
+    },
+    {
+      "name": "Avalanche",
+      "slug": "avalanche"
+    },
+    {
+      "name": "Gnosis",
+      "slug": "xdai",
+      "note": "Not 'gnosis'"
+    },
+    {
+      "name": "Fantom",
+      "slug": "fantom"
+    },
+    {
+      "name": "zkSync Era",
+      "slug": "zksync-era"
+    },
+    {
+      "name": "Linea",
+      "slug": "linea"
+    },
+    {
+      "name": "Scroll",
+      "slug": "scroll"
+    },
+    {
+      "name": "Blast",
+      "slug": "blast"
+    },
+    {
+      "name": "Zora",
+      "slug": "zora"
+    },
+    {
+      "name": "Mode",
+      "slug": "mode-mainnet"
+    },
+    {
+      "name": "Mantle",
+      "slug": "mantle"
+    },
+    {
+      "name": "Celo",
+      "slug": "celo"
+    },
+    {
+      "name": "Moonbeam",
+      "slug": "moonbeam"
+    },
+    {
+      "name": "Sonic",
+      "slug": "sonic"
+    },
+    {
+      "name": "Monad",
+      "slug": "monad"
+    },
+    {
+      "name": "Berachain",
+      "slug": "berachain-mainnet"
+    },
+    {
+      "name": "Unichain",
+      "slug": "unichain"
+    },
+    {
+      "name": "Abstract",
+      "slug": "abstract"
+    },
+    {
+      "name": "Story",
+      "slug": "story"
+    },
+    {
+      "name": "Polygon zkEVM",
+      "slug": "polygon-zkevm"
+    },
+    {
+      "name": "Ink",
+      "slug": "ink"
+    },
+    {
+      "name": "World Chain",
+      "slug": "worldchain"
+    },
+    {
+      "name": "Ronin",
+      "slug": "ronin"
+    },
+    {
+      "name": "Sei",
+      "slug": "sei"
+    },
+    {
+      "name": "Taiko",
+      "slug": "taiko"
+    },
+    {
+      "name": "Immutable zkEVM",
+      "slug": "imtbl-zkevm"
+    },
+    {
+      "name": "Build on Bitcoin (BOB)",
+      "slug": "bob"
+    },
+    {
+      "name": "HyperEVM",
+      "slug": "hyperevm"
+    },
+    {
+      "name": "MegaETH",
+      "slug": "megaeth-mainnet"
+    },
+    {
+      "name": "Filecoin",
+      "slug": "filecoin"
+    },
+    {
+      "name": "Kaia",
+      "slug": "kaia"
+    },
+    {
+      "name": "Moonriver",
+      "slug": "moonriver"
+    },
+    {
+      "name": "Metis",
+      "slug": "metis"
+    },
+    {
+      "name": "Swellchain",
+      "slug": "swell"
+    },
+    {
+      "name": "Apechain",
+      "slug": "apechain-mainnet"
+    }
+  ],
+  "testnets": [
+    {
+      "name": "Ethereum Sepolia",
+      "slug": "sepolia"
+    },
+    {
+      "name": "Ethereum Holesky",
+      "slug": "holesky"
+    },
+    {
+      "name": "Base Sepolia",
+      "slug": "base-sepolia"
+    },
+    {
+      "name": "Arbitrum Sepolia",
+      "slug": "arbitrum-sepolia"
+    },
+    {
+      "name": "Optimism Sepolia",
+      "slug": "optimism-sepolia"
+    },
+    {
+      "name": "Monad Testnet",
+      "slug": "monad-testnet"
+    },
+    {
+      "name": "Berachain Bepolia",
+      "slug": "berachain-bepolia"
+    }
+  ],
+  "commonMistakes": [
+    {
+      "wrong": "ethereum",
+      "correct": "mainnet",
+      "context": "Ethereum Mainnet"
+    },
+    {
+      "wrong": "polygon",
+      "correct": "matic",
+      "context": "Polygon Mainnet"
+    },
+    {
+      "wrong": "arbitrum",
+      "correct": "arbitrum-one",
+      "context": "Arbitrum One Mainnet"
+    },
+    {
+      "wrong": "gnosis",
+      "correct": "xdai",
+      "context": "Gnosis Chain"
+    },
+    {
+      "wrong": "binance",
+      "correct": "bsc",
+      "context": "BNB Smart Chain"
+    },
+    {
+      "wrong": "mode",
+      "correct": "mode-mainnet",
+      "context": "Mode Mainnet"
+    },
+    {
+      "wrong": "immutable",
+      "correct": "imtbl-zkevm",
+      "context": "Immutable zkEVM"
+    }
+  ],
+  "fullListUrl": "https://docs.goldsky.com/chains/supported-networks"
+}

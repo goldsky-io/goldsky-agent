@@ -1,0 +1,17 @@
+[
+  {"query": "should I use a subgraph or a turbo pipeline for my DeFi dashboard?", "should_trigger": true},
+  {"query": "what's the best way to index the same contract across 5 chains?", "should_trigger": true},
+  {"query": "I need a GraphQL API but also want data in postgres — what's the architecture?", "should_trigger": true},
+  {"query": "should I use no-code or low-code for my subgraph that needs enrichments?", "should_trigger": true},
+  {"query": "how do I optimize my subgraph indexing speed? it's too slow", "should_trigger": true},
+  {"query": "what's better for my use case — subgraph with webhooks or turbo pipeline to postgres?", "should_trigger": true},
+  {"query": "I have complex entity relationships — should I use source code or instant subgraph?", "should_trigger": true},
+  {"query": "how should I structure my multi-chain subgraph deployment strategy?", "should_trigger": true},
+  {"query": "deploy a subgraph for my NFT contract on Base", "should_trigger": false},
+  {"query": "my subgraph is stuck and not syncing, can you help?", "should_trigger": false},
+  {"query": "what's the JSON config field for setting startBlock in an instant subgraph?", "should_trigger": false},
+  {"query": "how do I create a tag for my subgraph to do a zero-downtime upgrade?", "should_trigger": false},
+  {"query": "migrate my TheGraph subgraph to Goldsky using the IPFS hash", "should_trigger": false},
+  {"query": "help me build a turbo pipeline for streaming blockchain data to postgres", "should_trigger": false},
+  {"query": "what does the store error mean in my subgraph logs?", "should_trigger": false}
+]

@@ -1,0 +1,17 @@
+[
+  {"query": "what fields go in the abis section of an instant subgraph config?", "should_trigger": true},
+  {"query": "what's the JSON schema for instant subgraph configuration version 1?", "should_trigger": true},
+  {"query": "how do I configure multiple chains in my instant subgraph instances array?", "should_trigger": true},
+  {"query": "what CLI flags does goldsky subgraph deploy accept?", "should_trigger": true},
+  {"query": "what is the chain slug for Polygon in subgraphs — is it matic or polygon?", "should_trigger": true},
+  {"query": "how do I set up enrichments with eth_call in my instant subgraph config?", "should_trigger": true},
+  {"query": "what's the difference between subgraph.yaml and the instant subgraph JSON format?", "should_trigger": true},
+  {"query": "what's the --from-abi flag for and how do I use it?", "should_trigger": true},
+  {"query": "what chains support Goldsky subgraphs? Is Blast supported?", "should_trigger": true},
+  {"query": "help me deploy a new subgraph from scratch step by step", "should_trigger": false},
+  {"query": "my subgraph is in error state and I need help diagnosing the issue", "should_trigger": false},
+  {"query": "how do I migrate my subgraph from TheGraph using an IPFS hash?", "should_trigger": false},
+  {"query": "how do I pause my subgraph and then resume it later?", "should_trigger": false},
+  {"query": "what's the YAML field for setting a primary key on a postgres sink in Turbo?", "should_trigger": false},
+  {"query": "how do I create a webhook for my subgraph entities?", "should_trigger": false}
+]

@@ -1,6 +1,6 @@
 # Goldsky Agent Skills
 
-AI-powered tools for building, deploying, and debugging Turbo pipelines that stream real-time blockchain data from 130+ chains.
+AI-powered tools for building, deploying, and debugging Goldsky products — Turbo pipelines and Subgraphs — streaming real-time blockchain data from 130+ chains.
 
 ## Available Skills
 
@@ -14,6 +14,17 @@ AI-powered tools for building, deploying, and debugging Turbo pipelines that str
 - **turbo-lifecycle** - Pause, resume, restart, delete commands
 - **turbo-monitor-debug** - Error patterns, log analysis, debugging
 - **turbo-doctor** - Interactive troubleshooting workflows
+
+### Subgraph Deployment
+- **subgraph-builder** - Interactive wizard for deploying subgraphs (no-code, low-code, source code)
+- **subgraph-config** - Instant subgraph JSON config, subgraph.yaml, CLI flags reference
+- **subgraph-migrate** - Migrate subgraphs from TheGraph, Alchemy, or other hosts
+- **subgraph-architecture** - Design decisions: subgraph vs pipeline, cross-chain strategies, performance optimization
+
+### Subgraph Operations
+- **subgraph-lifecycle** - Pause, start, delete, tags, webhooks, endpoint management
+- **subgraph-monitor-debug** - Error patterns, log analysis, stalled detection
+- **subgraph-doctor** - Interactive troubleshooting workflows
 
 ### Data & Configuration
 - **datasets** - Chain prefixes, dataset types, 130+ chains
@@ -40,6 +51,15 @@ npx skills add goldsky-io/goldsky-agent
 
 **"What dataset for Polygon NFTs?"**
 → Uses: datasets
+
+**"Create a subgraph for my NFT contract on Ethereum"**
+→ Uses: subgraph-builder, subgraph-config
+
+**"Migrate my subgraph from TheGraph to Goldsky"**
+→ Uses: subgraph-migrate, subgraph-lifecycle
+
+**"My subgraph stopped syncing"**
+→ Uses: subgraph-doctor, subgraph-monitor-debug
 
 ## Documentation
 

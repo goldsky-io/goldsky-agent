@@ -1,0 +1,17 @@
+[
+  {"query": "what does the 'column specified more than once' error mean in my subgraph?", "should_trigger": true},
+  {"query": "what CLI flags does the goldsky subgraph log command accept?", "should_trigger": true},
+  {"query": "what causes subgraph stalled detection and auto-pause?", "should_trigger": true},
+  {"query": "I'm seeing a 'wasm trap' error in my subgraph logs, what does that mean?", "should_trigger": true},
+  {"query": "how do I check the status of my subgraph from the command line?", "should_trigger": true},
+  {"query": "what are common AssemblyScript mapping errors in subgraphs and their fixes?", "should_trigger": true},
+  {"query": "what does a store error mean in subgraph logs?", "should_trigger": true},
+  {"query": "I got a 524 timeout when deploying my subgraph from IPFS, what does that mean?", "should_trigger": true},
+  {"query": "when should I contact Goldsky support vs try to fix my subgraph issue myself?", "should_trigger": true},
+  {"query": "my specific subgraph my-nft-tracker/1.0.0 is broken, walk me through fixing it step by step", "should_trigger": false},
+  {"query": "help me deploy a new subgraph for my contract on Base", "should_trigger": false},
+  {"query": "how do I migrate my subgraph from TheGraph to Goldsky?", "should_trigger": false},
+  {"query": "how do I create a webhook for my subgraph?", "should_trigger": false},
+  {"query": "what error patterns should I look for in my turbo pipeline logs?", "should_trigger": false},
+  {"query": "what's the instant subgraph JSON config format?", "should_trigger": false}
+]

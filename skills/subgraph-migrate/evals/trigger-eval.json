@@ -1,0 +1,17 @@
+[
+  {"query": "I want to migrate my subgraph from TheGraph to Goldsky", "should_trigger": true},
+  {"query": "I have an IPFS hash for my subgraph, how do I deploy it on Goldsky?", "should_trigger": true},
+  {"query": "how do I move my existing subgraph from Alchemy to Goldsky?", "should_trigger": true},
+  {"query": "migrate my uniswap subgraph from TheGraph's decentralized network to Goldsky", "should_trigger": true},
+  {"query": "I want to deploy an existing subgraph from a GraphQL URL to Goldsky", "should_trigger": true},
+  {"query": "can I do a one-step migration from TheGraph to Goldsky?", "should_trigger": true},
+  {"query": "I'm switching from Satsuma to Goldsky, what's the migration process?", "should_trigger": true},
+  {"query": "how do I get the IPFS deployment hash from my TheGraph subgraph?", "should_trigger": true},
+  {"query": "I need to move my subgraph from TheGraph hosted service to Goldsky with zero downtime", "should_trigger": true},
+  {"query": "help me create a brand new subgraph for my smart contract from scratch", "should_trigger": false},
+  {"query": "my migrated subgraph is stuck and not syncing after deployment", "should_trigger": false},
+  {"query": "what chain slugs does Goldsky support for subgraphs?", "should_trigger": false},
+  {"query": "how do I set up tags after I've deployed my subgraph?", "should_trigger": false},
+  {"query": "how do I build a turbo pipeline to move blockchain data to postgres?", "should_trigger": false},
+  {"query": "what does the --remove-graft flag do?", "should_trigger": false}
+]

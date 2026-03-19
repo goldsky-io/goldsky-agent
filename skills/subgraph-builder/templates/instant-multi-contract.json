@@ -1,0 +1,25 @@
+{
+  "version": "1",
+  "abis": {
+    "ERC20": {
+      "path": "./erc20-abi.json"
+    },
+    "ERC721": {
+      "path": "./erc721-abi.json"
+    }
+  },
+  "instances": [
+    {
+      "abi": "ERC20",
+      "address": "0xYOUR_ERC20_ADDRESS",
+      "chain": "mainnet",
+      "startBlock": 0
+    },
+    {
+      "abi": "ERC721",
+      "address": "0xYOUR_ERC721_ADDRESS",
+      "chain": "mainnet",
+      "startBlock": 0
+    }
+  ]
+}
