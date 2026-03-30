@@ -1,6 +1,6 @@
 ---
 name: turbo-doctor
-description: "Diagnose and fix broken Goldsky Turbo pipelines interactively. Use whenever the user has a specific pipeline that is misbehaving — error state, stuck in 'starting', connection refused, slow backfill, not getting data in postgres/clickhouse, duplicate rows, missing fields, named pipeline failing ('my base-usdc-transfers keeps failing'), or any symptom where something is wrong with a deployed pipeline. Runs goldsky turbo logs and status commands, identifies root cause, and offers to run fixes. For looking up CLI syntax or error message definitions WITHOUT an active problem, use /turbo-monitor-debug instead."
+description: "Diagnose and fix broken Goldsky Turbo pipelines interactively. Triggers on: pipeline in error state, stuck starting, connection refused, not getting data, duplicate rows, missing fields, slow backfill, or any named pipeline misbehaving. Runs logs/status commands, identifies root cause, and offers fixes. For CLI syntax or error pattern lookup without an active problem, use /turbo-operations instead."
 ---
 
 # Pipeline Doctor
@@ -9,7 +9,7 @@ description: "Diagnose and fix broken Goldsky Turbo pipelines interactively. Use
 
 - Diagnose and fix EXISTING pipeline problems interactively.
 - Do not build new pipelines — that belongs to `/turbo-builder`.
-- Do not serve as a command reference. If the user only needs CLI syntax or error pattern lookup, use the `/turbo-monitor-debug` or `/turbo-lifecycle` skill instead.
+- Do not serve as a command reference. If the user only needs CLI syntax or error pattern lookup, use the `/turbo-operations` skill instead.
 
 Systematically identify and resolve pipeline issues by following a structured diagnostic workflow.
 
@@ -53,7 +53,7 @@ Based on the status:
 
 Run `goldsky turbo logs <pipeline-name> --tail 100 2>&1` to get recent logs.
 
-Analyze the output for known error patterns. Reference the error patterns in the `/turbo-monitor-debug` skill, including:
+Analyze the output for known error patterns. Reference the error patterns in the `/turbo-operations` skill, including:
 
 - **Connection errors** — sink unreachable, auth failed, timeout
 - **Schema errors** — column mismatch, type mismatch, missing columns
@@ -115,7 +115,7 @@ Common fixes:
 
 ## Related
 
-- **`/turbo-monitor-debug`** — CLI command reference and error pattern lookup
-- **`/turbo-lifecycle`** — Pipeline lifecycle commands (pause, resume, restart, delete)
+- **`/turbo-operations`** — CLI commands, lifecycle operations, and error pattern reference
 - **`/turbo-builder`** — Build and deploy new pipelines
+- **`/turbo-pipelines`** — YAML configuration and architecture reference
 - **`/secrets`** — Manage sink credentials

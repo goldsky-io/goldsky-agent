@@ -1,6 +1,6 @@
 ---
 name: turbo-builder
-description: "Use this skill when the user wants to build, create, or set up a new Goldsky Turbo pipeline from scratch. Triggers when someone describes data they want to move — specifying a source (chain, dataset, contract) and a destination (postgres, clickhouse, kafka, s3, webhook) — or asks to be walked through pipeline creation. Also triggers for phrases like 'help me build', 'I want to index', 'set up a pipeline', or 'track X on Y chain'. Covers the full workflow: gathering requirements, selecting datasets, generating YAML, validating, and deploying. Do NOT use for debugging existing pipelines (use /turbo-doctor), YAML syntax lookups (use /turbo-pipelines), or questions about specific fields/configuration options without intent to build."
+description: "Build and deploy new Goldsky Turbo pipelines from scratch. Triggers on: 'build a pipeline', 'index X on Y chain', 'set up a pipeline', 'track transfers to postgres', or any request describing data to move from a chain/contract to a destination (postgres, clickhouse, kafka, s3, webhook). Covers the full workflow: requirements → dataset selection → YAML generation → validation → deploy. Not for debugging (use /turbo-doctor) or syntax lookups (use /turbo-pipelines)."
 ---
 
 # Pipeline Builder
@@ -12,13 +12,6 @@ description: "Use this skill when the user wants to build, create, or set up a n
 - For dataset lookups, use `/datasets`.
 
 Walk the user through building a complete pipeline from scratch, step by step. Generate a valid YAML configuration, validate it, and deploy it.
-
-## Mode Detection
-
-Before running any commands, check if you have the `Bash` tool available:
-
-- **If Bash is available** (CLI mode): Execute commands, validate YAML, and deploy directly.
-- **If Bash is NOT available** (reference mode): Generate the complete YAML configuration and provide copy-paste instructions for the user to validate and deploy manually.
 
 ## Builder Workflow
 
@@ -112,7 +105,7 @@ If it doesn't exist, help create it using the `/secrets` skill.
 
 ### Step 7: Choose Mode
 
-Use the `/turbo-architecture` skill to decide:
+Use the `/turbo-pipelines` skill for guidance:
 
 - **Streaming** (default) — continuous processing, no `end_block`, runs indefinitely
 - **Job mode** — one-time backfill, set `job: true` and `end_block`
@@ -120,8 +113,6 @@ Use the `/turbo-architecture` skill to decide:
 ### Step 8: Generate, Validate, and Present
 
 Assemble the complete pipeline YAML. Use a descriptive name following the convention: `<chain>-<data>-<sink>` (e.g., `base-erc20-transfers-postgres`).
-
-**CLI mode (Bash available):**
 
 1. Write the YAML file to disk (e.g., `<pipeline-name>.yaml`).
 2. Run validation BEFORE showing the YAML to the user:
@@ -137,12 +128,6 @@ goldsky turbo validate -f <pipeline-name>.yaml
    - SQL syntax errors in transforms
 
 4. Once validation passes, present the full YAML to the user for review.
-
-**Reference mode (no Bash):**
-
-1. Perform the structural self-check from `turbo-pipelines/references/validation-checklist.md`.
-2. Present the YAML with the checklist results.
-3. Instruct the user to run `goldsky turbo validate -f <file>.yaml` before deploying.
 
 ### Step 9: Deploy
 
@@ -196,9 +181,9 @@ Present a summary:
 
 ## Related
 
-- **`/turbo-pipelines`** — YAML syntax reference for sources, transforms, and sinks
+- **`/turbo-pipelines`** — YAML configuration and architecture reference
 - **`/turbo-doctor`** — Diagnose and fix pipeline issues
-- **`/turbo-architecture`** — Pipeline design patterns and architecture decisions
+- **`/turbo-operations`** — Lifecycle commands and monitoring reference
 - **`/turbo-transforms`** — SQL and TypeScript transform reference
 - **`/datasets`** — Dataset names and chain prefixes
 - **`/secrets`** — Sink credential management
