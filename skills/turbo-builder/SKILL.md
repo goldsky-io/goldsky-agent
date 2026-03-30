@@ -1,6 +1,6 @@
 ---
 name: turbo-builder
-description: "Use this skill when the user wants to build, create, or set up a new Goldsky Turbo pipeline from scratch. Triggers when someone describes data they want to move — specifying a source (chain, dataset, contract) and a destination (postgres, clickhouse, kafka, s3, webhook) — or asks to be walked through pipeline creation. Also triggers for phrases like 'help me build', 'I want to index', 'set up a pipeline', or 'track X on Y chain'. Covers the full workflow: gathering requirements, selecting datasets, generating YAML, validating, and deploying. Do NOT use for debugging existing pipelines (use /turbo-doctor), YAML syntax lookups (use /turbo-pipelines), or questions about specific fields/configuration options without intent to build."
+description: "Build and deploy new Goldsky Turbo pipelines from scratch. Triggers on: 'build a pipeline', 'index X on Y chain', 'set up a pipeline', 'track transfers to postgres', or any request describing data to move from a chain/contract to a destination (postgres, clickhouse, kafka, s3, webhook). Covers the full workflow: requirements → dataset selection → YAML generation → validation → deploy. Not for debugging (use /turbo-doctor) or syntax lookups (use /turbo-pipelines)."
 ---
 
 # Pipeline Builder

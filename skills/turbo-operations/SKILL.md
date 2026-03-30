@@ -1,6 +1,6 @@
 ---
 name: turbo-operations
-description: "Goldsky Turbo pipeline operations reference — lifecycle commands and monitoring. Use when the user asks about: pausing/resuming/restarting/deleting pipelines, what happens to checkpoint state on delete, streaming vs job-mode lifecycle differences (job pipelines cannot be paused or restarted), pipeline states (running/starting/paused/error/completed), CLI syntax for `goldsky turbo inspect` or `goldsky turbo logs`, TUI keyboard shortcuts, what a specific error message means (connection refused, auth failure, backpressure, etc.), or whether resuming picks up from where it left off. Also use for 'will deleting lose my sink data' or 'can I update a running pipeline in place'. For step-by-step interactive diagnosis of a broken pipeline, use /turbo-doctor instead. For building new pipelines, use /turbo-builder instead."
+description: "Turbo pipeline operations reference — lifecycle commands (pause, resume, restart, delete), pipeline states, checkpoint behavior, streaming vs job-mode differences, CLI syntax for `inspect`/`logs`, TUI shortcuts, and error pattern lookup. Triggers on: 'how do I pause/restart/delete', 'will deleting lose my data', 'what does this error mean', 'inspect TUI shortcuts'. For interactive diagnosis of a broken pipeline, use /turbo-doctor."
 ---
 
 # Turbo Pipeline Operations

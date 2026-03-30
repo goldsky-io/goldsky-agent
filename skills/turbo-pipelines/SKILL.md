@@ -1,6 +1,6 @@
 ---
 name: turbo-pipelines
-description: "Goldsky Turbo pipeline YAML reference and architecture guide — the authoritative source for pipeline configuration and design decisions. Use whenever the user asks about: specific YAML fields (what does `start_at` do, what's `from:` in a sink, is `version` required), required vs optional fields for any source/transform/sink type, validation errors ('unknown field', 'missing required'), resource sizing (xs/s/m/l/xl/xxl), architecture decisions (kafka vs dataset source, streaming vs job mode, fan-out vs fan-in, one pipeline vs many, which sink type), data flow patterns, pipeline splitting, or 'what's the best way to structure my pipeline'. Also use for 'what are all the available sink types'. For writing transform SQL/TypeScript/dynamic tables, use /turbo-transforms. For interactive end-to-end pipeline building, use /turbo-builder."
+description: "Turbo pipeline YAML reference and architecture guide. Covers: YAML field syntax (start_at, from, version, primary_key), source/transform/sink configuration, validation errors, resource sizing (xs–xxl), architecture decisions (dataset vs kafka, streaming vs job, fan-out vs fan-in, sink selection, pipeline splitting). Triggers on: 'what does field X do', 'what fields does a postgres sink need', 'what resource size', 'should I use kafka or dataset', 'how to structure my pipeline'. For writing transforms, use /turbo-transforms. For end-to-end building, use /turbo-builder."
 ---
 
 # Turbo Pipeline Configuration & Architecture

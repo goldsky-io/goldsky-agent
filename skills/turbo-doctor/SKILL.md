@@ -1,6 +1,6 @@
 ---
 name: turbo-doctor
-description: "Diagnose and fix broken Goldsky Turbo pipelines interactively. Use whenever the user has a specific pipeline that is misbehaving — error state, stuck in 'starting', connection refused, slow backfill, not getting data in postgres/clickhouse, duplicate rows, missing fields, named pipeline failing ('my base-usdc-transfers keeps failing'), or any symptom where something is wrong with a deployed pipeline. Runs goldsky turbo logs and status commands, identifies root cause, and offers to run fixes. For looking up CLI syntax or error message definitions WITHOUT an active problem, use /turbo-operations instead."
+description: "Diagnose and fix broken Goldsky Turbo pipelines interactively. Triggers on: pipeline in error state, stuck starting, connection refused, not getting data, duplicate rows, missing fields, slow backfill, or any named pipeline misbehaving. Runs logs/status commands, identifies root cause, and offers fixes. For CLI syntax or error pattern lookup without an active problem, use /turbo-operations instead."
 ---
 
 # Pipeline Doctor
