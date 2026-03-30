@@ -1,7 +1,7 @@
 # Goldsky Agent
 
 [![Install with npx](https://img.shields.io/badge/install-npx%20skills%20add-blue)](https://github.com/goldsky-io/goldsky-agent#installation)
-[![Skills](https://img.shields.io/badge/skills-10-green)](#skills)
+[![Skills](https://img.shields.io/badge/skills-8-green)](#skills)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 AI-powered tools for streaming real-time blockchain data. Build, deploy, and debug Turbo pipelines that index onchain events from 130+ chains into PostgreSQL, ClickHouse, Kafka, and more.
@@ -14,7 +14,7 @@ AI-powered tools for streaming real-time blockchain data. Build, deploy, and deb
 | Fix a broken pipeline                 | `/turbo-doctor`      |
 | Find the right dataset name           | `/datasets`          |
 | Look up YAML syntax                   | `/turbo-pipelines`   |
-| Check error patterns                  | `/turbo-monitor-debug`|
+| Check error patterns or CLI commands  | `/turbo-operations`  |
 
 Just describe what you need in natural language — the right skill is selected automatically.
 
@@ -84,11 +84,9 @@ goldsky-agent/
 ├── skills/              # All skills (auto-triggered by description matching)
 │   ├── turbo-builder/         # Step-by-step pipeline creation wizard
 │   ├── turbo-doctor/          # Diagnose and fix pipeline issues
-│   ├── turbo-pipelines/       # YAML configuration reference
+│   ├── turbo-pipelines/       # YAML config + architecture reference
 │   ├── turbo-transforms/      # SQL, TypeScript, dynamic tables
-│   ├── turbo-monitor-debug/   # Error patterns, CLI commands
-│   ├── turbo-lifecycle/       # List, pause, resume, delete
-│   ├── turbo-architecture/    # Design patterns, sink selection
+│   ├── turbo-operations/      # Lifecycle commands, monitoring, errors
 │   ├── datasets/              # Chain prefixes, dataset types
 │   ├── secrets/               # Credential management
 │   └── auth-setup/            # CLI installation, login
@@ -122,7 +120,6 @@ These guide you through processes, help make decisions, or walk you through mult
 | `turbo-builder` | "I want to build a pipeline for X" | Guides you chain → dataset → transforms → sink → validate → deploy |
 | `turbo-doctor` | "My pipeline is broken / not getting data / output looks wrong" | Diagnoses the problem step-by-step and offers to run fixes |
 | `auth-setup` | "How do I install the CLI / log in?" | Walks through CLI installation and authentication setup |
-| `turbo-architecture` | "Should I use dataset or Kafka source? Fan-in or fan-out?" | Helps make design decisions and choose architecture patterns |
 | `secrets` | "How do I create credentials for PostgreSQL / ClickHouse?" | Guides credential creation and secret management |
 
 ### Reference Skills
@@ -131,10 +128,9 @@ Look up syntax, commands, and information without a guided workflow:
 
 | Skill | When to use | What's inside |
 | ----- | ----------- | ------------- |
-| `turbo-pipelines` | "What's the YAML syntax for X?" | Complete source/transform/sink field reference |
+| `turbo-pipelines` | "What's the YAML syntax for X? Should I use dataset or Kafka?" | Config field reference + architecture decisions (source types, flow patterns, sizing) |
 | `turbo-transforms` | "How do I decode EVM logs / write a SQL transform?" | SQL, TypeScript/WASM, dynamic tables, HTTP handlers |
-| `turbo-monitor-debug` | "How do I view logs? What does this error mean? TUI shortcuts?" | CLI commands, log flags, TUI keys, error pattern lookup |
-| `turbo-lifecycle` | "How do I pause / restart / delete? Will delete lose my data?" | Pause/resume/restart/delete rules, streaming vs job-mode differences |
+| `turbo-operations` | "How do I pause / restart / delete? What does this error mean?" | Lifecycle commands, pipeline states, CLI monitoring, error patterns |
 | `datasets` | "What's the dataset name for Polygon NFTs?" | Chain prefixes, dataset types, naming conventions |
 
 ## Pre-Deploy Hooks

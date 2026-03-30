@@ -288,7 +288,7 @@
         "Then redeploy: goldsky turbo apply <file.yaml>",
         "Wait for auto-cleanup (~1 hour after job completion)"
       ],
-      "relatedSkill": "/turbo-lifecycle"
+      "relatedSkill": "/turbo-operations"
     }
   ],
   "healthyIndicators": [

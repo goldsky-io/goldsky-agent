@@ -6,13 +6,11 @@ AI-powered tools for building, deploying, and debugging Turbo pipelines that str
 
 ### Pipeline Building
 - **turbo-builder** - Interactive wizard for creating pipelines step-by-step
-- **turbo-pipelines** - YAML configuration reference (sources, transforms, sinks)
+- **turbo-pipelines** - YAML configuration and architecture reference (sources, transforms, sinks, design patterns)
 - **turbo-transforms** - SQL, TypeScript, and dynamic table transforms
-- **turbo-architecture** - Design patterns and architecture guidance
 
 ### Pipeline Operations
-- **turbo-lifecycle** - Pause, resume, restart, delete commands
-- **turbo-monitor-debug** - Error patterns, log analysis, debugging
+- **turbo-operations** - Lifecycle commands, monitoring, and error patterns
 - **turbo-doctor** - Interactive troubleshooting workflows
 
 ### Data & Configuration
@@ -36,7 +34,7 @@ npx skills add goldsky-io/goldsky-agent
 → Uses: turbo-builder, turbo-pipelines, datasets, secrets
 
 **"My pipeline is stuck in error state"**
-→ Uses: turbo-doctor, turbo-monitor-debug
+→ Uses: turbo-doctor, turbo-operations
 
 **"What dataset for Polygon NFTs?"**
 → Uses: datasets
