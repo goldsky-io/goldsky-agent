@@ -99,36 +99,26 @@ goldsky turbo apply my-pipeline.yaml
 
 ## Monitoring Commands
 
-| Action                   | Command                                  |
-| ------------------------ | ---------------------------------------- |
-| List pipelines           | `goldsky turbo list`                     |
-| View live data           | `goldsky turbo inspect <name>`           |
-| Inspect specific node    | `goldsky turbo inspect <name> -n <node>` |
-| View logs                | `goldsky turbo logs <name>`              |
-| Follow logs              | `goldsky turbo logs <name> --follow`     |
-| Logs with timestamps     | `goldsky turbo logs <name> --timestamps` |
-| Last N lines             | `goldsky turbo logs <name> --tail N`     |
-| Logs since N seconds ago | `goldsky turbo logs <name> --since N`    |
+| Action                   | Command                                              |
+| ------------------------ | ---------------------------------------------------- |
+| List pipelines           | `goldsky turbo list`                                 |
+| View live data           | `goldsky turbo inspect <name> -p`                    |
+| Inspect specific node    | `goldsky turbo inspect <name> -n <node> -p`          |
+| View logs                | `goldsky turbo logs <name>`                          |
+| Follow logs              | `goldsky turbo logs <name> --follow`                 |
+| Logs with timestamps     | `goldsky turbo logs <name> --timestamps`             |
+| Last N lines             | `goldsky turbo logs <name> --tail N`                 |
+| Logs since N seconds ago | `goldsky turbo logs <name> --since N`                |
 
-## Live Inspect TUI Shortcuts
+## `goldsky turbo inspect` Flags
 
-| Key                     | Action               |
-| ----------------------- | -------------------- |
-| `Tab`/`→`, `Shift+Tab`/`←` | Next/prev tab    |
-| `1`-`9`                 | Jump to tab number   |
-| `j`/`k` / `↑`/`↓`     | Scroll               |
-| `g`/`Home`, `G`/`End`  | Top/bottom           |
-| `Page Up`/`Page Down`  | Scroll by page       |
-| `/` → `Enter`          | Search               |
-| `n` / `N`              | Next/prev match      |
-| `Esc`                   | Clear search         |
-| `d`                     | Toggle definition    |
-| `w`                     | Open web dashboard   |
-| `e`                     | Open web editor      |
-| `q` / `Ctrl+C`         | Quit                 |
-| `Shift` + mouse         | Select and copy text |
+| Flag                   | Short | Description                                                  |
+| ---------------------- | ----- | ------------------------------------------------------------ |
+| `--print`              | `-p`  | Print records to stdout                                      |
+| `--topology-node-keys` | `-n`  | Comma-separated node keys to filter (e.g. a transform name)  |
+| `--buffer-size`        | `-b`  | Max records to keep in buffer (default: 10000)               |
 
-The TUI automatically reconnects when the pipeline is updated, paused, resumed, or temporarily unavailable. It has a **30-minute timeout** before closing.
+Always use `-p`. Always include it in every `inspect` command you suggest.
 
 ### Log Analysis Script
 

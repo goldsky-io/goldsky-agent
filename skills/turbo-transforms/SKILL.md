@@ -256,7 +256,7 @@ sinks:
 
 **"Missing primary_key"** — Every transform needs `primary_key`. Almost always use `id`.
 
-**"Column not found"** — Use `goldsky turbo inspect <pipeline> -n <source_node>` to see actual columns.
+**"Column not found"** — Use `goldsky turbo inspect <pipeline> -n <source_node> -p` to see actual columns.
 
 **Empty results from decoded events:**
 - Verify ABI JSON matches actual contract events
@@ -267,8 +267,7 @@ sinks:
 **Type mismatch in UNION ALL** — All branches need identical column counts and compatible types.
 
 ```bash
-# Inspect a specific transform's output
-goldsky turbo inspect <pipeline-name> -n <transform_name>
+goldsky turbo inspect <pipeline-name> -n <transform_name> -p
 ```
 
 ---
