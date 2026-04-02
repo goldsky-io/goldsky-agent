@@ -148,8 +148,10 @@ goldsky turbo list
 Suggest running inspect to verify data flow:
 
 ```bash
-goldsky turbo inspect <pipeline-name>
+goldsky turbo inspect <pipeline-name> -p
 ```
+
+To filter to a specific node: `goldsky turbo inspect <pipeline-name> -n <node-name> -p`.
 
 Present a summary:
 
@@ -163,7 +165,7 @@ Present a summary:
 **Mode:** [streaming/job]
 
 **Next steps:**
-- Monitor with `goldsky turbo inspect <name>`
+- Verify data flow with `goldsky turbo inspect <name> -p`
 - Check logs with `goldsky turbo logs <name>`
 - Use /turbo-doctor if you run into issues
 ```
