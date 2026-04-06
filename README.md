@@ -92,7 +92,7 @@ goldsky-agent/
 │   ├── auth-setup/            # CLI installation, login
 │   └── cli-reference/         # All valid CLI commands + flags (auto-generated)
 ├── scripts/             # Maintenance scripts
-│   └── generate-cli-reference.sh  # Regenerates cli-reference skill from installed CLI
+│   └── generate-cli-reference.js  # Regenerates cli-reference skill from installed CLI
 ├── hooks/               # Pre/post deploy automation
 │   └── scripts/               # Validation, secret checking
 └── .claude-plugin/      # Plugin manifest
@@ -147,7 +147,7 @@ The plugin runs hooks automatically on `goldsky turbo apply` commands:
 | `secret-check` | Verifies all `secret_name` references exist |
 | `post-deploy-inspect` | Suggests `goldsky turbo inspect` after deploy |
 
-> To regenerate the CLI reference after a CLI update: `bash scripts/generate-cli-reference.sh`
+> To regenerate the CLI reference after a CLI update: `bash scripts/generate-cli-reference.js`
 
 ## Coverage
 
