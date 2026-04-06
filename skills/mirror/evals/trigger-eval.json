@@ -1,0 +1,17 @@
+[
+  {"query": "how do I create a Mirror pipeline?", "should_trigger": true},
+  {"query": "how do I sync my Goldsky subgraph to a PostgreSQL database?", "should_trigger": true},
+  {"query": "what is the difference between Mirror and Turbo?", "should_trigger": true},
+  {"query": "how do I apply a Mirror pipeline YAML?", "should_trigger": true},
+  {"query": "goldsky pipeline apply — how does it work?", "should_trigger": true},
+  {"query": "how do I pause or stop a Mirror pipeline?", "should_trigger": true},
+  {"query": "what sinks does Mirror support?", "should_trigger": true},
+  {"query": "how do I use direct indexing in a Mirror pipeline?", "should_trigger": true},
+  {"query": "can I write Mirror pipeline data to ClickHouse?", "should_trigger": true},
+  {"query": "how do I delete a Mirror pipeline?", "should_trigger": true},
+  {"query": "how do I build a Turbo pipeline for USDC transfers on Base?", "should_trigger": false},
+  {"query": "what's the dataset name for Polygon ERC-20 transfers?", "should_trigger": false},
+  {"query": "how do I deploy a subgraph to Goldsky?", "should_trigger": false},
+  {"query": "my turbo pipeline is broken — help me diagnose it", "should_trigger": false},
+  {"query": "how do I write a SQL transform in a Turbo pipeline?", "should_trigger": false}
+]

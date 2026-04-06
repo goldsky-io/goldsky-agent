@@ -18,6 +18,9 @@ AI-powered tools for building, deploying, and debugging Turbo pipelines that str
 - **secrets** - Credential management for sinks (PostgreSQL, ClickHouse, Kafka)
 - **auth-setup** - CLI installation and authentication
 
+### Other Products
+- **mirror** - Mirror pipeline sources, sinks, lifecycle commands, and guidance on Mirror vs Turbo
+
 ## Quick Start
 
 ```bash
