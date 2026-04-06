@@ -18,6 +18,9 @@ AI-powered tools for building, deploying, and debugging Turbo pipelines that str
 - **secrets** - Credential management for sinks (PostgreSQL, ClickHouse, Kafka)
 - **auth-setup** - CLI installation and authentication
 
+### Other Products
+- **subgraphs** - Deploy subgraphs, manage GraphQL endpoints and tags, migrate from The Graph
+
 ## Quick Start
 
 ```bash

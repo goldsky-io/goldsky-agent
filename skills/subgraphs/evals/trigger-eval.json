@@ -1,0 +1,18 @@
+[
+  {"query": "how do I deploy a subgraph to Goldsky?", "should_trigger": true},
+  {"query": "I want to migrate my subgraph from The Graph to Goldsky", "should_trigger": true},
+  {"query": "what is the GraphQL endpoint URL for my subgraph?", "should_trigger": true},
+  {"query": "how do subgraph tags work?", "should_trigger": true},
+  {"query": "can I deploy a subgraph without writing AssemblyScript code?", "should_trigger": true},
+  {"query": "how do I create a low-code or no-code subgraph?", "should_trigger": true},
+  {"query": "my subgraph is stalled — what do I do?", "should_trigger": true},
+  {"query": "how do I add a webhook to my subgraph?", "should_trigger": true},
+  {"query": "how do I index the same contract on multiple chains with a subgraph?", "should_trigger": true},
+  {"query": "how do I make my subgraph endpoint private / require an API key?", "should_trigger": true},
+  {"query": "what is a subgraph and when should I use one?", "should_trigger": true},
+  {"query": "I want to build a pipeline for USDC transfers on Base into PostgreSQL", "should_trigger": false},
+  {"query": "what's the dataset name for polygon erc20 transfers?", "should_trigger": false},
+  {"query": "my turbo pipeline is stuck in error state", "should_trigger": false},
+  {"query": "how do I write a SQL transform to filter ERC-20 transfers?", "should_trigger": false},
+  {"query": "how do I stream Solana token transfers to ClickHouse?", "should_trigger": false}
+]
