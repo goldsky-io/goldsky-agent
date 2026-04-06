@@ -1,7 +1,7 @@
 # Goldsky Agent
 
 [![Install with npx](https://img.shields.io/badge/install-npx%20skills%20add-blue)](https://github.com/goldsky-io/goldsky-agent#installation)
-[![Skills](https://img.shields.io/badge/skills-8-green)](#skills)
+[![Skills](https://img.shields.io/badge/skills-9-green)](#skills)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 AI-powered tools for streaming real-time blockchain data. Build, deploy, and debug Turbo pipelines that index onchain events from 130+ chains into PostgreSQL, ClickHouse, Kafka, and more.
@@ -89,7 +89,10 @@ goldsky-agent/
 │   ├── turbo-operations/      # Lifecycle commands, monitoring, errors
 │   ├── datasets/              # Chain prefixes, dataset types
 │   ├── secrets/               # Credential management
-│   └── auth-setup/            # CLI installation, login
+│   ├── auth-setup/            # CLI installation, login
+│   └── cli-reference/         # All valid CLI commands + flags (auto-generated)
+├── scripts/             # Maintenance scripts
+│   └── generate-cli-reference.js  # Regenerates cli-reference skill from installed CLI
 ├── hooks/               # Pre/post deploy automation
 │   └── scripts/               # Validation, secret checking
 └── .claude-plugin/      # Plugin manifest
@@ -132,6 +135,7 @@ Look up syntax, commands, and information without a guided workflow:
 | `turbo-transforms` | "How do I decode EVM logs / write a SQL transform?" | SQL, TypeScript/WASM, dynamic tables, HTTP handlers |
 | `turbo-operations` | "How do I pause / restart / delete? What does this error mean?" | Lifecycle commands, pipeline states, CLI monitoring, error patterns |
 | `datasets` | "What's the dataset name for Polygon NFTs?" | Chain prefixes, dataset types, naming conventions |
+| `cli-reference` | Consulted automatically before any `goldsky` command | All valid subcommands, arguments, and flags — generated from the installed CLI |
 
 ## Pre-Deploy Hooks
 
@@ -143,6 +147,8 @@ The plugin runs hooks automatically on `goldsky turbo apply` commands:
 | `secret-check` | Verifies all `secret_name` references exist |
 | `post-deploy-inspect` | Suggests `goldsky turbo inspect` after deploy |
 
+> To regenerate the CLI reference after a CLI update: `bash scripts/generate-cli-reference.js`
+
 ## Coverage
 
 These tools cover the full Turbo pipeline surface:
@@ -152,7 +158,7 @@ These tools cover the full Turbo pipeline surface:
 - **Sinks** — PostgreSQL, ClickHouse, Kafka, S3, Webhook, S2
 - **Modes** — Streaming (continuous) and Job (batch with `end_block`)
 - **Lifecycle** — Deploy, pause, resume, restart, delete
-- **Monitoring** — Live inspect TUI, log analysis, error matching
+- **Monitoring** — Live inspect (`-p` flag), log analysis, error matching
 
 ## MCP Server
 
