@@ -1,0 +1,146 @@
+{
+  "description": "Goldsky CLI command reference. Use this to verify commands exist before suggesting them.",
+  "valid_commands": {
+    "turbo": {
+      "apply": {
+        "syntax": "goldsky turbo apply <file.yaml>",
+        "aliases": ["-f <file.yaml>", "--file <file.yaml>"],
+        "description": "Deploy or update a pipeline from YAML"
+      },
+      "validate": {
+        "syntax": "goldsky turbo validate <file.yaml>",
+        "aliases": ["-f <file.yaml>"],
+        "description": "Validate pipeline YAML without deploying"
+      },
+      "list": {
+        "syntax": "goldsky turbo list",
+        "description": "List all pipelines in the current project"
+      },
+      "delete": {
+        "syntax": "goldsky turbo delete <pipeline-name>",
+        "description": "Permanently delete a pipeline"
+      },
+      "pause": {
+        "syntax": "goldsky turbo pause <pipeline-name>",
+        "description": "Pause a streaming pipeline (preserves state)"
+      },
+      "resume": {
+        "syntax": "goldsky turbo resume <pipeline-name>",
+        "description": "Resume a paused pipeline"
+      },
+      "restart": {
+        "syntax": "goldsky turbo restart <pipeline-name>",
+        "flags": ["--clear-state"],
+        "description": "Restart pipeline pods"
+      },
+      "inspect": {
+        "syntax": "goldsky turbo inspect <pipeline-name> -p",
+        "flags": ["-p/--print", "-n/--topology-node-keys", "-b/--buffer-size"],
+        "description": "Interactive TUI to view live pipeline data"
+      },
+      "logs": {
+        "syntax": "goldsky turbo logs <pipeline-name>",
+        "flags": ["--follow", "--tail <N>", "--since <N>", "--timestamps"],
+        "description": "View pipeline logs"
+      }
+    },
+    "secret": {
+      "list": {
+        "syntax": "goldsky secret list",
+        "description": "List all secrets in the current project"
+      },
+      "create": {
+        "syntax": "goldsky secret create <name> --value <value>",
+        "description": "Create a new secret"
+      },
+      "update": {
+        "syntax": "goldsky secret update <name> --value <value>",
+        "description": "Update an existing secret"
+      },
+      "delete": {
+        "syntax": "goldsky secret delete <name>",
+        "description": "Delete a secret"
+      },
+      "reveal": {
+        "syntax": "goldsky secret reveal <name>",
+        "description": "Show the value of a secret"
+      }
+    },
+    "project": {
+      "list": {
+        "syntax": "goldsky project list",
+        "description": "List all projects"
+      },
+      "create": {
+        "syntax": "goldsky project create --name <name>",
+        "description": "Create a new project"
+      },
+      "users list": {
+        "syntax": "goldsky project users list",
+        "description": "List project members"
+      },
+      "users invite": {
+        "syntax": "goldsky project users invite --emails <email> --role <role>",
+        "description": "Invite a user to the project"
+      }
+    },
+    "dataset": {
+      "list": {
+        "syntax": "goldsky dataset list",
+        "description": "List available blockchain datasets"
+      }
+    }
+  },
+  "invalid_commands": {
+    "turbo stop": {
+      "reason": "Not a valid Goldsky CLI command",
+      "suggest_instead": "goldsky turbo pause <pipeline-name>",
+      "note": "Use 'pause' to temporarily stop, or 'delete' to permanently remove"
+    },
+    "turbo start": {
+      "reason": "Not a valid Goldsky CLI command",
+      "suggest_instead": "goldsky turbo apply <file.yaml>",
+      "note": "Use 'apply' to deploy a new pipeline, or 'resume' to restart a paused one"
+    },
+    "turbo run": {
+      "reason": "Not a valid Goldsky CLI command",
+      "suggest_instead": "goldsky turbo apply <file.yaml>",
+      "note": "Pipelines are deployed with 'apply', not 'run'"
+    },
+    "turbo execute": {
+      "reason": "Not a valid Goldsky CLI command",
+      "suggest_instead": "goldsky turbo apply <file.yaml>",
+      "note": "Pipelines are deployed with 'apply'"
+    },
+    "turbo update": {
+      "reason": "Not a valid Goldsky CLI command",
+      "suggest_instead": "goldsky turbo apply <file.yaml>",
+      "note": "Re-running 'apply' with the same pipeline name updates it in place"
+    },
+    "turbo status": {
+      "reason": "Not a valid Goldsky CLI command",
+      "suggest_instead": "goldsky turbo list",
+      "note": "Use 'list' to see pipeline statuses"
+    },
+    "turbo deploy": {
+      "reason": "Not a valid Goldsky CLI command",
+      "suggest_instead": "goldsky turbo apply <file.yaml>",
+      "note": "Deployment is done with 'apply'"
+    },
+    "turbo create": {
+      "reason": "Not a valid Goldsky CLI command",
+      "suggest_instead": "goldsky turbo apply <file.yaml>",
+      "note": "Pipelines are created by applying a YAML file"
+    },
+    "turbo info": {
+      "reason": "Not a valid Goldsky CLI command",
+      "suggest_instead": "goldsky turbo list",
+      "note": "Use 'list' to see pipeline information"
+    },
+    "turbo describe": {
+      "reason": "Not a valid Goldsky CLI command",
+      "suggest_instead": "goldsky turbo inspect <pipeline-name> -p",
+      "note": "Use 'inspect -p' to see pipeline details and data"
+    }
+  }
+}

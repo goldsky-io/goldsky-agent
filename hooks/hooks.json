@@ -1,6 +1,14 @@
 {
   "hooks": [
     {
+      "name": "cli-validation",
+      "description": "Validates Goldsky CLI commands and blocks invalid subcommands (like 'turbo stop') with helpful suggestions",
+      "type": "command",
+      "event": "PreToolUse",
+      "matcher": "Bash",
+      "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/cli-validation.sh"
+    },
+    {
       "name": "pre-deploy-validate",
       "description": "Validates pipeline YAML before deploying with goldsky turbo apply",
       "type": "command",

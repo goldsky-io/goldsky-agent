@@ -7,6 +7,15 @@ description: "Turbo pipeline operations reference — lifecycle commands (pause,
 
 Lifecycle commands, monitoring, and error reference for running Turbo pipelines. This is a lookup reference — for interactive troubleshooting of a broken pipeline, use `/turbo-doctor`. For building new pipelines, use `/turbo-builder`.
 
+## Valid CLI Commands
+
+> **Important:** Only these `goldsky turbo` subcommands exist. Do not suggest others.
+>
+> `apply` | `validate` | `list` | `delete` | `pause` | `resume` | `restart` | `inspect` | `logs`
+>
+> Commands like `stop`, `start`, `run`, `update`, `status`, `deploy`, `create` do **not exist**.
+> See `data/cli-commands.json` for the full reference with syntax and common mistakes.
+
 ## Pipeline States
 
 | State     | Description                                  |
