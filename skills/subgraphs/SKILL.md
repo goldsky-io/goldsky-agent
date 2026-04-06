@@ -1,6 +1,6 @@
 ---
 name: subgraphs
-description: "Use this skill when the user asks about Goldsky Subgraphs — deploying, managing, or querying subgraphs. Triggers on: 'how do I deploy a subgraph', 'how do I migrate from The Graph', 'what is a subgraph', 'how do I get a GraphQL endpoint', 'low-code or no-code subgraph', 'subgraph tags', 'subgraph webhooks', 'cross-chain subgraph'. Do NOT trigger for questions that are purely about Turbo pipelines, Mirror pipelines, or dataset names."
+description: "Use this skill when the user asks about Goldsky Subgraphs — deploying, managing, or querying subgraphs. Triggers on: 'deploy a subgraph', 'migrate from The Graph', 'what is a subgraph', 'GraphQL endpoint', 'low-code or no-code subgraph', 'subgraph tags', 'subgraph webhooks', 'cross-chain subgraph', 'subgraph stalled', 'subgraph API key'. Also use this skill when the user wants to build a GraphQL API over onchain data, power a dApp frontend with indexed blockchain data, or reuse an existing TheGraph subgraph on Goldsky. For questions about streaming raw chain data directly to a database without GraphQL, use the turbo-builder or mirror skills instead."
 ---
 
 # Goldsky Subgraphs
