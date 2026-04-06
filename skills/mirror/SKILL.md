@@ -1,6 +1,6 @@
 ---
 name: mirror
-description: "Use this skill when the user asks about Goldsky Mirror pipelines — creating, deploying, operating, or understanding Mirror. Triggers on: 'how do I create a Mirror pipeline', 'how do I sync my subgraph to a database', 'goldsky pipeline apply', 'mirror pipeline sources sinks', 'mirror vs turbo', 'direct indexing mirror', 'mirror pipeline YAML'. Mirror is the legacy/v1 streaming pipeline product. For questions that are purely about Turbo pipelines, use the turbo-* skills instead."
+description: "Use this skill when the user asks about Goldsky Mirror pipelines — creating, deploying, operating, or troubleshooting Mirror. Triggers on: 'Mirror pipeline', 'goldsky pipeline apply', 'sync subgraph to database', 'mirror vs turbo', 'direct indexing', 'mirror pipeline YAML', 'mirror pipeline pause/stop/restart'. Also use this skill when the user wants to sync a Goldsky subgraph into PostgreSQL, ClickHouse, Kafka, or S3 — Mirror is the only pipeline product that supports subgraph sources. For new pipelines that don't need a subgraph source, the turbo-builder skill is usually a better fit."
 ---
 
 # Goldsky Mirror Pipelines
