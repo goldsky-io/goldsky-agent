@@ -92,6 +92,7 @@ goldsky-agent/
 │   ├── auth-setup/            # CLI installation, login
 │   ├── cli-reference/         # All valid CLI commands + flags (auto-generated)
 │   └── mirror/                # Mirror pipeline deploy, operate, sources/sinks reference
+│   └── subgraphs/             # Subgraph deploy, GraphQL endpoints, tags reference
 ├── scripts/             # Maintenance scripts
 │   └── generate-cli-reference.js  # Regenerates cli-reference skill from installed CLI
 ├── hooks/               # Pre/post deploy automation
@@ -138,6 +139,7 @@ Look up syntax, commands, and information without a guided workflow:
 | `datasets` | "What's the dataset name for Polygon NFTs?" | Chain prefixes, dataset types, naming conventions |
 | `cli-reference` | Consulted automatically before any `goldsky` command | All valid subcommands, arguments, and flags — generated from the installed CLI |
 | `mirror` | "How do I sync my subgraph to PostgreSQL / create a Mirror pipeline?" | Sources, sinks, lifecycle commands, Mirror vs Turbo guidance |
+| `subgraphs` | "How do I deploy a subgraph / migrate from The Graph?" | Deploy paths, GraphQL endpoints, tags, webhooks, cross-chain patterns |
 
 ## Pre-Deploy Hooks
 
