@@ -1,0 +1,22 @@
+[
+  {"query": "my mirror pipeline 'uniswap-sync-v2' has been in TERMINATED state since last night — it was running fine for weeks, can you figure out what happened?", "should_trigger": true},
+  {"query": "i keep getting 'Cannot process request, found existing request in-flight' when i try to update my pipeline config — how do i unblock this?", "should_trigger": true},
+  {"query": "our pipeline that syncs the QiDAO subgraph to postgres just died — the monitor is showing some kind of credential error, we didn't change anything", "should_trigger": true},
+  {"query": "my mirror pipeline won't start — it keeps cycling between STARTING and TERMINATED over and over. i've restarted it three times already", "should_trigger": true},
+  {"query": "i tried to pause my pipeline but it's been stuck on 'snapshot creation in progress' at 33% for over an hour, nothing is happening", "should_trigger": true},
+  {"query": "goldsky pipeline monitor is showing FAILING status on my base-logs pipeline — the errors mention connection refused to our clickhouse instance", "should_trigger": true},
+  {"query": "we resized our postgres database over the weekend and now our mirror pipeline can't connect — it's showing ACTIVE but TERMINATED, how do i fix this?", "should_trigger": true},
+  {"query": "my pipeline is running but it seems way too slow — it's been backfilling for 3 days on what should be a small dataset. is it a resource issue?", "should_trigger": true},
+  {"query": "i accidentally applied a broken SQL transform to my pipeline and now it's terminated. how do i roll back to the previous version?", "should_trigger": true},
+  {"query": "can you check why my mirror pipeline 'nft-tracker-mainnet' is not processing any records? the monitor shows 0 records written for the last hour", "should_trigger": true},
+  {"query": "what's the YAML syntax for a subgraph_entity source? i need the field names for the subgraphs array", "should_trigger": false},
+  {"query": "help me build a new turbo pipeline that indexes USDC transfers on Base and writes them to postgres", "should_trigger": false},
+  {"query": "how do i create a goldsky secret for my clickhouse database credentials?", "should_trigger": false},
+  {"query": "my turbo pipeline eth-logs-v3 is failing with 'unknown dataset' — can you help debug it?", "should_trigger": false},
+  {"query": "what's the difference between mirror and turbo? we're trying to decide which to use for our new project", "should_trigger": false},
+  {"query": "what flags does goldsky pipeline apply accept? specifically the --from-snapshot options", "should_trigger": false},
+  {"query": "how do i deploy my subgraph to goldsky from a local directory?", "should_trigger": false},
+  {"query": "i want to add a new sink to my mirror pipeline YAML — what's the config format for a kafka sink?", "should_trigger": false},
+  {"query": "what resource sizes are available for mirror pipelines? is there anything bigger than xl?", "should_trigger": false},
+  {"query": "how do i set up goldsky CLI authentication on a new machine?", "should_trigger": false}
+]
