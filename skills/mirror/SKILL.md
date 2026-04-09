@@ -1,6 +1,6 @@
 ---
 name: mirror
-description: "Use this skill when the user asks about Goldsky Mirror pipelines — creating, deploying, operating, or troubleshooting Mirror. Triggers on: 'Mirror pipeline', 'goldsky pipeline apply', 'sync subgraph to database', 'mirror vs turbo', 'direct indexing', 'mirror pipeline YAML', 'mirror pipeline pause/stop/restart'. Also use this skill when the user wants to sync a Goldsky subgraph into PostgreSQL, ClickHouse, Kafka, or S3 — Mirror is the only pipeline product that supports subgraph sources. For new pipelines that don't need a subgraph source, the turbo-builder skill is usually a better fit."
+description: "Use this skill when the user asks about Goldsky Mirror pipelines — creating, deploying, operating, or troubleshooting Mirror. Triggers on: 'Mirror pipeline', 'goldsky pipeline apply', 'sync subgraph to database', 'mirror vs turbo', 'direct indexing', 'mirror pipeline YAML', 'mirror pipeline pause/stop/restart'. Also use this skill when the user wants to sync a Goldsky subgraph into a database or message queue — Mirror is the only pipeline product that supports subgraph sources. For new pipelines that don't need a subgraph source, the turbo-builder skill is usually a better fit. Do NOT trigger on 'goldsky turbo' commands or generic 'build a pipeline' requests without subgraph context — those belong to the turbo skills."
 ---
 
 # Goldsky Mirror Pipelines
@@ -104,12 +104,9 @@ See [docs.goldsky.com/mirror/sources/supported-sources](https://docs.goldsky.com
 | **ClickHouse** | `clickhouse` | OLAP — uses ReplacingMergeTree by default, `append_only_mode` for best performance |
 | **MySQL** | `mysql` | OLTP workloads |
 | **Elasticsearch** | `elasticsearch` | Real-time search and analytics |
-| **OpenSearch** | `opensearch` | Search and analytics (Elasticsearch-compatible) |
 | **Kafka** | `kafka` | High-throughput streaming to a topic, configurable `topic_partitions` |
 | **Object Storage** | `file` | S3, GCS, or R2 — Parquet format, append-only, supports `partition_columns` |
 | **AWS SQS** | `sqs` | Message queuing |
-| **DynamoDB** | `dynamodb` | AWS NoSQL |
-| **Timescale** | `timescale` | Time-series data (PostgreSQL-compatible, technical preview) |
 | **Webhook** | `webhook` | HTTP POST to an external endpoint |
 
 All sinks writing to user-managed destinations require a **Goldsky Secret** (`secret_name`). Create one with `goldsky secret create`.
@@ -161,14 +158,6 @@ sinks:
     type: sqs
     url: https://sqs.us-east-1.amazonaws.com/123456/my-queue
     secret_name: MY_SQS_SECRET
-    from: my_source
-
-# Webhook
-sinks:
-  my_webhook:
-    type: webhook
-    url: https://example.com/webhook
-    secret_name: MY_WEBHOOK_SECRET
     from: my_source
 ```
 
@@ -394,11 +383,10 @@ Change the compute resources for a pipeline.
 
 | Positional | Description |
 | ---------- | ----------- |
-| `resourceSize` | One of: `s`, `m`, `l`, `xl`, `xxl`, `mem.l`, `mem.xl`, `mem.xxl` (default: `s`) |
+| `resourceSize` | One of: `s`, `m`, `l`, `xl`, `xxl` (default: `s`) |
 
 ```bash
 goldsky pipeline resize my-pipeline l
-goldsky pipeline resize my-pipeline mem.xl
 ```
 
 ### `goldsky pipeline validate [config-path]`
@@ -434,7 +422,7 @@ Guided CLI experience for creating a pipeline interactively.
 
 | Flag | Type | Description |
 | ---- | ---- | ----------- |
-| `--resource-size, --resourceSize` | `s \| m \| l \| xl \| xxl \| mem.l \| mem.xl \| mem.xxl` | Resource size (default: s) |
+| `--resource-size, --resourceSize` | `s \| m \| l \| xl \| xxl` | Resource size (default: s) |
 | `--use-dedicated-ip` | boolean | Use dedicated egress IPs (default: false) |
 | `--skip-transform-validation` | boolean | Skip transform validation |
 | `--status` | `ACTIVE \| INACTIVE` | _(deprecated, use `pipeline start/stop/pause`)_ |
@@ -517,7 +505,6 @@ Set via `resource_size` in YAML or `goldsky pipeline resize <name> <size>`.
 | ---- | ----------- |
 | `s` | Default. Handles most use cases, backfill of small chains, up to 300K records/sec, up to ~8 subgraph sources |
 | `m`, `l`, `xl`, `xxl` | Larger compute — for backfilling large chains or large JOINs |
-| `mem.l`, `mem.xl`, `mem.xxl` | Memory-optimized variants (CLI only) |
 
 Start small and scale up if needed. Resource size affects pricing.
 
