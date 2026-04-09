@@ -19,6 +19,7 @@ AI-powered tools for building, deploying, and debugging Turbo pipelines that str
 - **auth-setup** - CLI installation and authentication
 
 ### Other Products
+- **mirror** - Mirror pipeline sources, sinks, lifecycle commands, and guidance on Mirror vs Turbo
 - **subgraphs** - Deploy subgraphs, manage GraphQL endpoints and tags, migrate from The Graph
 
 ## Quick Start

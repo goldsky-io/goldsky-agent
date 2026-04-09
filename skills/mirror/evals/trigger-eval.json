@@ -1,0 +1,22 @@
+[
+  {"query": "i have a goldsky subgraph called 'uniswap-v3/v1' and i want to sync it into my postgres database — what's the easiest way to do that?", "should_trigger": true},
+  {"query": "we have an existing Mirror pipeline (my-pipeline.yaml) and i need to update the sink config — do i just run pipeline apply again?", "should_trigger": true},
+  {"query": "what's the difference between Mirror and Turbo? we're evaluating which one to use for our new project", "should_trigger": true},
+  {"query": "my mirror pipeline keeps restarting — it was working yesterday but now it's in a restart loop. how do i debug this?", "should_trigger": true},
+  {"query": "should i use mirror or turbo for my new project? we don't have a subgraph yet", "should_trigger": true},
+  {"query": "how does 'goldsky pipeline pause' work — does it save my progress so i can resume from the same block?", "should_trigger": true},
+  {"query": "what database destinations does Mirror support? we're trying to decide between clickhouse and kafka for our analytics stack", "should_trigger": true},
+  {"query": "i have a Mirror pipeline using direct indexing and i need to add a SQL transform to filter out zero-value transfers", "should_trigger": true},
+  {"query": "how do i merge data from two subgraphs (one on mainnet, one on arbitrum) into a single table?", "should_trigger": true},
+  {"query": "what flags does goldsky pipeline apply accept? i need to skip snapshot creation", "should_trigger": true},
+  {"query": "how do i cancel a stuck snapshot on my mirror pipeline?", "should_trigger": true},
+  {"query": "i need to resize my mirror pipeline — it's running out of resources during backfill", "should_trigger": true},
+  {"query": "help me build a brand new turbo pipeline that indexes USDC transfers on Base and writes them to postgres", "should_trigger": false},
+  {"query": "what's the dataset name for polygon erc20 transfers in goldsky?", "should_trigger": false},
+  {"query": "how do i deploy my subgraph to goldsky from a local directory?", "should_trigger": false},
+  {"query": "my turbo pipeline (eth-logs-v3) is failing with 'unknown dataset' error, help me fix it", "should_trigger": false},
+  {"query": "how do i write a typescript transform to decode EVM logs in a turbo pipeline?", "should_trigger": false},
+  {"query": "goldsky turbo deploy my-pipeline.yaml — what does this command do?", "should_trigger": false},
+  {"query": "how do i create a goldsky secret for my postgres credentials?", "should_trigger": false},
+  {"query": "i want to stream ERC-20 transfers on Base to postgres — help me set up a pipeline", "should_trigger": false}
+]
