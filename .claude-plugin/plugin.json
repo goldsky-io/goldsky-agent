@@ -1,14 +1,14 @@
 {
   "name": "goldsky",
-  "version": "1.2.0",
-  "description": "Stream real-time blockchain data to your infrastructure. Build, deploy, and debug data pipelines that index onchain events from 20+ chains into PostgreSQL, ClickHouse, Kafka, and more.",
+  "version": "1.3.0",
+  "description": "Stream real-time blockchain data to your infrastructure. Build, deploy, and debug data pipelines that index onchain events from 20+ chains into PostgreSQL, ClickHouse, Kafka, and more. Set up and debug high-performance Edge RPC endpoints for EVM networks.",
   "author": {
     "name": "Goldsky"
   },
   "repository": "https://github.com/goldsky-io/goldsky-agent",
   "homepage": "https://docs.goldsky.com",
   "license": "MIT",
-  "keywords": ["goldsky", "blockchain", "pipelines", "turbo", "web3", "data"],
+  "keywords": ["goldsky", "blockchain", "pipelines", "turbo", "web3", "data", "edge-rpc", "rpc"],
   "mcpServers": {
     "goldsky-docs": {
       "type": "http",

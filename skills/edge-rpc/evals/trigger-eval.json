@@ -1,0 +1,22 @@
+[
+  {"query": "how do i set up an Edge RPC endpoint for Ethereum?", "should_trigger": true},
+  {"query": "i need a high-performance RPC provider for Base, does Goldsky have one?", "should_trigger": true},
+  {"query": "my Edge RPC endpoint is returning 401 unauthorized, what's wrong?", "should_trigger": true},
+  {"query": "getting rate limit exceeded errors from edge.goldsky.com, how do i fix this?", "should_trigger": true},
+  {"query": "how do i connect viem to Goldsky Edge RPC?", "should_trigger": true},
+  {"query": "i want to use Goldsky as my RPC provider for Arbitrum, walk me through it", "should_trigger": true},
+  {"query": "eth_getLogs is returning missing data from my Edge endpoint, help me debug", "should_trigger": true},
+  {"query": "what chains does Edge RPC support? do you have Monad?", "should_trigger": true},
+  {"query": "how do i enable flashblocks on my Base Edge RPC endpoint?", "should_trigger": true},
+  {"query": "my HyperEVM requests are returning inconsistent block data, sometimes transactions are missing", "should_trigger": true},
+  {"query": "how much does Edge RPC cost per request?", "should_trigger": true},
+  {"query": "i need to configure rate limiting on my Edge RPC secret", "should_trigger": true},
+  {"query": "can i use header-based auth instead of putting my secret in the URL?", "should_trigger": true},
+  {"query": "Edge RPC is timing out on trace_call, what should i do?", "should_trigger": true},
+  {"query": "help me build a pipeline to stream USDC transfers on Base to postgres", "should_trigger": false},
+  {"query": "how do i deploy a subgraph to Goldsky?", "should_trigger": false},
+  {"query": "what's the YAML syntax for a turbo pipeline postgres sink?", "should_trigger": false},
+  {"query": "my turbo pipeline is stuck in error state", "should_trigger": false},
+  {"query": "how do i install the goldsky CLI?", "should_trigger": false},
+  {"query": "what dataset name do i use for ethereum raw blocks?", "should_trigger": false}
+]
