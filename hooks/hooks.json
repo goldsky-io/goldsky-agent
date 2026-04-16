@@ -1,28 +1,35 @@
 {
-  "hooks": [
-    {
-      "name": "pre-deploy-validate",
-      "description": "Validates pipeline YAML before deploying with goldsky turbo apply",
-      "type": "command",
-      "event": "PreToolUse",
-      "matcher": "Bash",
-      "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/pre-deploy-validate.sh"
-    },
-    {
-      "name": "secret-check",
-      "description": "Verifies that all secret_name references in pipeline YAML exist before deploying",
-      "type": "command",
-      "event": "PreToolUse",
-      "matcher": "Bash",
-      "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/secret-check.sh"
-    },
-    {
-      "name": "post-deploy-inspect",
-      "description": "Suggests running goldsky turbo inspect after a successful pipeline deploy",
-      "type": "command",
-      "event": "PostToolUse",
-      "matcher": "Bash",
-      "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/post-deploy-inspect.sh"
-    }
-  ]
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/pre-deploy-validate.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/secret-check.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/post-deploy-inspect.sh"
+          }
+        ]
+      }
+    ]
+  }
 }
