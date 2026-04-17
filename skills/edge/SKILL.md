@@ -27,7 +27,7 @@ Replace `{chainId}` with the chain ID (e.g., `1` for Ethereum, `8453` for Base, 
 Three options:
 - **Query parameter**: `?secret=YOUR_SECRET`
 - **Header**: `X-ERPC-Secret-Token: YOUR_SECRET`
-- **x402 (pay-per-request)**: Clients without a secret receive an HTTP 402 response with payment requirements. An x402-compatible client signs a USDC payment and retries; Edge settles via a facilitator before forwarding the request upstream. Payment is settled on **Base** in USDC (currently Base Sepolia, chain `84532`). Pricing is `$0.000005` per request (same as the standard `$5 per million` rate). See https://www.x402.org/ for the protocol spec.
+- **x402 (pay-per-request)**: Clients without a secret receive an HTTP 402 response with payment requirements. An x402-compatible client signs a USDC payment and retries; Edge settles via a facilitator before forwarding the request upstream. Payment is settled on **Base** (chain `8453`) in USDC. Pricing is `$0.000005` per request (same as the standard `$5 per million` rate). See https://www.x402.org/ for the protocol spec.
 
 ### Example (curl)
 
