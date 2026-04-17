@@ -228,85 +228,20 @@ Before using trace methods (`debug_trace*`, `trace_*`), check the per-method pag
 
 # eRPC (Open-Source)
 
-Edge is built on **eRPC**, an open-source fault-tolerant EVM RPC proxy. Users who need capabilities beyond what Goldsky Edge exposes may want to run eRPC directly.
+Edge is built on **eRPC**, an open-source fault-tolerant EVM RPC proxy. For capabilities beyond what Goldsky Edge exposes (self-hosting, custom cache drivers, custom selection policies, multi-provider failover, etc.), users may want to run eRPC directly.
 
-**GitHub**: https://github.com/erpc/erpc
-**Docs**: https://docs.erpc.cloud/
+For full eRPC reference (features, config, APIs), fetch the LLM-optimized docs bundle: **https://docs.erpc.cloud/llms.txt**
 
-## eRPC Core Features (Beyond Edge)
-
-These are capabilities available in standalone eRPC that power users may find valuable:
-
-### Caching (Re-org Aware)
-
-- Four cache drivers: Memory, Redis, PostgreSQL, DynamoDB
-- Finality-aware with states: finalized, unfinalized, realtime, unknown
-- Per-method cache policies with TTL and finality matching
-- Block re-org protection via reference tracking
-- Built-in zstd compression (50-90% storage savings)
-
-### Failover & Resilience
-
-- **Retry**: Configurable max attempts, delay, backoff, jitter
-- **Circuit breaker**: Opens after configurable failure thresholds
-- **Timeout**: Per-method configurable durations
-- **Hedge**: Parallel requests to backup upstreams after delay
-- **Consensus**: Multi-upstream agreement with configurable penalties
-
-### Load Balancing
-
-- Score-based routing using real-time metrics (error rate, latency, throttling, block lag)
-- Configurable score multipliers and hysteresis
-- Custom TypeScript evaluation functions for selection policies
-
-### Multi-Chain Support
-
-- 2,000+ chains and 4,000+ public RPC endpoints out of the box
-- 20+ native provider integrations (Alchemy, Infura, dRPC, BlastAPI, QuickNode, Ankr, etc.)
-- Automatic chain detection from provider API keys
-
-### Authentication Options
-
-- Secret (API key), Network (IP allowlist), JWT, SIWE (Sign-in with Ethereum), x402 (pay-per-request)
-- Per-strategy method filtering and rate limit budgets
-
-### Data Integrity
-
-- Block height enforcement across upstreams
-- getLogs range validation and auto-splitting
-- Response validation: bloom filter checks, log index validation, hash uniqueness
-- Misbehavior logging to file or S3
-
-### Configuration
-
-eRPC uses `erpc.yaml` or `erpc.ts` config files organized by:
-- **Projects**: Top-level container with auth, CORS, rate limits, networks, upstreams
-- **Networks**: Blockchain chains (e.g., `evm:42161` for Arbitrum)
-- **Upstreams**: Individual RPC endpoints with failsafe policies
-- **Providers**: Higher-level abstraction — one API key auto-generates upstreams for all chains
-- **Rate limit budgets**: Named, reusable configs with method/count/period rules
-
-### Running eRPC Independently
-
-```bash
-# Quick start with npx
-npx start-erpc
-
-# Or via Docker
-docker run -v $(pwd)/erpc.yaml:/root/erpc.yaml ghcr.io/erpc/erpc
-```
-
-## Documentation Links
+## Goldsky Documentation Links
 
 - Edge Introduction: https://docs.goldsky.com/edge-rpc/introduction
 - Edge Quickstart: https://docs.goldsky.com/edge-rpc/quickstart
 - Why Edge: https://docs.goldsky.com/edge-rpc/why-edge
-- Security: https://docs.goldsky.com/edge-rpc/platform/security
+- Security & Rate Limiting: https://docs.goldsky.com/edge-rpc/platform/security
 - Monitoring: https://docs.goldsky.com/edge-rpc/platform/monitoring
 - Flashblocks: https://docs.goldsky.com/edge-rpc/capabilities/flashblocks
 - HyperEVM System Tx: https://docs.goldsky.com/edge-rpc/capabilities/hyperevm-system-transactions
 - Error Codes: https://docs.goldsky.com/edge-rpc/evm/error-codes
+- RPC Methods Index: https://docs.goldsky.com/edge-rpc/evm/methods
 - Pricing: https://docs.goldsky.com/pricing/summary
 - Supported Networks: https://docs.goldsky.com/chains/supported-networks
-- eRPC Docs: https://docs.erpc.cloud/
-- eRPC GitHub: https://github.com/erpc/erpc
