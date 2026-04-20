@@ -1,6 +1,11 @@
-Goldsky Edge is a managed, high-performance RPC endpoint service for EVM blockchains, built on eRPC — an open-source fault-tolerant EVM RPC proxy. It provides globally-distributed, low-latency RPC access with intelligent routing, caching, failover, and built-in observability.
+---
+name: edge
+description: "Use this skill when the user asks about Goldsky Edge — the managed RPC endpoint service for EVM chains. Triggers on: 'Edge RPC', 'Goldsky RPC endpoint', 'edge.goldsky.com', 'eth_getLogs is slow', 'RPC rate limit', 'hedged requests', 'flashblocks', 'HyperEVM system transactions', 'x402 pay-per-request RPC', 'Goldsky Edge pricing', 'Edge dashboard', 'gs_edge_ API key', 'rpc-edge'. Also use this skill when the user wants a resilient, low-latency JSON-RPC endpoint for EVM chains (Ethereum, Base, Arbitrum, Optimism, Polygon zkEVM, BSC, Avalanche, Berachain, HyperEVM, Monad, Sei, Sonic, Unichain, zkSync, etc.), is debugging RPC errors like -32005/-32012/-32014/-32015/-32016, or is comparing providers (Alchemy, Infura, QuickNode, Ankr) against Edge. For questions about self-hosting eRPC or custom eRPC configuration beyond what Edge exposes, point them at https://docs.erpc.cloud/llms.txt. Do NOT trigger on Goldsky Mirror, Turbo, or Subgraph pipeline questions — those belong to their respective skills."
+---
 
 # Goldsky Edge (RPC Endpoints)
+
+Goldsky Edge is a managed, high-performance RPC endpoint service for EVM blockchains, built on eRPC — an open-source fault-tolerant EVM RPC proxy. It provides globally-distributed, low-latency RPC access with intelligent routing, caching, failover, and built-in observability.
 
 ## What Edge Does
 
