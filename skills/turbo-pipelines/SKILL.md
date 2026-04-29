@@ -112,8 +112,13 @@ For full sink field specifications, read `references/sink-reference.md`.
 
 ### Pipeline Splitting
 
-**One pipeline when:** Shared source, shared intermediate transforms, atomic deployment.
-**Multiple pipelines when:** Different sources, different lifecycle needs, different resource sizes, different chains.
+**Default to one pipeline with multiple sinks** when the user wants the same source data sent to multiple destinations. A single Turbo pipeline supports multiple sinks natively — each sink has a `from:` field pointing at a source or transform by name, and sinks run independently (one failing does not block the others, and each can have its own `batch_size` / `batch_flush_interval`).
+
+**Do NOT split into separate pipelines just because there are multiple destinations.** Generating one pipeline per sink duplicates the source ingestion, wastes resources, and decouples deployments that should be atomic.
+
+**Split into multiple pipelines only when:** sources are fundamentally different (different chains with independent lifecycles), the destinations need different resource sizes, or the user explicitly asks for separate pipelines.
+
+See `references/architecture-patterns.md` for fan-out (one source → multiple sinks) and fan-in (UNION ALL) YAML examples, and `templates/multi-sink-pipeline.yaml` / `templates/fan-out-pipeline.yaml` / `templates/fan-in-pipeline.yaml` for ready-to-adapt configs.
 
 ---
 
