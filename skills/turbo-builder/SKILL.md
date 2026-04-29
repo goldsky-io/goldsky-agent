@@ -83,7 +83,7 @@ transforms:
       WHERE <conditions>
 ```
 
-### Step 6: Configure the Sink
+### Step 6: Configure the Sink(s)
 
 Ask where the data should go. Use the `/turbo-pipelines` skill for sink configuration:
 
@@ -94,6 +94,10 @@ Ask where the data should go. Use the `/turbo-pipelines` skill for sink configur
 | Kafka | `secret_name`, `topic` |
 | S3 | `bucket`, `region`, `prefix`, `format` |
 | Webhook | `url`, `format` |
+
+**If the user names more than one destination, generate ONE pipeline with multiple sinks — do not generate a separate pipeline per destination.** Each sink has a `from:` field that references the source (or a transform) by name, and sinks run independently. Use a fan-out pattern when different sinks want different views of the same source — add an SQL transform per view, then point each sink's `from:` at the appropriate transform. See `references/architecture-patterns.md` in `/turbo-pipelines` and `templates/multi-sink-pipeline.yaml` for examples.
+
+Only split into separate pipelines when sources are fundamentally different (e.g., different chains with independent lifecycles) or the user explicitly asks for separate pipelines.
 
 For sinks requiring `secret_name`, check if the secret exists:
 
