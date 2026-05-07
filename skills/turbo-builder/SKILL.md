@@ -39,8 +39,9 @@ If the user already described their goal, extract answers from their description
 Use the `/datasets` skill to find the right dataset.
 
 Key points:
-- Common datasets: `<chain>.decoded_logs`, `<chain>.raw_transactions`, `<chain>.erc20_transfers`, `<chain>.raw_traces`
-- For decoded contract events, use `<chain>.decoded_logs` with a filter on `address` and `topic0`
+- Common datasets: `<chain>.raw_logs`, `<chain>.raw_transactions`, `<chain>.erc20_transfers`, `<chain>.raw_traces`
+- For decoded contract events on EVM chains: source from `<chain>.raw_logs` with a filter on `address` ONLY, then add a SQL transform that calls `_gs_log_decode(_gs_fetch_abi(<explorer-url>, <source>), topics, data) AS decoded`, then filter downstream by `WHERE decoded.event_signature = '<EventName>(<types>)'`. Never put topic0 hashes in the source filter — see `/turbo-transforms` for the full pattern. There is no consumable `<chain>.decoded_logs` dataset; decoding always happens in a transform.
+- For pre-decoded common token events: `<chain>.erc20_transfers`, `<chain>.erc721_transfers`, `<chain>.erc1155_transfers` are available and don't need decoding transforms.
 - For Solana: use `solana.transactions`, `solana.token_transfers`, etc.
 
 Present the dataset choice to the user for confirmation.
