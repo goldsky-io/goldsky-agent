@@ -1,6 +1,6 @@
 ---
 name: secrets
-description: "Use this skill when a user wants to store, manage, or work with Goldsky secrets — the named credential objects used by pipeline sinks. This includes: creating a new secret from a connection string or credentials, listing or inspecting existing secrets, updating or rotating credentials after a password change, and deleting secrets that are no longer needed. Trigger for any query where the user mentions 'goldsky secret', wants to securely store database credentials for a pipeline, or is working with sink authentication for PostgreSQL, Neon, Supabase, ClickHouse, Kafka, S3, Elasticsearch, DynamoDB, SQS, OpenSearch, or webhooks."
+description: "Use this skill when a user wants to store, manage, or work with Goldsky secrets — the named credential objects used by pipeline sinks. This includes: creating a new secret from a connection string or credentials, listing or inspecting existing secrets, updating or rotating credentials after a password change, and deleting secrets that are no longer needed. Trigger for any query where the user mentions 'goldsky secret', wants to securely store database credentials for a pipeline, or is working with sink authentication for PostgreSQL, Neon, Supabase, ClickHouse, Kafka, S3, Google Cloud Pub/Sub, Elasticsearch, DynamoDB, SQS, OpenSearch, or webhooks."
 ---
 
 # Goldsky Secrets Management
@@ -105,6 +105,7 @@ Run `goldsky secret list` to confirm creation.
 | ClickHouse    | `clickhouse.json`    | `clickHouse`    | Analytics database              |
 | Kafka         | `kafka.json`         | `kafka`         | Event streaming                 |
 | AWS S3        | `s3.json`            | `s3`            | Object storage                  |
+| Google Pub/Sub| —                    | `pubsub`        | GCP Pub/Sub topic (Turbo-only)  |
 | ElasticSearch | `elasticsearch.json` | `elasticSearch` | Search engine                   |
 | DynamoDB      | `dynamodb.json`      | `dynamodb`      | NoSQL database                  |
 | SQS           | `sqs.json`           | `sqs`           | Message queue                   |
@@ -152,6 +153,22 @@ access_key_id:secret_access_key
 ```
 
 Or with session token: `access_key_id:secret_access_key:session_token`
+
+**Google Cloud Pub/Sub** — JSON format (Turbo-only):
+
+```json
+{
+  "type": "pubsub",
+  "projectId": "goldsky-prod",
+  "credentialsJson": "{\"type\":\"service_account\",\"project_id\":\"goldsky-prod\",...}"
+}
+```
+
+The CLI prompts for the GCP project id and asks for the entire service-account JSON key as a single-line paste; it validates the paste is JSON with `type === "service_account"`.
+
+**IAM requirements:** the service account must have **`roles/pubsub.publisher`** AND **`roles/pubsub.viewer`**. The `viewer` role is required by the sink's topic-existence pre-check during initialization — a publish-only SA will fail sink init with a `PermissionDenied` error.
+
+The Pub/Sub topic itself must exist in the GCP project before deploying the pipeline; Goldsky does not auto-create topics.
 
 **Webhook:**
 

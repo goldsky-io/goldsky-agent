@@ -90,6 +90,7 @@ Start small and scale up — defensive sizing avoids wasted resources.
 | Real-time aggregates | `postgres_aggregate` | Balances, counters, running totals via triggers|
 | Analytics queries    | `clickhouse`         | Large-scale aggregations, time-series data    |
 | Event processing     | `kafka`              | Downstream consumers, event-driven systems    |
+| GCP messaging        | `pubsub`             | Google Cloud Pub/Sub topics (Turbo-only)       |
 | Serverless streaming | `s2_sink`            | S2.dev streams, alternative to Kafka          |
 | Notifications        | `webhook`            | Lambda functions, API callbacks, alerts        |
 | Data lake            | `s3_sink`            | Long-term archival, batch processing          |
@@ -191,12 +192,13 @@ No `start_at` or `version` fields. Optional: `filter`, `include_metadata`, `star
 
 ### Transform Configuration
 
-| Type            | Use Case                              |
-| --------------- | ------------------------------------- |
-| `sql`           | Filtering, projections, SQL functions |
-| `script`        | Custom TypeScript/WASM logic          |
-| `handler`       | Call external HTTP APIs to enrich     |
-| `dynamic_table` | Lookup tables backed by a database    |
+| Type            | Use Case                                       |
+| --------------- | ---------------------------------------------- |
+| `sql`           | Filtering, projections, SQL functions          |
+| `script`        | Custom TypeScript/WASM logic                   |
+| `handler`       | Call external HTTP APIs to enrich              |
+| `dynamic_table` | Lookup tables backed by a database             |
+| `throttle`      | Cap throughput to a fixed records-per-second   |
 
 #### SQL Transform
 
@@ -237,6 +239,30 @@ transforms:
 
 For TypeScript, handler, and dynamic table transforms, see `/turbo-transforms`.
 
+#### Throttle Transform
+
+Caps the throughput of a stream by buffering records into batches and emitting each batch on a fixed minimum interval. Throttle does **not** modify data — every input record passes through unchanged. Use it to stay under rate limits of downstream sinks or external APIs, smooth bursty sources, or pace records into HTTP handlers.
+
+```yaml
+transforms:
+  throttled:
+    type: throttle
+    from: my_source
+    max_batch_size: 100
+    min_batch_interval: 10s
+```
+
+| Field                | Required | Description                                                  |
+| -------------------- | -------- | ------------------------------------------------------------ |
+| `type`               | Yes      | `throttle`                                                   |
+| `from`               | Yes      | Source or transform to read from                             |
+| `max_batch_size`     | No       | Max records per batch                                        |
+| `min_batch_interval` | No       | Minimum time between batches (e.g. `10s`, `500ms`, `1m`)     |
+
+Effective max throughput ≈ `max_batch_size / min_batch_interval` records per second. Throttle limits the **maximum** rate, not the minimum — if upstream is slow, batches will be smaller and arrive less frequently.
+
+**Place throttle close to the bottleneck** (just before the rate-limited sink or handler) so upstream transforms still process at full speed.
+
 ### Sink Configuration
 
 Quick examples for common sinks. For full field specs of all sink types, read `references/sink-reference.md`.
@@ -266,6 +292,19 @@ sinks:
     primary_key: id
 ```
 
+#### Pub/Sub (Turbo-only)
+
+```yaml
+sinks:
+  output:
+    type: pubsub
+    from: my_transform
+    topic: my-topic
+    secret_name: MY_PUBSUB_SECRET
+```
+
+The secret holds a GCP project id and service-account JSON. Topic must already exist in GCP.
+
 #### Blackhole (Testing)
 
 ```yaml
@@ -294,6 +333,7 @@ To reset checkpoints: rename the source or pipeline. Warning: this reprocesses a
 | `minimal-erc20-blackhole.yaml` | Simplest pipeline, no credentials | Quick testing                |
 | `filtered-transfers-sql.yaml`  | Filter by contract address        | USDC, specific tokens        |
 | `postgres-output.yaml`         | Write to PostgreSQL               | Production data storage      |
+| `pubsub-output.yaml`           | Write to Google Cloud Pub/Sub     | GCP-based event consumers    |
 | `multi-chain-pipeline.yaml`    | Combine multiple chains           | Cross-chain analytics        |
 | `solana-transfers.yaml`        | Solana SPL tokens                 | Non-EVM chains               |
 | `multi-sink-pipeline.yaml`     | Multiple outputs                  | Archive + alerts + streaming |

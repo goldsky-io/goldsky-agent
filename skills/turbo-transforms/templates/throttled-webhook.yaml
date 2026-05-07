@@ -1,0 +1,36 @@
+# Throttled Webhook Pipeline
+# Caps a high-volume stream at ~10 records/second before sending to a webhook
+# so the receiving service is not overwhelmed and per-second rate limits
+# are respected.
+#
+# Effective rate ≈ max_batch_size / min_batch_interval = 100 / 10s = 10 rps
+#
+# Place the throttle JUST BEFORE the rate-limited sink so upstream transforms
+# still process at full speed.
+#
+# Usage:
+#   1. Replace the webhook URL.
+#   2. Run: goldsky turbo apply throttled-webhook.yaml
+
+name: base-erc20-transfers-throttled-webhook
+resource_size: s
+
+sources:
+  transfers:
+    type: dataset
+    dataset_name: base.erc20_transfers
+    version: 1.2.0
+    start_at: latest
+
+transforms:
+  throttled:
+    type: throttle
+    from: transfers
+    max_batch_size: 100
+    min_batch_interval: 10s
+
+sinks:
+  webhook_output:
+    type: webhook
+    from: throttled
+    url: https://api.example.com/transfers

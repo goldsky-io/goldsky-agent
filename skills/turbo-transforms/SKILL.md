@@ -35,11 +35,11 @@ transforms:
 
 ### Required Fields
 
-| Field         | Required | Description                                      |
-| ------------- | -------- | ------------------------------------------------ |
-| `type`        | Yes      | `sql`, `script`, `handler`, or `dynamic_table`   |
-| `primary_key` | Yes      | Column used for uniqueness and ordering           |
-| `sql`         | Yes      | SQL query (for `sql` type transforms)            |
+| Field         | Required | Description                                                  |
+| ------------- | -------- | ------------------------------------------------------------ |
+| `type`        | Yes      | `sql`, `script`, `handler`, `dynamic_table`, or `throttle`   |
+| `primary_key` | Yes\*    | Column used for uniqueness and ordering (\*not for `throttle`) |
+| `sql`         | Yes      | SQL query (for `sql` type transforms)                        |
 
 ### Referencing Data
 
@@ -289,6 +289,41 @@ Updatable lookup tables for allowlists, blocklists, and join-style enrichment �
 See `references/dynamic-tables.md` for full config, backend options, REST API updates, and wallet-tracking example.
 
 ---
+
+## Throttle Transform (Flow Control)
+
+Caps the throughput of a stream by buffering records into batches and emitting each batch on a fixed minimum interval. Throttle does **not** modify data — every input record passes through unchanged. Use it to:
+
+- Stay under rate limits of downstream sinks or external APIs
+- Smooth bursty sources into a steady, predictable rate
+- Pace records into an HTTP `handler` so the receiving service is not overwhelmed
+- Slow down processing during development or testing
+
+```yaml
+transforms:
+  throttled:
+    type: throttle
+    from: my_source       # source or transform
+    max_batch_size: 100
+    min_batch_interval: 10s
+```
+
+| Field                | Required | Description                                              |
+| -------------------- | -------- | -------------------------------------------------------- |
+| `type`               | Yes      | `throttle`                                               |
+| `from`               | Yes      | Source or transform to read from                         |
+| `max_batch_size`     | No       | Max records per batch                                    |
+| `min_batch_interval` | No       | Minimum time between batches (e.g. `10s`, `500ms`, `1m`) |
+
+A batch is flushed downstream when **both** `max_batch_size` records have accumulated **and** `min_batch_interval` has elapsed since the previous batch. Effective max throughput ≈ `max_batch_size / min_batch_interval` records per second.
+
+**Best practices:**
+
+- Place throttle close to the bottleneck (just before the rate-limited sink/handler) so upstream transforms still process at full speed.
+- Tune `max_batch_size` to match the downstream sink's preferred batch size.
+- Throttle is a `transform` — chain other transforms downstream from it the same way you would any other transform (e.g. `from: throttled` in a sink).
+- Throttle does not have a `primary_key` field (records pass through unchanged).
+- Remove throttle in production where possible; it caps throughput by design.
 
 ## Solana Transform Patterns
 
