@@ -27,7 +27,7 @@ For each source entry:
 
 For each transform entry:
 
-- [ ] `type` is one of: `sql`, `script`, `handler`, `dynamic_table`
+- [ ] `type` is one of: `sql`, `script`, `handler`, `dynamic_table`, `throttle`
 - [ ] For `type: sql`:
   - [ ] `primary_key` is specified
   - [ ] `sql` field contains a SELECT statement
@@ -41,18 +41,24 @@ For each transform entry:
   - [ ] If `backend_type: Postgres`, `secret_name` is specified
 - [ ] For `type: handler`:
   - [ ] `primary_key`, `from`, and `url` are present
+- [ ] For `type: throttle`:
+  - [ ] `from` references an existing source or earlier transform
+  - [ ] If specified, `max_batch_size` is a positive integer
+  - [ ] If specified, `min_batch_interval` is a duration string (e.g. `10s`, `500ms`, `1m`)
+  - [ ] `primary_key` is NOT required (throttle passes records through unchanged)
 
 ## Sinks
 
 For each sink entry:
 
-- [ ] `type` is one of: `postgres`, `postgres_aggregate`, `clickhouse`, `kafka`, `webhook`, `s3_sink`, `s2_sink`, `blackhole`
+- [ ] `type` is one of: `postgres`, `postgres_aggregate`, `clickhouse`, `kafka`, `pubsub`, `webhook`, `s3_sink`, `s2_sink`, `blackhole`
 - [ ] `from` references a valid source or transform key name
 - [ ] Required fields by type:
   - `postgres`: `schema`, `table`, `secret_name`, `primary_key`
   - `postgres_aggregate`: `schema`, `landing_table`, `agg_table`, `primary_key`, `secret_name`, `group_by`, `aggregate`
   - `clickhouse`: `table`, `secret_name`, `primary_key`
   - `kafka`: `topic`
+  - `pubsub`: `topic`, `secret_name` (Turbo-only sink)
   - `s3_sink`: `endpoint`, `bucket`, `secret_name`
   - `s2_sink`: `access_token`, `basin`, `stream`
   - `webhook`: `url` (no `secret_name`)

@@ -10,10 +10,11 @@ Complete field reference for all Turbo pipeline sink types.
 4. [PostgreSQL Aggregate](#postgresql-aggregate)
 5. [ClickHouse](#clickhouse)
 6. [Kafka](#kafka)
-7. [Webhook](#webhook)
-8. [S3](#s3)
-9. [S2](#s2)
-10. [Multi-Sink Considerations](#multi-sink-considerations)
+7. [Pub/Sub](#pubsub)
+8. [Webhook](#webhook)
+9. [S3](#s3)
+10. [S2](#s2)
+11. [Multi-Sink Considerations](#multi-sink-considerations)
 
 ---
 
@@ -121,6 +122,37 @@ sinks:
     data_format: avro          # or: json
     schema_registry_url: http://schema-registry:8081  # required for avro
 ```
+
+---
+
+## Pub/Sub
+
+Publish records to a [Google Cloud Pub/Sub](https://cloud.google.com/pubsub) topic. **Turbo-only sink** — not available on stream pipelines.
+
+```yaml
+sinks:
+  pubsub_output:
+    type: pubsub
+    from: my_transform
+    topic: my-topic
+    secret_name: MY_PUBSUB_SECRET
+    # Optional batching:
+    # batch_size: 1000
+    # batch_flush_interval: 1s
+```
+
+| Field                  | Required | Description                                                              |
+| ---------------------- | -------- | ------------------------------------------------------------------------ |
+| `type`                 | Yes      | `pubsub`                                                                 |
+| `from`                 | Yes      | Source or transform to read from                                         |
+| `topic`                | Yes      | Pub/Sub topic name (must already exist in the GCP project)               |
+| `secret_name`          | Yes      | Secret holding the GCP project id and service-account JSON               |
+| `batch_size`           | No       | Records per batch                                                        |
+| `batch_flush_interval` | No       | Max time between flushes (e.g. `1s`, `500ms`)                            |
+
+**Secret format** (`type: pubsub`): a GCP project id and a raw service-account JSON key. See `/secrets` for the create flow. The IAM role on the service account must include **`roles/pubsub.publisher`** AND **`roles/pubsub.viewer`** (the `viewer` role is needed by the sink's topic-existence pre-check during initialization — a publish-only SA will fail sink init with `PermissionDenied`).
+
+The topic must exist in GCP before deploying the pipeline — Goldsky does not auto-create topics.
 
 ---
 

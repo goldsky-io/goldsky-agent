@@ -93,6 +93,7 @@ Ask where the data should go. Use the `/turbo-pipelines` skill for sink configur
 | PostgreSQL | `secret_name`, `schema`, `table`, `primary_key` |
 | ClickHouse | `secret_name`, `table`, `order_by` |
 | Kafka | `secret_name`, `topic` |
+| Pub/Sub (Turbo-only) | `secret_name`, `topic` |
 | S3 | `bucket`, `region`, `prefix`, `format` |
 | Webhook | `url`, `format` |
 
