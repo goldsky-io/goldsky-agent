@@ -155,9 +155,10 @@
         "ethereum": { "version": "1.0.0", "startAtSupport": true }
       }
     },
-    "traces": {
+    "raw_traces": {
       "description": "Internal transactions and call traces",
       "useCase": "MEV analysis, contract interactions, deep transaction analysis",
+      "warning": "Use 'raw_traces' (canonical name per docs); 'traces' is an older alias still accepted on some chains.",
       "chains": {
         "ethereum": { "version": "1.0.0", "startAtSupport": true }
       },
@@ -182,6 +183,30 @@
         "status": "integer",
         "trace_id": "string",
         "block_timestamp": "integer (unix)"
+      }
+    },
+    "erc1155_transfers": {
+      "description": "ERC-1155 multi-token transfers (curated)",
+      "useCase": "Gaming, multi-token standards, NFT collections that mix fungible and non-fungible items",
+      "chains": {
+        "ethereum": { "version": "1.0.0", "startAtSupport": true },
+        "base": { "version": "1.0.0", "startAtSupport": true },
+        "matic": { "version": "1.0.0", "startAtSupport": true }
+      },
+      "schema": {
+        "id": "string",
+        "operator": "string",
+        "from_address": "string",
+        "to_address": "string",
+        "token_id": "decimal",
+        "value": "decimal",
+        "address": "string (token contract address)",
+        "block_number": "integer",
+        "block_timestamp": "integer (unix)",
+        "block_hash": "string",
+        "transaction_hash": "string",
+        "transaction_index": "integer",
+        "log_index": "integer"
       }
     }
   },
