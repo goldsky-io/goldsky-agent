@@ -97,9 +97,10 @@ sources:
 | `erc20_transfers`   | Fungible token transfers    | Token tracking, DeFi analytics       |
 | `erc721_transfers`  | NFT transfers               | NFT marketplaces, ownership tracking |
 | `erc1155_transfers` | Multi-token transfers       | Gaming, multi-token standards        |
-| `decoded_logs`      | ABI-decoded event logs      | Specific contract events             |
 
 > **Important:** Use `raw_transactions`, NOT `transactions`. Use `raw_logs`, NOT `logs` (though `logs` works as an alias on some chains).
+>
+> **There is no consumable `decoded_logs` source dataset.** For decoded contract events, source from `<chain>.raw_logs` and decode in a SQL transform via `_gs_log_decode(_gs_fetch_abi(<explorer-url>, <source>), topics, data)`. See `/turbo-transforms` for the full pattern.
 
 ### Solana
 
@@ -426,8 +427,8 @@ Dataset: `ethereum.erc721_transfers`
 
 ### "I want to monitor a specific smart contract"
 
-1. Dataset: `<chain>.logs` for raw events, or `<chain>.decoded_logs` for decoded events
-2. Filter by contract address in your transform
+1. Source: `<chain>.raw_logs`, filtered to the contract address in the source filter
+2. To decode events: add a SQL transform calling `_gs_log_decode(_gs_fetch_abi(<explorer-url>, <source>), topics, data) AS decoded`, then filter downstream by `WHERE decoded.event_signature = '<EventName>(<types>)'`. Never put topic0 hashes in the source filter.
 
 ### "I need multi-chain data"
 

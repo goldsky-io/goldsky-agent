@@ -183,13 +183,6 @@
         "trace_id": "string",
         "block_timestamp": "integer (unix)"
       }
-    },
-    "decoded_logs": {
-      "description": "ABI-decoded event logs",
-      "useCase": "Specific contract events with human-readable data",
-      "chains": {
-        "ethereum": { "version": "1.0.0", "startAtSupport": true }
-      }
     }
   },
   "solana": {
