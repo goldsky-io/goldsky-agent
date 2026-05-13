@@ -8,13 +8,15 @@ Complete field reference for all Turbo pipeline sink types.
 2. [Blackhole (Testing)](#blackhole-testing)
 3. [PostgreSQL](#postgresql)
 4. [PostgreSQL Aggregate](#postgresql-aggregate)
-5. [ClickHouse](#clickhouse)
-6. [Kafka](#kafka)
-7. [Pub/Sub](#pubsub)
-8. [Webhook](#webhook)
-9. [S3](#s3)
-10. [S2](#s2)
-11. [Multi-Sink Considerations](#multi-sink-considerations)
+5. [MySQL](#mysql)
+6. [ClickHouse](#clickhouse)
+7. [Kafka](#kafka)
+8. [Pub/Sub](#pubsub)
+9. [Webhook](#webhook)
+10. [S3](#s3)
+11. [SQS](#sqs)
+12. [S2](#s2)
+13. [Multi-Sink Considerations](#multi-sink-considerations)
 
 ---
 
@@ -86,6 +88,41 @@ sinks:
 ```
 
 Supported aggregation functions: `sum`, `count`, `avg`, `min`, `max`
+
+---
+
+## MySQL
+
+```yaml
+sinks:
+  mysql_output:
+    type: mysql
+    from: my_transform
+    schema: my_database       # MySQL treats schema and database as synonyms
+    table: my_table
+    secret_name: MY_MYSQL_SECRET
+    primary_key: id           # Optional — enables upsert (ON DUPLICATE KEY UPDATE)
+    # on_conflict: update     # or: nothing (INSERT IGNORE). Only with primary_key.
+    # batch_size: 1000
+```
+
+| Field          | Required | Description                                                                              |
+| -------------- | -------- | ---------------------------------------------------------------------------------------- |
+| `type`         | Yes      | `mysql`                                                                                  |
+| `from`         | Yes      | Source or transform to read from                                                         |
+| `schema`       | Yes      | Database name (MySQL treats `schema` and `database` as synonyms)                         |
+| `table`        | Yes      | Table name (auto-created if missing)                                                     |
+| `secret_name`  | Yes      | Secret holding MySQL connection fields                                                   |
+| `primary_key`  | No       | Column or comma-separated list — when set, inserts become upserts (composite keys ok)    |
+| `on_conflict`  | No       | `update` (default, `ON DUPLICATE KEY UPDATE`) or `nothing` (`INSERT IGNORE`)             |
+| `batch_size`   | No       | Max rows per `INSERT` statement (default `1000`)                                         |
+
+**Secret format:** structured JSON with `host`, `port`, `user`, `password`, `databaseName`. The `goldsky secret create` flow accepts either a MySQL URL (`mysql://user:pass@host:3306/database`) or individual fields and parses them into the structured shape.
+
+**Behavior notes:**
+- Auto-creates the table on startup with `CREATE TABLE IF NOT EXISTS`. No `ALTER TABLE` — adding a new upstream column against an existing table fails the insert.
+- Rows with `_gs_op = "d"` are deleted by primary key. With no `primary_key`, deletes are a no-op.
+- Arrow → MySQL type mapping: `Int32 → INT`, `Int64 → BIGINT`, `UInt64 → BIGINT UNSIGNED`, `Float64 → DOUBLE`, `Utf8 → TEXT`, `Binary → LONGBLOB`, `Timestamp → DATETIME(6)`, `Date → DATE`, `Decimal(p,s) → DECIMAL(p,s)` (precision capped at 65), nested types (struct/list/map) → `JSON`.
 
 ---
 
@@ -198,6 +235,57 @@ sinks:
 ```
 
 **Secret format:** `access_key_id:secret_access_key` (or `access_key_id:secret_access_key:session_token` for temporary credentials)
+
+---
+
+## SQS
+
+Send each upstream row to Amazon SQS as a JSON message body. Standard queues only — FIFO queues are not supported (the sink does not set `MessageGroupId` or `MessageDeduplicationId`).
+
+```yaml
+sinks:
+  sqs_output:
+    type: sqs_sink
+    from: my_transform
+    queue_url: https://sqs.us-east-1.amazonaws.com/123456789012/my-queue
+    secret_name: MY_SQS_SECRET
+```
+
+Inline credentials (not recommended for production):
+
+```yaml
+sinks:
+  sqs_output:
+    type: sqs_sink
+    from: my_transform
+    queue_url: https://sqs.us-east-1.amazonaws.com/123456789012/my-queue
+    access_key_id: <your-access-key>
+    secret_access_key: <your-secret-key>
+    region: us-east-1
+    # session_token: <sts-token>   # optional, for temporary credentials
+    # endpoint_url: <custom-url>   # optional, for SQS-compatible services / VPC endpoints
+```
+
+| Field               | Required | Description                                                                          |
+| ------------------- | -------- | ------------------------------------------------------------------------------------ |
+| `type`              | Yes      | `sqs_sink`                                                                           |
+| `from`              | Yes      | Source or transform to read from                                                     |
+| `queue_url`         | Yes      | Full SQS queue URL                                                                   |
+| `secret_name`       | Varies   | Secret holding `accessKeyId` / `secretAccessKey` / `region` (preferred)              |
+| `access_key_id`     | Varies   | Inline AWS access key (omit when using `secret_name`)                                |
+| `secret_access_key` | Varies   | Inline AWS secret (omit when using `secret_name`)                                    |
+| `region`            | Varies   | AWS region (omit when using `secret_name`)                                           |
+| `session_token`     | No       | STS / SSO / assumed-role temporary credentials                                       |
+| `endpoint_url`      | No       | Custom SQS endpoint (e.g. VPC endpoint or SQS-compatible service)                    |
+
+**Secret format** (`type: sqs`): JSON with `accessKeyId`, `secretAccessKey`, `region`, and `type: "sqs"`.
+
+**IAM:** the credentials need `sqs:SendMessage` and `sqs:SendMessageBatch` on the target queue.
+
+**Delivery behavior:**
+- Uses `SendMessageBatch` with up to 10 messages per request; larger upstream batches are split into 10-message chunks automatically.
+- Retries partial-batch failures up to 5 times with exponential backoff (100 ms → 5 s). Sender-fault failures fail immediately without retry.
+- SQS rejects messages over 256 KB — drop or truncate wide columns upstream with a SQL transform if payloads approach the limit.
 
 ---
 
