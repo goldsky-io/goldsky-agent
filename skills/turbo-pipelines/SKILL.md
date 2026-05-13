@@ -84,17 +84,19 @@ Start small and scale up — defensive sizing avoids wasted resources.
 
 ### Sink Selection
 
-| Destination          | Sink Type            | Best For                                      |
-| -------------------- | -------------------- | --------------------------------------------- |
-| Application DB       | `postgres`           | Row-level lookups, joins, application serving |
+| Destination          | Sink Type            | Best For                                       |
+| -------------------- | -------------------- | ---------------------------------------------- |
+| Application DB       | `postgres`           | Row-level lookups, joins, application serving  |
 | Real-time aggregates | `postgres_aggregate` | Balances, counters, running totals via triggers|
-| Analytics queries    | `clickhouse`         | Large-scale aggregations, time-series data    |
-| Event processing     | `kafka`              | Downstream consumers, event-driven systems    |
+| MySQL-compatible DB  | `mysql`              | Existing MySQL stacks, upserts on primary key  |
+| Analytics queries    | `clickhouse`         | Large-scale aggregations, time-series data     |
+| Event processing     | `kafka`              | Downstream consumers, event-driven systems     |
+| AWS messaging        | `sqs_sink`           | Decoupled AWS consumers (standard queues only) |
 | GCP messaging        | `pubsub`             | Google Cloud Pub/Sub topics (Turbo-only)       |
-| Serverless streaming | `s2_sink`            | S2.dev streams, alternative to Kafka          |
+| Serverless streaming | `s2_sink`            | S2.dev streams, alternative to Kafka           |
 | Notifications        | `webhook`            | Lambda functions, API callbacks, alerts        |
-| Data lake            | `s3_sink`            | Long-term archival, batch processing          |
-| Testing              | `blackhole`          | Validate pipeline without writing data        |
+| Data lake            | `s3_sink`            | Long-term archival, batch processing           |
+| Testing              | `blackhole`          | Validate pipeline without writing data         |
 
 For full sink field specifications, read `references/sink-reference.md`.
 

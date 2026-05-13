@@ -1,6 +1,6 @@
 ---
 name: turbo-builder
-description: "Build and deploy new Goldsky Turbo pipelines from scratch. Triggers on: 'build a pipeline', 'index X on Y chain', 'set up a pipeline', 'track transfers to postgres', or any request describing data to move from a chain/contract to a destination (postgres, clickhouse, kafka, s3, webhook). Covers the full workflow: requirements → dataset selection → YAML generation → validation → deploy. Not for debugging (use /turbo-doctor) or syntax lookups (use /turbo-pipelines)."
+description: "Build and deploy new Goldsky Turbo pipelines from scratch. Triggers on: 'build a pipeline', 'index X on Y chain', 'set up a pipeline', 'track transfers to postgres', or any request describing data to move from a chain/contract to a destination (postgres, mysql, clickhouse, kafka, pubsub, s3, sqs, webhook). Covers the full workflow: requirements → dataset selection → YAML generation → validation → deploy. Not for debugging (use /turbo-doctor) or syntax lookups (use /turbo-pipelines)."
 ---
 
 # Pipeline Builder
@@ -91,9 +91,11 @@ Ask where the data should go. Use the `/turbo-pipelines` skill for sink configur
 | Sink | Key config |
 |------|-----------|
 | PostgreSQL | `secret_name`, `schema`, `table`, `primary_key` |
+| MySQL | `secret_name`, `schema`, `table`, `primary_key` (optional, enables upsert) |
 | ClickHouse | `secret_name`, `table`, `order_by` |
 | Kafka | `secret_name`, `topic` |
 | Pub/Sub (Turbo-only) | `secret_name`, `topic` |
+| SQS | `secret_name`, `queue_url` |
 | S3 | `bucket`, `region`, `prefix`, `format` |
 | Webhook | `url`, `format` |
 
