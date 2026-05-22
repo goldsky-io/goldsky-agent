@@ -307,6 +307,21 @@ sinks:
 
 The secret holds a GCP project id and service-account JSON. Topic must already exist in GCP.
 
+#### Webhook
+
+```yaml
+sinks:
+  webhook_alerts:
+    type: webhook
+    from: my_transform
+    url: https://api.example.com/webhook
+    secret_name: MY_WEBHOOK_SECRET # Optional httpauth secret
+    one_row_per_request: true # Optional
+    skip_on_error: true # Optional; continue past failed deliveries
+```
+
+Use `skip_on_error: true` only when missing a webhook delivery is acceptable, because failed rows are skipped instead of blocking or failing the pipeline.
+
 #### Blackhole (Testing)
 
 ```yaml

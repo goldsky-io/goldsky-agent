@@ -61,7 +61,7 @@ For each sink entry:
   - `pubsub`: `topic`, `secret_name` (Turbo-only sink)
   - `s3_sink`: `endpoint`, `bucket`, `secret_name`
   - `s2_sink`: `access_token`, `basin`, `stream`
-  - `webhook`: `url` (no `secret_name`)
+  - `webhook`: `url`; optional `secret_name`, `headers`, `one_row_per_request`, `skip_on_error`
   - `blackhole`: only `from` required
 
 ## Cross-References

@@ -195,7 +195,7 @@ The topic must exist in GCP before deploying the pipeline — Goldsky does not a
 
 ## Webhook
 
-Webhook sinks do **not** use Goldsky's secrets management. Include auth headers directly in the config, or use a plain URL for unauthenticated endpoints.
+Webhook sinks send rows to an HTTP endpoint with `POST`. Use `secret_name` for a Goldsky `httpauth` secret, inline `headers` for non-secret headers, or a plain URL for unauthenticated endpoints. Do not provide the same header through both `secret_name` and `headers`.
 
 ```yaml
 sinks:
@@ -203,9 +203,10 @@ sinks:
     type: webhook
     from: my_transform
     url: https://api.example.com/webhook
+    secret_name: MY_WEBHOOK_SECRET
     one_row_per_request: true
+    skip_on_error: true
     headers:
-      Authorization: Bearer your-token
       Content-Type: application/json
 ```
 
@@ -218,6 +219,16 @@ sinks:
     from: my_transform
     url: https://my-lambda.us-west-2.on.aws/
 ```
+
+| Field                 | Required | Description                                                                 |
+| --------------------- | -------- | --------------------------------------------------------------------------- |
+| `url`                 | Yes      | Fully-qualified HTTP(S) endpoint URL. Webhook sinks always use HTTP `POST`. |
+| `secret_name`         | No       | Name of a Goldsky `httpauth` secret for authenticated webhooks.             |
+| `headers`             | No       | Additional non-secret headers. Do not duplicate headers from `secret_name`. |
+| `one_row_per_request` | No       | Send one JSON object per request instead of batching rows as a JSON array.  |
+| `skip_on_error`       | No       | If `true`, failed deliveries are skipped so the pipeline continues.         |
+
+By default, retriable responses such as timeouts, `408`, `429`, and `5xx` are retried with backoff, while non-retriable `4xx` responses fail the pipeline. Set `skip_on_error: true` only when missing a delivery is acceptable, because skipped rows are not delivered to the endpoint.
 
 ---
 
