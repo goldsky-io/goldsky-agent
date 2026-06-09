@@ -1,0 +1,71 @@
+# goldsky-io/goldsky-agent repository. APP-4690.
+name: Sync to Bedrock KB
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "skills/**"
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-west-2
+  S3_BUCKET: goldsky-kb-prod
+  KB_ID: ${{ secrets.BEDROCK_KB_ID_PROD }}
+  DATA_SOURCE_ID: ${{ secrets.BEDROCK_DATA_SOURCE_SKILLS_ID_PROD }}
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/goldsky-kb-prod-gha-ingest
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Sync skills/ to S3
+        run: |
+          aws s3 sync skills/ s3://$S3_BUCKET/skills/ \
+            --delete
+
+      - name: Trigger Bedrock ingestion job
+        run: |
+          JOB_ID=$(aws bedrock-agent start-ingestion-job \
+            --knowledge-base-id "$KB_ID" \
+            --data-source-id "$DATA_SOURCE_ID" \
+            --description "Triggered by ${GITHUB_SHA::7} on $(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --query 'ingestionJob.ingestionJobId' \
+            --output text)
+          echo "Started ingestion job: $JOB_ID"
+          echo "JOB_ID=$JOB_ID" >> "$GITHUB_ENV"
+
+      - name: Wait for ingestion to complete
+        run: |
+          for i in {1..60}; do
+            STATUS=$(aws bedrock-agent get-ingestion-job \
+              --knowledge-base-id "$KB_ID" \
+              --data-source-id "$DATA_SOURCE_ID" \
+              --ingestion-job-id "$JOB_ID" \
+              --query 'ingestionJob.status' \
+              --output text)
+            echo "[$i/60] Status: $STATUS"
+            if [ "$STATUS" = "COMPLETE" ]; then exit 0; fi
+            if [ "$STATUS" = "FAILED" ]; then
+              aws bedrock-agent get-ingestion-job \
+                --knowledge-base-id "$KB_ID" \
+                --data-source-id "$DATA_SOURCE_ID" \
+                --ingestion-job-id "$JOB_ID"
+              exit 1
+            fi
+            sleep 30
+          done
+          echo "Timed out waiting for ingestion"
+          exit 1
