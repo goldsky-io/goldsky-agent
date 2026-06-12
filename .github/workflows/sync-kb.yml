@@ -1,0 +1,120 @@
+# Syncs this repo's skills/ content to the Goldsky AI chatbot's Bedrock KB
+# ingest buckets and triggers a Knowledge Base ingestion job.
+# goldsky-io/goldsky-agent repository.
+#
+# Dual-write: there is one KB per environment (dev + prod), each in its own AWS
+# account, and they are kept in sync by syncing to BOTH on every run. Each
+# environment leg activates only when its per-environment repo secrets are set,
+# so prod turns on automatically once its secrets are added — no workflow change.
+#
+# Auth is GitHub OIDC into the per-account `goldsky-kb-<env>-gha-ingest` role,
+# whose trust policy only allows `refs/heads/main`, so this runs on main (push
+# or manual dispatch), not on feature branches. Account ids come from secrets
+# (not committed to this public repo).
+name: Sync to Bedrock KB
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "skills/**"
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-west-2
+  # Per-environment config from repo secrets. An env whose KB-id or account-id
+  # secret is empty is skipped (see the resolve step), so prod stays inert until
+  # its secrets exist.
+  KB_ID_DEV: ${{ secrets.BEDROCK_KB_ID_DEV }}
+  KB_ID_PROD: ${{ secrets.BEDROCK_KB_ID_PROD }}
+  DS_ID_DEV: ${{ secrets.BEDROCK_DATA_SOURCE_SKILLS_ID_DEV }}
+  DS_ID_PROD: ${{ secrets.BEDROCK_DATA_SOURCE_SKILLS_ID_PROD }}
+  ACCOUNT_DEV: ${{ secrets.AWS_ACCOUNT_ID_DEV }}
+  ACCOUNT_PROD: ${{ secrets.AWS_ACCOUNT_ID_PROD }}
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    # Serialize runs per environment so two pushes can't race the S3 sync /
+    # overlap ingestion jobs on the same data source; don't cancel an in-flight
+    # ingestion.
+    concurrency:
+      group: sync-kb-${{ github.workflow }}-${{ matrix.environment }}
+      cancel-in-progress: false
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: [dev, prod]
+    steps:
+      - name: Resolve KB target for ${{ matrix.environment }}
+        id: kb
+        run: |
+          case "${{ matrix.environment }}" in
+            dev)  KB_ID="$KB_ID_DEV";  DS_ID="$DS_ID_DEV";  ACCOUNT="$ACCOUNT_DEV"  ;;
+            prod) KB_ID="$KB_ID_PROD"; DS_ID="$DS_ID_PROD"; ACCOUNT="$ACCOUNT_PROD" ;;
+          esac
+          if [ -z "$KB_ID" ] || [ -z "$ACCOUNT" ]; then
+            echo "Missing secrets for ${{ matrix.environment }} — skipping."
+            echo "active=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "active=true" >> "$GITHUB_OUTPUT"
+            echo "kb_id=$KB_ID" >> "$GITHUB_OUTPUT"
+            echo "ds_id=$DS_ID" >> "$GITHUB_OUTPUT"
+            echo "account=$ACCOUNT" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout
+        if: steps.kb.outputs.active == 'true'
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Configure AWS credentials via OIDC
+        if: steps.kb.outputs.active == 'true'
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
+        with:
+          role-to-assume: arn:aws:iam::${{ steps.kb.outputs.account }}:role/goldsky-kb-${{ matrix.environment }}-gha-ingest
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Sync skills/ to S3 (${{ matrix.environment }})
+        if: steps.kb.outputs.active == 'true'
+        run: |
+          aws s3 sync skills/ "s3://goldsky-kb-${{ matrix.environment }}/skills/" \
+            --exclude "*.sh" \
+            --delete
+
+      - name: Trigger + wait for ingestion (${{ matrix.environment }})
+        if: steps.kb.outputs.active == 'true'
+        env:
+          KB_ID: ${{ steps.kb.outputs.kb_id }}
+          DATA_SOURCE_ID: ${{ steps.kb.outputs.ds_id }}
+        run: |
+          JOB_ID=$(aws bedrock-agent start-ingestion-job \
+            --knowledge-base-id "$KB_ID" \
+            --data-source-id "$DATA_SOURCE_ID" \
+            --description "Triggered by ${GITHUB_SHA::7} on $(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --query 'ingestionJob.ingestionJobId' \
+            --output text)
+          echo "Started ingestion job $JOB_ID (${{ matrix.environment }})"
+          for i in {1..60}; do
+            STATUS=$(aws bedrock-agent get-ingestion-job \
+              --knowledge-base-id "$KB_ID" \
+              --data-source-id "$DATA_SOURCE_ID" \
+              --ingestion-job-id "$JOB_ID" \
+              --query 'ingestionJob.status' \
+              --output text)
+            echo "[$i/60] Status: $STATUS"
+            if [ "$STATUS" = "COMPLETE" ]; then exit 0; fi
+            if [ "$STATUS" = "FAILED" ]; then
+              aws bedrock-agent get-ingestion-job \
+                --knowledge-base-id "$KB_ID" \
+                --data-source-id "$DATA_SOURCE_ID" \
+                --ingestion-job-id "$JOB_ID"
+              exit 1
+            fi
+            sleep 30
+          done
+          echo "Timed out waiting for ingestion"
+          exit 1
