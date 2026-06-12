@@ -39,6 +39,12 @@ env:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    # Serialize runs per environment so two pushes can't race the S3 sync /
+    # overlap ingestion jobs on the same data source; don't cancel an in-flight
+    # ingestion.
+    concurrency:
+      group: sync-kb-${{ github.workflow }}-${{ matrix.environment }}
+      cancel-in-progress: false
     strategy:
       fail-fast: false
       matrix:
@@ -63,11 +69,11 @@ jobs:
 
       - name: Checkout
         if: steps.kb.outputs.active == 'true'
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Configure AWS credentials via OIDC
         if: steps.kb.outputs.active == 'true'
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
         with:
           role-to-assume: arn:aws:iam::${{ steps.kb.outputs.account }}:role/goldsky-kb-${{ matrix.environment }}-gha-ingest
           aws-region: ${{ env.AWS_REGION }}
@@ -76,6 +82,7 @@ jobs:
         if: steps.kb.outputs.active == 'true'
         run: |
           aws s3 sync skills/ "s3://goldsky-kb-${{ matrix.environment }}/skills/" \
+            --exclude "*.sh" \
             --delete
 
       - name: Trigger + wait for ingestion (${{ matrix.environment }})
