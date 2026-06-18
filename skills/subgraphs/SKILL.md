@@ -1,6 +1,6 @@
 ---
 name: subgraphs
-description: "Use this skill when the user asks about Goldsky Subgraphs — deploying, managing, or querying subgraphs. Triggers on: 'deploy a subgraph', 'migrate from The Graph', 'what is a subgraph', 'GraphQL endpoint', 'low-code or no-code subgraph', 'subgraph tags', 'subgraph webhooks', 'cross-chain subgraph', 'subgraph stalled', 'subgraph API key', 'init subgraph', 'scaffold subgraph', 'subgraph logs', 'pause subgraph', 'start subgraph', 'graft subgraph'. Also use this skill when the user wants to build a GraphQL API over onchain data, power a dApp frontend with indexed blockchain data, or reuse an existing TheGraph subgraph on Goldsky. For questions about streaming raw chain data directly to a database without GraphQL, use the turbo-builder or mirror skills instead."
+description: "Use this skill when the user asks about Goldsky Subgraphs — deploying, managing, or querying subgraphs. Triggers on: 'deploy a subgraph', 'what is a subgraph', 'GraphQL endpoint', 'low-code or no-code subgraph', 'subgraph tags', 'subgraph webhooks', 'cross-chain subgraph', 'subgraph API key', 'init subgraph', 'scaffold subgraph', 'subgraph logs', 'pause subgraph', 'start subgraph', 'graft subgraph'. Also use this skill when the user wants to build a GraphQL API over onchain data or power a dApp frontend with indexed blockchain data. For a subgraph that is failing, stalled, stuck syncing, or won't deploy, use the subgraph-doctor skill. For migrating a subgraph off The Graph, use the subgraph-migrate-thegraph skill. For questions about streaming raw chain data directly to a database without GraphQL, use the turbo-builder or mirror skills instead."
 ---
 
 # Goldsky Subgraphs
@@ -95,14 +95,13 @@ Use the Goldsky dashboard to deploy pre-built subgraphs for common standards (ER
 
 ### Migrate from The Graph
 
-One-step migration — no code changes needed:
+One-step migration, no code changes — deploy from your existing endpoint or IPFS hash:
 
 ```bash
-goldsky subgraph deploy my-subgraph/1.0.0 \
-  --from-url <your-thegraph-deployment-url>
+goldsky subgraph deploy my-subgraph/1.0.0 --from-url <your-thegraph-deployment-url>
 ```
 
-See [docs.goldsky.com/subgraphs/deploying-subgraphs](https://docs.goldsky.com/subgraphs/deploying-subgraphs).
+> For a guided migration (path selection, verifying sync, migrating tags, swapping your endpoint), use **`/subgraph-migrate-thegraph`**.
 
 ### Deploy flags reference
 
@@ -298,13 +297,7 @@ goldsky subgraph log my-subgraph/1.0.0 --format json
 | `--levels <levels>` | — | Explicit comma-separated log levels to include |
 | `--interval <seconds>` | `5` | Seconds between log checks |
 
-### Stalled subgraphs
-
-If a subgraph stops progressing, Goldsky auto-pauses it and sends an email notification. To diagnose:
-
-1. Check logs: `goldsky subgraph log my-subgraph/1.0.0 --since 1h --filter error`
-2. Look for handler errors, RPC timeouts, or out-of-memory issues
-3. Fix the issue and redeploy, or contact support@goldsky.com
+> **Subgraph failing, stalled, stuck syncing, or won't deploy?** Use **`/subgraph-doctor`** for a step-by-step diagnostic workflow (status checks, log reading, the `_meta` query, error-pattern matching, and fixes).
 
 ---
 
@@ -342,5 +335,7 @@ See [docs.goldsky.com/subgraphs/introduction](https://docs.goldsky.com/subgraphs
 
 ## Related
 
+- **`/subgraph-doctor`** — Diagnose and fix a failing, stalled, or stuck subgraph
+- **`/subgraph-migrate-thegraph`** — Guided migration of a subgraph from The Graph
 - **`/turbo-builder`** — Build a streaming pipeline to a database instead of a GraphQL API
 - **Goldsky docs:** [docs.goldsky.com/subgraphs/introduction](https://docs.goldsky.com/subgraphs/introduction)

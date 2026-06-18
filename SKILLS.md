@@ -16,7 +16,9 @@ AI-powered tools for building, deploying, and debugging across the full Goldsky 
 - **mirror-doctor** - Diagnose and fix broken Mirror pipelines interactively
 
 ### Subgraphs
-- **subgraphs** - Deploy subgraphs, manage GraphQL endpoints and tags, migrate from The Graph
+- **subgraphs** - Deploy subgraphs, manage GraphQL endpoints, tags, and webhooks
+- **subgraph-doctor** - Diagnose and fix failing, stalled, or stuck subgraphs interactively
+- **subgraph-migrate-thegraph** - Guided migration of a subgraph from The Graph
 
 ### Compose
 - **compose** - Build offchain-to-onchain TypeScript tasks (oracles, keepers, automation)
@@ -55,6 +57,12 @@ npx skills add goldsky-io/goldsky-agent
 
 **"Sync my subgraph entities into PostgreSQL"**
 → Uses: mirror, secrets
+
+**"My subgraph stopped syncing / won't deploy"**
+→ Uses: subgraph-doctor, subgraphs
+
+**"Migrate my subgraph from The Graph to Goldsky"**
+→ Uses: subgraph-migrate-thegraph, subgraphs
 
 **"What dataset for Polygon NFTs?"**
 → Uses: datasets
