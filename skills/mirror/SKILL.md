@@ -557,7 +557,7 @@ Run `goldsky pipeline cancel-update <name>` to cancel the in-flight operation, t
 ## Related
 
 - **`/turbo-builder`** — Build a new Turbo pipeline (recommended for new projects not using subgraph sources)
-- **`/subgraphs`** — Deploy and manage the subgraph you want to sync via Mirror
+- **`/subgraph-builder`** — Build and deploy the subgraph you want to sync via Mirror
 - **`/secrets`** — Create secrets for sink credentials
 - **`/datasets`** — Browse available dataset names and chain prefixes
 - **Goldsky docs:** [docs.goldsky.com/mirror/introduction](https://docs.goldsky.com/mirror/introduction)

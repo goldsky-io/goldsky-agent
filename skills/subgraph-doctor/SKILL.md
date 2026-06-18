@@ -1,6 +1,6 @@
 ---
 name: subgraph-doctor
-description: "Diagnose and fix broken Goldsky Subgraphs. Use this skill whenever a user has a subgraph that is failing, stalled, stuck syncing, not indexing, auto-paused, returning errors, or won't deploy. Triggers on: 'subgraph stopped syncing', 'subgraph stuck at block', 'subgraph stalled', 'subgraph failed to deploy', 'indexing error', 'SubgraphSyncingFailure', 'unexpected null in handler', 'no network found', 'deployment already exists', 'subgraph not returning data', 'subgraph endpoint 404', 'reached the subgraph limit', 'rate limited'. Also use when the user names a subgraph alongside a problem. Runs CLI commands directly to check status, read logs, identify root cause, and apply fixes. For deploy/tag/endpoint syntax reference, use /subgraphs instead. For migrating from The Graph, use /subgraph-migrate-thegraph instead."
+description: "Diagnose and fix broken Goldsky Subgraphs. Use this skill whenever a user has a subgraph that is failing, stalled, stuck syncing, not indexing, auto-paused, returning errors, or won't deploy. Triggers on: 'subgraph stopped syncing', 'subgraph stuck at block', 'subgraph stalled', 'subgraph failed to deploy', 'indexing error', 'SubgraphSyncingFailure', 'unexpected null in handler', 'no network found', 'deployment already exists', 'subgraph not returning data', 'subgraph endpoint 404', 'reached the subgraph limit', 'rate limited'. Also use when the user names a subgraph alongside a problem. Runs CLI commands directly to check status, read logs, identify root cause, and apply fixes. For building, authoring, deploying, or endpoint/tag reference, use /subgraph-builder instead. For migrating from The Graph, use /subgraph-migrate-thegraph instead."
 ---
 
 # Subgraph Doctor
@@ -10,9 +10,9 @@ Diagnose and fix existing Goldsky Subgraph problems by running CLI commands, rea
 ## Boundaries
 
 - Diagnose and fix EXISTING subgraph problems.
-- Do not build or scaffold new subgraphs — use `/subgraphs` for `init`/`deploy` reference.
+- Do not build or scaffold new subgraphs — use `/subgraph-builder` for authoring/`init`/`deploy`.
 - Do not handle The Graph migrations — use `/subgraph-migrate-thegraph`.
-- Do not serve as a command reference — use `/subgraphs` for CLI syntax and flag lookups.
+- Do not serve as a command reference — use `/subgraph-builder` or `/cli-reference` for CLI syntax and flag lookups.
 - Do not handle Turbo or Mirror pipelines — use `/turbo-doctor` or `/mirror-doctor`.
 - **Customer-facing only.** Use only `goldsky` CLI commands, the dashboard, and GraphQL queries. Never suggest `graphman`, `kubectl`, Datadog, or direct database access — those are internal Goldsky tooling. When a problem needs them, escalate to support (see Step 6).
 
@@ -150,7 +150,7 @@ The deploy command errors out and nothing gets created. Common cases:
 **Symptoms:** `404` on the GraphQL endpoint, "no data", or rate-limit errors.
 
 - **404 / no data:** The subgraph may not be synced yet (check `_meta`), or the public endpoint is disabled. Verify the endpoint URL with `goldsky subgraph list <name/version>`. Don't assume an endpoint is live before the resource exists and has synced.
-- **Public vs private:** If queries fail auth, the endpoint may be private. Toggle with `goldsky subgraph update <name/version> --public-endpoint enabled` (see `/subgraphs`).
+- **Public vs private:** If queries fail auth, the endpoint may be private. Toggle with `goldsky subgraph update <name/version> --public-endpoint enabled` (see `/subgraph-builder`).
 - **Rate limits:** Default is ~50 requests / 10 seconds. Higher limits are sales/support-gated — escalate (Step 6); don't promise a specific new limit.
 
 ### Step 6: Present Diagnosis
@@ -195,13 +195,27 @@ Offer to run fixes, and confirm before anything destructive:
 
 After a fix, re-check `goldsky subgraph list <name/version>` and the `_meta` query to confirm the head is advancing again.
 
+## Common mapping-code root causes (catch before redeploy)
+
+When indexing halted on a handler/mapping error, the underlying cause is almost always one of these AssemblyScript mistakes. Check the mapping for them before redeploying — and recommend the **Subgraph Linter** (static analysis) plus Matchstick tests so they never reach a deploy again (see `/subgraph-builder` → `references/testing.md`):
+
+| Root cause | Symptom it produces | Fix |
+|------------|--------------------|-----|
+| Unchecked `Entity.load(id)!` force-unwrap | `unexpected null in handler` panic when the entity is missing | Use get-or-create; never `!`-unwrap a `load`. |
+| Early-return that skips `.save()` (often after a reverting `decimals()`/`symbol()` on a non-ERC-20) | later `.load()` panics; `Token.load`/Heap errors | Use `try_` calls, default the value, persist the entity, skip only downstream pricing. |
+| Division without a zero guard | math abort / `unexpected null` | Wrap in a `safeDiv` (return 0 when denominator is 0). |
+| Stale `.save()` after a helper already mutated the entity | overwritten/clobbered fields, wrong data (not always a crash) | Load once, mutate, save once; don't save a stale copy. |
+| Per-event `eth_call` that reverts or is undeclared | slow indexing or `unexpected null` | Make it revert-safe (`try_`) and declare it (`specVersion 1.2.0`+). |
+
+These are the *causes* behind the reactive symptoms in Step 5's "Handler / mapping errors". Fixing the code and rewinding to the first affected block is the durable fix.
+
 ## Important Rules
 
 - Always gather data (logs + `_meta`) before diagnosing. Never guess.
 - "The product is solid — most issues are customer-side." Check the obvious customer causes first (wrong network, mapping bug, schema/manifest error) before assuming a Goldsky-side problem.
 - Never recommend `graphman`/`kubectl`/Datadog/database access to a customer. Escalate instead.
 - Confirm before destructive commands (delete, reindex from scratch).
-- Redeploying creates a new immutable version. Use tags so the frontend URL doesn't change (see `/subgraphs`).
+- Redeploying creates a new immutable version. Use tags so the frontend URL doesn't change (see `/subgraph-builder`).
 
 ## When Bash Is Not Available
 
@@ -209,7 +223,7 @@ Give one command at a time, explain what to look for, and proceed based on the u
 
 ## Related
 
-- **`/subgraphs`** — Deploy, tags, endpoints, webhooks, lifecycle reference
+- **`/subgraph-builder`** — Build, author, and deploy subgraphs; schema/mapping/manifest authoring; endpoints, tags, webhooks
 - **`/subgraph-migrate-thegraph`** — Migrate a subgraph from The Graph
 - **`/auth-setup`** — CLI installation and authentication
 - **`/datasets`** — Chain prefixes and supported-network slugs

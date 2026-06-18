@@ -1,6 +1,6 @@
 ---
 name: subgraph-migrate-thegraph
-description: "Migrate a subgraph from The Graph to Goldsky as a drop-in replacement — no code changes required. Use this skill when the user wants to move, switch, port, or migrate a subgraph off The Graph (hosted service, Subgraph Studio, or the decentralized network) onto Goldsky, or when a subgraph endpoint they relied on (e.g. The Graph hosted service) was sunset. Triggers on: 'migrate from The Graph', 'move my subgraph to Goldsky', 'switch off The Graph', 'redeploy a TheGraph subgraph', 'my subgraph endpoint is gone', 'from-url', 'from-ipfs-hash', 'drop-in replacement for The Graph'. For diagnosing a subgraph that fails after migrating, use /subgraph-doctor. For general deploy/tag/endpoint reference, use /subgraphs."
+description: "Migrate a subgraph from The Graph to Goldsky as a drop-in replacement — no code changes required. Use this skill when the user wants to move, switch, port, or migrate a subgraph off The Graph (hosted service, Subgraph Studio, or the decentralized network) onto Goldsky, or when a subgraph endpoint they relied on (e.g. The Graph hosted service) was sunset. Triggers on: 'migrate from The Graph', 'move my subgraph to Goldsky', 'switch off The Graph', 'redeploy a TheGraph subgraph', 'my subgraph endpoint is gone', 'from-url', 'from-ipfs-hash', 'drop-in replacement for The Graph'. For diagnosing a subgraph that fails after migrating, use /subgraph-doctor. For building/authoring or general deploy/tag/endpoint reference, use /subgraph-builder."
 ---
 
 # Migrate a Subgraph from The Graph
@@ -11,7 +11,7 @@ Migrating an existing subgraph from The Graph to Goldsky is a **drop-in replacem
 
 - This skill is for migrating **from The Graph** (hosted service, Subgraph Studio, or decentralized network).
 - For diagnosing a subgraph that fails to deploy or sync after migrating, use `/subgraph-doctor`.
-- For deploy/tag/endpoint/webhook syntax reference, use `/subgraphs`.
+- For deploy/tag/endpoint/webhook reference, use `/subgraph-builder`.
 - For migrating from Alchemy, follow the dedicated Alchemy migration docs (not covered here).
 
 ## Two hard rules
@@ -41,7 +41,7 @@ Before deploying, get the user's actual source — do not guess it.
   ```
   `deployment` is the IPFS hash.
 
-If the user can't produce either, fall back to deploying from source (`--path`) and point them to `/subgraphs` for `init`/build.
+If the user can't produce either, fall back to deploying from source (`--path`) and point them to `/subgraph-builder` for `init`/build.
 
 ## Step 3: Install the CLI and log in
 
@@ -69,7 +69,7 @@ goldsky subgraph deploy my-subgraph/1.0.0 --from-url <your-thegraph-endpoint>
 # From an IPFS hash (deployment ID)
 goldsky subgraph deploy my-subgraph/1.0.0 --from-ipfs-hash <Qm...>
 
-# From source (build first per /subgraphs)
+# From source (build first per /subgraph-builder)
 goldsky subgraph deploy my-subgraph/1.0.0 --path ./build
 ```
 
@@ -103,7 +103,7 @@ goldsky subgraph tag create my-subgraph/1.0.0 --tag prod
 # https://api.goldsky.com/api/public/<project-id>/subgraphs/my-subgraph/prod/gn
 ```
 
-Once synced, point your app at the Goldsky endpoint (use the tagged URL so future redeploys don't break the frontend). See `/subgraphs` for endpoints, private endpoints/API keys, and webhooks.
+Once synced, point your app at the Goldsky endpoint (use the tagged URL so future redeploys don't break the frontend). See `/subgraph-builder` for endpoints, private endpoints/API keys, and webhooks.
 
 ## Common migration gotchas
 
@@ -117,7 +117,7 @@ These show up because a subgraph authored for The Graph hits Goldsky's spec vali
 
 ## Related
 
-- **`/subgraphs`** — Deploy paths, endpoints, tags, webhooks, lifecycle reference
+- **`/subgraph-builder`** — Build, author, and deploy subgraphs; endpoints, tags, webhooks reference
 - **`/subgraph-doctor`** — Diagnose a subgraph that fails to deploy or sync after migrating
 - **`/auth-setup`** — CLI installation and login
 - **Goldsky docs:** [docs.goldsky.com/subgraphs/migrate-from-the-graph](https://docs.goldsky.com/subgraphs/migrate-from-the-graph)

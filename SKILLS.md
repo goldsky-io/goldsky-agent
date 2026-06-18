@@ -16,7 +16,7 @@ AI-powered tools for building, deploying, and debugging across the full Goldsky 
 - **mirror-doctor** - Diagnose and fix broken Mirror pipelines interactively
 
 ### Subgraphs
-- **subgraphs** - Deploy subgraphs, manage GraphQL endpoints, tags, and webhooks
+- **subgraph-builder** - Author, build, and deploy subgraphs: schema design, AssemblyScript mappings, manifest, instant subgraphs, performance, testing, endpoints/tags/webhooks
 - **subgraph-doctor** - Diagnose and fix failing, stalled, or stuck subgraphs interactively
 - **subgraph-migrate-thegraph** - Guided migration of a subgraph from The Graph
 
@@ -58,11 +58,14 @@ npx skills add goldsky-io/goldsky-agent
 **"Sync my subgraph entities into PostgreSQL"**
 → Uses: mirror, secrets
 
+**"Build me a subgraph for an ERC-721 contract"**
+→ Uses: subgraph-builder, cli-reference
+
 **"My subgraph stopped syncing / won't deploy"**
-→ Uses: subgraph-doctor, subgraphs
+→ Uses: subgraph-doctor, subgraph-builder
 
 **"Migrate my subgraph from The Graph to Goldsky"**
-→ Uses: subgraph-migrate-thegraph, subgraphs
+→ Uses: subgraph-migrate-thegraph, subgraph-builder
 
 **"What dataset for Polygon NFTs?"**
 → Uses: datasets
