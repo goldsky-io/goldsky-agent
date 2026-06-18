@@ -1,5 +1,5 @@
 ---
-name: subgraph-migrate-thegraph
+name: subgraph-migrate
 description: "Migrate a subgraph from The Graph to Goldsky as a drop-in replacement — no code changes required. Use this skill when the user wants to move, switch, port, or migrate a subgraph off The Graph (hosted service, Subgraph Studio, or the decentralized network) onto Goldsky, or when a subgraph endpoint they relied on (e.g. The Graph hosted service) was sunset. Triggers on: 'migrate from The Graph', 'move my subgraph to Goldsky', 'switch off The Graph', 'redeploy a TheGraph subgraph', 'my subgraph endpoint is gone', 'from-url', 'from-ipfs-hash', 'drop-in replacement for The Graph'. For diagnosing a subgraph that fails after migrating, use /subgraph-doctor. For building/authoring or general deploy/tag/endpoint reference, use /subgraph-builder."
 ---
 

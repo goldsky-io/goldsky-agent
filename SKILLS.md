@@ -18,7 +18,7 @@ AI-powered tools for building, deploying, and debugging across the full Goldsky 
 ### Subgraphs
 - **subgraph-builder** - Author, build, and deploy subgraphs: schema design, AssemblyScript mappings, manifest, instant subgraphs, performance, testing, endpoints/tags/webhooks
 - **subgraph-doctor** - Diagnose and fix failing, stalled, or stuck subgraphs interactively
-- **subgraph-migrate-thegraph** - Guided migration of a subgraph from The Graph
+- **subgraph-migrate** - Guided migration of a subgraph from The Graph
 
 ### Compose
 - **compose** - Build offchain-to-onchain TypeScript tasks (oracles, keepers, automation)
@@ -65,7 +65,7 @@ npx skills add goldsky-io/goldsky-agent
 → Uses: subgraph-doctor, subgraph-builder
 
 **"Migrate my subgraph from The Graph to Goldsky"**
-→ Uses: subgraph-migrate-thegraph, subgraph-builder
+→ Uses: subgraph-migrate, subgraph-builder
 
 **"What dataset for Polygon NFTs?"**
 → Uses: datasets

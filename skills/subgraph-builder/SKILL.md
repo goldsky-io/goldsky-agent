@@ -1,6 +1,6 @@
 ---
 name: subgraph-builder
-description: "Build, author, and deploy Goldsky Subgraphs — hosted GraphQL APIs over onchain data. Use this skill when the user wants to create, scaffold, write, or deploy a subgraph; design a subgraph schema or entities; write or fix AssemblyScript mapping handlers; configure subgraph.yaml (data sources, event/call/block handlers, templates); deploy from source, an ABI (instant/no-code), or IPFS; or set up GraphQL endpoints, tags, and webhooks. Triggers on: 'build a subgraph', 'create a subgraph', 'deploy a subgraph', 'init subgraph', 'scaffold subgraph', 'write a subgraph mapping', 'design a subgraph schema', 'subgraph entities', 'subgraph.yaml', 'event handlers', 'no-code / low-code / instant subgraph', 'subgraph from ABI', 'GraphQL endpoint', 'subgraph tags', 'subgraph webhooks', 'cross-chain subgraph', 'index a contract with a GraphQL API'. For a subgraph that is failing, stalled, or won't deploy, use /subgraph-doctor. For migrating an existing subgraph off The Graph, use /subgraph-migrate-thegraph. For exhaustive CLI flags, use /cli-reference. For streaming raw chain data to a database without GraphQL, use /turbo-builder."
+description: "Build, author, and deploy Goldsky Subgraphs — hosted GraphQL APIs over onchain data. Use this skill when the user wants to create, scaffold, write, or deploy a subgraph; design a subgraph schema or entities; write or fix AssemblyScript mapping handlers; configure subgraph.yaml (data sources, event/call/block handlers, templates); deploy from source, an ABI (instant/no-code), or IPFS; or set up GraphQL endpoints, tags, and webhooks. Triggers on: 'build a subgraph', 'create a subgraph', 'deploy a subgraph', 'init subgraph', 'scaffold subgraph', 'write a subgraph mapping', 'design a subgraph schema', 'subgraph entities', 'subgraph.yaml', 'event handlers', 'no-code / low-code / instant subgraph', 'subgraph from ABI', 'GraphQL endpoint', 'subgraph tags', 'subgraph webhooks', 'cross-chain subgraph', 'index a contract with a GraphQL API'. For a subgraph that is failing, stalled, or won't deploy, use /subgraph-doctor. For migrating an existing subgraph off The Graph, use /subgraph-migrate. For exhaustive CLI flags, use /cli-reference. For streaming raw chain data to a database without GraphQL, use /turbo-builder."
 ---
 
 # Subgraph Builder
@@ -14,7 +14,7 @@ Build a Goldsky Subgraph end-to-end: design the schema, write mappings, configur
 
 - Build and author NEW subgraphs (schema, mappings, manifest, deploy, endpoints, tags, webhooks).
 - Do not diagnose broken/stalled subgraphs — use `/subgraph-doctor`.
-- Do not run The Graph migrations — use `/subgraph-migrate-thegraph`.
+- Do not run The Graph migrations — use `/subgraph-migrate`.
 - For exhaustive `goldsky subgraph` flags, use `/cli-reference` or `goldsky subgraph <cmd> --help` — this skill covers the workflow, not a flag dump.
 
 ## Choose an approach first
@@ -135,7 +135,7 @@ Present a summary (name/version, network, endpoint URL, tag). Point the user to 
 ## Related
 
 - **`/subgraph-doctor`** — Diagnose a failing, stalled, or won't-deploy subgraph
-- **`/subgraph-migrate-thegraph`** — Migrate an existing subgraph off The Graph
+- **`/subgraph-migrate`** — Migrate an existing subgraph off The Graph
 - **`/cli-reference`** — Exhaustive `goldsky subgraph` commands and flags
 - **`/turbo-builder`** — Stream raw chain data to a database instead of a GraphQL API
 - **`/mirror`** — Sync subgraph entities into your own database (incl. cross-chain merge)

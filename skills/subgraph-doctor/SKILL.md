@@ -1,6 +1,6 @@
 ---
 name: subgraph-doctor
-description: "Diagnose and fix broken Goldsky Subgraphs. Use this skill whenever a user has a subgraph that is failing, stalled, stuck syncing, not indexing, auto-paused, returning errors, or won't deploy. Triggers on: 'subgraph stopped syncing', 'subgraph stuck at block', 'subgraph stalled', 'subgraph failed to deploy', 'indexing error', 'SubgraphSyncingFailure', 'unexpected null in handler', 'no network found', 'deployment already exists', 'subgraph not returning data', 'subgraph endpoint 404', 'reached the subgraph limit', 'rate limited'. Also use when the user names a subgraph alongside a problem. Runs CLI commands directly to check status, read logs, identify root cause, and apply fixes. For building, authoring, deploying, or endpoint/tag reference, use /subgraph-builder instead. For migrating from The Graph, use /subgraph-migrate-thegraph instead."
+description: "Diagnose and fix broken Goldsky Subgraphs. Use this skill whenever a user has a subgraph that is failing, stalled, stuck syncing, not indexing, auto-paused, returning errors, or won't deploy. Triggers on: 'subgraph stopped syncing', 'subgraph stuck at block', 'subgraph stalled', 'subgraph failed to deploy', 'indexing error', 'SubgraphSyncingFailure', 'unexpected null in handler', 'no network found', 'deployment already exists', 'subgraph not returning data', 'subgraph endpoint 404', 'reached the subgraph limit', 'rate limited'. Also use when the user names a subgraph alongside a problem. Runs CLI commands directly to check status, read logs, identify root cause, and apply fixes. For building, authoring, deploying, or endpoint/tag reference, use /subgraph-builder instead. For migrating from The Graph, use /subgraph-migrate instead."
 ---
 
 # Subgraph Doctor
@@ -11,7 +11,7 @@ Diagnose and fix existing Goldsky Subgraph problems by running CLI commands, rea
 
 - Diagnose and fix EXISTING subgraph problems.
 - Do not build or scaffold new subgraphs — use `/subgraph-builder` for authoring/`init`/`deploy`.
-- Do not handle The Graph migrations — use `/subgraph-migrate-thegraph`.
+- Do not handle The Graph migrations — use `/subgraph-migrate`.
 - Do not serve as a command reference — use `/subgraph-builder` or `/cli-reference` for CLI syntax and flag lookups.
 - Do not handle Turbo or Mirror pipelines — use `/turbo-doctor` or `/mirror-doctor`.
 - **Customer-facing only.** Use only `goldsky` CLI commands, the dashboard, and GraphQL queries. Never suggest `graphman`, `kubectl`, Datadog, or direct database access — those are internal Goldsky tooling. When a problem needs them, escalate to support (see Step 6).
@@ -224,7 +224,7 @@ Give one command at a time, explain what to look for, and proceed based on the u
 ## Related
 
 - **`/subgraph-builder`** — Build, author, and deploy subgraphs; schema/mapping/manifest authoring; endpoints, tags, webhooks
-- **`/subgraph-migrate-thegraph`** — Migrate a subgraph from The Graph
+- **`/subgraph-migrate`** — Migrate a subgraph from The Graph
 - **`/auth-setup`** — CLI installation and authentication
 - **`/datasets`** — Chain prefixes and supported-network slugs
 - **`/turbo-doctor`**, **`/mirror-doctor`** — Pipeline (not subgraph) diagnosis
