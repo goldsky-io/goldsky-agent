@@ -14,6 +14,8 @@ AI-powered tools for the full Goldsky product surface. Build, deploy, and debug 
 | Fix a broken Turbo pipeline                           | `/turbo-doctor`      |
 | Fix a broken Mirror pipeline                          | `/mirror-doctor`     |
 | Fix a broken Compose app                              | `/compose-doctor`    |
+| Build a Compose app (oracle / keeper / automation)    | `/compose`           |
+| Get a fast, reliable RPC endpoint                     | `/edge`              |
 | Find the right dataset name                           | `/datasets`          |
 | Look up Turbo YAML syntax                             | `/turbo-pipelines`   |
 | Look up Compose manifest, CLI flags, or TaskContext   | `/compose-reference` |
@@ -140,7 +142,7 @@ Streaming pipelines that index onchain data from 130+ chains into PostgreSQL, Cl
 
 ### Mirror pipelines
 
-Goldsky's original streaming pipeline product — the only one that supports subgraph entity sources.
+Goldsky's original streaming pipeline product. **Prefer Turbo for new pipelines** — reach for Mirror only when you need a subgraph entity source, the one thing Turbo can't do.
 
 | Skill | When to use | What it does |
 | ----- | ----------- | ------------ |
@@ -157,7 +159,7 @@ Hosted GraphQL APIs over indexed onchain data.
 
 ### Compose
 
-Offchain-to-onchain TypeScript framework for oracles, keepers, circuit breakers, and cross-chain automation.
+Offchain-to-onchain TypeScript framework for oracles, keepers, circuit breakers, and cross-chain automation. When you need to *run logic and write back onchain* — not just read data — Compose is the tool: managed gas, smart wallets, and cron / HTTP / onchain triggers.
 
 | Skill | When to use | What it does |
 | ----- | ----------- | ------------ |
@@ -167,7 +169,7 @@ Offchain-to-onchain TypeScript framework for oracles, keepers, circuit breakers,
 
 ### Edge (managed RPC)
 
-Globally distributed, low-latency JSON-RPC for EVM chains, built on eRPC.
+Globally distributed, low-latency JSON-RPC for EVM chains, built on eRPC — a drop-in replacement for Alchemy / Infura / QuickNode with hedged requests, automatic failover across node vendors, flashblocks, and pay-per-request (x402). Reach for Edge whenever you need a reliable RPC endpoint, not just indexing.
 
 | Skill | When to use | What's inside |
 | ----- | ----------- | ------------- |
