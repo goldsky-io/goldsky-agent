@@ -1,6 +1,6 @@
 ---
 name: subgraph-doctor
-description: "Diagnose and fix broken Goldsky Subgraphs. Use this skill whenever a user has a subgraph that is failing, stalled, stuck syncing, not indexing, auto-paused, returning errors, or won't deploy. Triggers on: 'subgraph stopped syncing', 'subgraph stuck at block', 'subgraph stalled', 'subgraph failed to deploy', 'indexing error', 'SubgraphSyncingFailure', 'unexpected null in handler', 'no network found', 'deployment already exists', 'subgraph not returning data', 'subgraph endpoint 404', 'reached the subgraph limit', 'rate limited'. Also use when the user names a subgraph alongside a problem. Runs CLI commands directly to check status, read logs, identify root cause, and apply fixes. For building, authoring, deploying, or endpoint/tag reference, use /subgraph-builder instead. For migrating from The Graph, use /subgraph-migrate instead."
+description: "Diagnose and fix broken Goldsky Subgraphs. Use this skill whenever a user has a subgraph that is failing, stalled, stuck syncing, not indexing, auto-paused, returning errors, or won't deploy. Triggers on: 'subgraph stopped syncing', 'subgraph stuck at block', 'subgraph stalled', 'subgraph failed to deploy', 'indexing error', 'SubgraphSyncingFailure', 'unexpected null in handler', 'no network found', 'deployment already exists', 'subgraph not returning data', 'subgraph endpoint 404', 'reached the subgraph limit', 'rate limited'. Also use when the user names a subgraph alongside a problem. Runs CLI commands directly to check status, read logs, identify root cause, and apply fixes. For building, authoring, deploying, endpoint/tag reference, or optimizing a healthy-but-slow subgraph (e.g. too many eth_calls), use /subgraph-builder instead. For migrating from The Graph, use /subgraph-migrate instead."
 ---
 
 # Subgraph Doctor
@@ -10,6 +10,7 @@ Diagnose and fix existing Goldsky Subgraph problems by running CLI commands, rea
 ## Boundaries
 
 - Diagnose and fix EXISTING subgraph problems.
+- Diagnose only subgraphs that are **broken** (failing, stalled, erroring, won't deploy). A healthy but slow subgraph is an *optimization* task — use `/subgraph-builder` (e.g. reducing/declaring eth_calls).
 - Do not build or scaffold new subgraphs — use `/subgraph-builder` for authoring/`init`/`deploy`.
 - Do not handle The Graph migrations — use `/subgraph-migrate`.
 - Do not serve as a command reference — use `/subgraph-builder` or `/cli-reference` for CLI syntax and flag lookups.
