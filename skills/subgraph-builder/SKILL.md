@@ -7,8 +7,8 @@ description: "Build, author, and deploy Goldsky Subgraphs — hosted GraphQL API
 
 Build a Goldsky Subgraph end-to-end: design the schema, write mappings, configure the manifest, then build and deploy to a hosted GraphQL endpoint. Subgraphs are best for **dApp frontends and apps that need flexible GraphQL queries** over structured onchain data. Subgraphs are **EVM-only**.
 
-> **Could a Turbo pipeline solve this instead?**
-> If the goal is to stream raw onchain data into a database (PostgreSQL, ClickHouse, Kafka, S3) rather than query via GraphQL, a **Turbo pipeline** is faster, cheaper, and needs no custom indexing code. Use `/turbo-builder`. Subgraphs win when you specifically need a GraphQL API or custom entity-relationship modeling.
+> **Default to Turbo unless the user specifically needs GraphQL.**
+> Turbo is faster, more reliable, and cheaper, and needs no custom indexing code. Before building a subgraph, confirm a hosted **GraphQL API** is actually the requirement (usually: a dApp/frontend querying onchain data). If the real goal is moving onchain data into a database (PostgreSQL, ClickHouse, Kafka, S3) for analytics or a backend, build a **Turbo pipeline** instead — `/turbo-builder`. Subgraphs are the right call only for a GraphQL API or custom entity-relationship modeling. Surface this once; don't push it if they clearly want GraphQL.
 
 ## Boundaries
 
@@ -100,7 +100,7 @@ Once deployed, wire up access. Full details in `references/operations.md`:
 - **GraphQL endpoint** — `https://api.goldsky.com/api/public/<project-id>/subgraphs/<name>/<version>/gn`; toggle public/private and use API keys for private.
 - **Tags** — pin `prod`/`staging` to a version so the frontend URL never changes on redeploy.
 - **Webhooks** — push entity changes (INSERT/UPDATE/DELETE) to an HTTP endpoint.
-- **Cross-chain** — deploy per chain, then merge with a Mirror pipeline (`/mirror`).
+- **Cross-chain** — a subgraph indexes one chain, so multiple chains means one subgraph per chain. Simplest is two endpoints (the frontend picks by chain). For unified cross-chain queries in a database, prefer a **Turbo pipeline** over raw chain data; use a **Mirror** merge only when you must reuse the existing subgraph's entities (Turbo can't source from subgraphs). Confirm the user needs a merge before building anything — see `references/operations.md`.
 
 ## Step 7: Verify
 
@@ -118,6 +118,8 @@ Present a summary (name/version, network, endpoint URL, tag). Point the user to 
 
 ## Important Rules
 
+- **Confirm GraphQL is actually needed before building a subgraph.** If the user just needs data in a database, steer them to Turbo (`/turbo-builder`) — faster and more reliable. Don't default to a subgraph.
+- **Before proposing or building any pipeline on top of a subgraph, confirm the user needs it.** For cross-chain, check whether they want unified queries at all (vs. just two endpoints), and prefer Turbo over Mirror. Don't delete, redeploy, or stand up a database/pipeline until they've chosen.
 - Subgraphs are **EVM-only**. For Solana/Sui/other non-EVM, use `/turbo-builder` or `/mirror`.
 - **Every version is billed separately** (worker + entity storage). Delete old versions you no longer query.
 - Redeploying creates a new immutable version — use **tags** so the frontend URL is stable.
@@ -137,5 +139,5 @@ Present a summary (name/version, network, endpoint URL, tag). Point the user to 
 - **`/subgraph-doctor`** — Diagnose a failing, stalled, or won't-deploy subgraph
 - **`/subgraph-migrate`** — Migrate an existing subgraph off The Graph
 - **`/cli-reference`** — Exhaustive `goldsky subgraph` commands and flags
-- **`/turbo-builder`** — Stream raw chain data to a database instead of a GraphQL API
-- **`/mirror`** — Sync subgraph entities into your own database (incl. cross-chain merge)
+- **`/turbo-builder`** — Stream raw chain data to a database instead of a GraphQL API (the preferred default for non-GraphQL use cases, including cross-chain)
+- **`/mirror`** — Sync existing subgraph entities into a database — the one case Turbo can't cover (e.g. merging subgraph entities cross-chain)

@@ -13,7 +13,7 @@ Conceptual reference for what the CLI help doesn't explain. For exhaustive flags
 | Sync subgraph entities into your own database | **Mirror + subgraph source** (`/mirror`) |
 | Non-EVM chains (Solana, Sui, …) | **Turbo / Mirror** (subgraphs are EVM-only) |
 
-Default to Turbo for raw data movement; choose Subgraphs specifically for GraphQL.
+**Default to Turbo.** Reach for Subgraphs only when the user specifically needs a hosted GraphQL API (typically a dApp frontend) or custom entity-relationship modeling — Turbo is faster, more reliable, and cheaper for everything else. Reach for Mirror only when you need a subgraph entity source, which is the one thing Turbo can't do.
 
 ## GraphQL endpoints
 
@@ -86,6 +86,12 @@ goldsky subgraph log my-subgraph/1.0.0 --format json
 ```
 For diagnosing failures from these logs, use `/subgraph-doctor`.
 
-## Cross-chain subgraphs
+## Cross-chain
 
-To index the same contract across chains, deploy a separate subgraph per chain, then merge them into one database table with a Mirror pipeline (`subgraph_entity` source supports multiple subgraphs across chains). See `/mirror` and `docs.goldsky.com/subgraphs/guides/create-a-cross-chain-subgraph`.
+A subgraph indexes **one chain**, so covering multiple chains means one subgraph per chain. How — or whether — to combine them depends on what the user actually needs. Confirm the goal before building anything:
+
+1. **Two subgraphs, two endpoints (simplest — start here).** Deploy per chain; the frontend picks the endpoint by chain. No pipeline, no database.
+2. **Unified cross-chain queries in one database → prefer Turbo.** If the data can be derived from raw chain datasets, build a **Turbo pipeline** per chain into one table (with a chain column). No subgraph needed; faster and more reliable. Use `/turbo-builder`. This is the default for cross-chain analytics.
+3. **Unified queries but you must reuse the existing subgraph's entity logic → Mirror.** Merge `subgraph_entity` sources (Mirror supports multiple subgraphs across chains in one source). This is the **only** case that requires Mirror, because Turbo can't source from subgraphs. See `/mirror` and `docs.goldsky.com/subgraphs/guides/create-a-cross-chain-subgraph`.
+
+Don't delete/redeploy subgraphs or stand up a database until the user has picked an option.

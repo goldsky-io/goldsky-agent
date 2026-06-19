@@ -7,6 +7,9 @@ description: "Migrate a subgraph from The Graph to Goldsky as a drop-in replacem
 
 Migrating an existing subgraph from The Graph to Goldsky is a **drop-in replacement** — you don't change your subgraph code. You point Goldsky at your published subgraph (by URL or IPFS hash) or redeploy from source, then swap the endpoint your app queries.
 
+> **Worth a quick check first: do they still need a subgraph?**
+> Migration is a natural moment to reconsider. If the dApp needs a hosted **GraphQL API**, migrating the subgraph is the right move — continue below. But if the real goal is getting this data into a database for analytics or a backend, a **Turbo pipeline** is faster, more reliable, and cheaper (`/turbo-builder`) — they may not need a subgraph at all. Surface this once; if they clearly want GraphQL, proceed with the migration.
+
 ## Boundaries
 
 - This skill is for migrating **from The Graph** (hosted service, Subgraph Studio, or decentralized network).
