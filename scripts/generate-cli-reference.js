@@ -417,7 +417,7 @@ function main() {
   // Frontmatter
   sections.push(`---
 name: cli-reference
-description: "Goldsky CLI command and flag reference — all valid subcommands, arguments, and options for goldsky turbo, pipeline, subgraph, secret, db, project, dataset, indexed, telemetry, and compose. Consult before suggesting any goldsky command to avoid hallucinating invalid commands or flags."
+description: "Goldsky CLI command and flag reference — all valid subcommands, arguments, and options for goldsky turbo, pipeline, subgraph, secret, project, dataset, indexed, telemetry, and compose. Consult before suggesting any goldsky command to avoid hallucinating invalid commands or flags."
 ---
 
 # Goldsky CLI Reference
@@ -460,8 +460,12 @@ goldsky compose update
   // turbo (from binary)
   sections.push(renderTurboSection());
 
-  // TypeScript CLI command groups
-  const groups = ["pipeline", "subgraph", "secret", "db", "project", "dataset", "indexed", "telemetry"];
+  // TypeScript CLI command groups.
+  // NOTE: `db` is intentionally excluded — it is registered as a hidden command
+  // (`.command("db", false, ...)` in the CLI entrypoint, so it never appears in
+  // `goldsky --help`). We document only surfaced commands. Likewise `chat` is an
+  // unregistered source module (no `.command()`), so it is not a real command.
+  const groups = ["pipeline", "subgraph", "secret", "project", "dataset", "indexed", "telemetry"];
   groups.forEach((verb) => {
     const dir = path.join(COMMANDS_DIR, verb);
     if (!fs.existsSync(dir)) return;

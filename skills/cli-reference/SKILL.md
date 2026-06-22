@@ -1,6 +1,6 @@
 ---
 name: cli-reference
-description: "Goldsky CLI command and flag reference — all valid subcommands, arguments, and options for goldsky turbo, pipeline, subgraph, secret, db, project, dataset, indexed, telemetry, and compose. Consult before suggesting any goldsky command to avoid hallucinating invalid commands or flags."
+description: "Goldsky CLI command and flag reference — all valid subcommands, arguments, and options for goldsky turbo, pipeline, subgraph, secret, project, dataset, indexed, telemetry, and compose. Consult before suggesting any goldsky command to avoid hallucinating invalid commands or flags."
 ---
 
 # Goldsky CLI Reference
@@ -522,22 +522,6 @@ update a secret
 **Options:**
 - `--value <string>` — the new value of the secret
 - `--description <string>` — the new description of the secret
-
----
-
-## goldsky db
-
-Commands related to Goldsky DB
-
-### Subcommands
-
-#### `goldsky db clickhouse`
-
-Commands related to Goldsky ClickHouse
-
-##### `goldsky db clickhouse connect`
-
-Connect to your Goldsky ClickHouse database
 
 ---
 
