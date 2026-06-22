@@ -1,7 +1,7 @@
 # Goldsky Agent
 
 [![Install with npx](https://img.shields.io/badge/install-npx%20skills%20add-blue)](https://github.com/goldsky-io/goldsky-agent#installation)
-[![Skills](https://img.shields.io/badge/skills-16-green)](#skills)
+[![Skills](https://img.shields.io/badge/skills-18-green)](#skills)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 AI-powered tools for the full Goldsky product surface. Build, deploy, and debug Turbo pipelines, Mirror pipelines, Subgraphs, Compose apps, and Edge RPC — from natural-language prompts.
@@ -14,6 +14,9 @@ AI-powered tools for the full Goldsky product surface. Build, deploy, and debug 
 | Fix a broken Turbo pipeline                           | `/turbo-doctor`      |
 | Fix a broken Mirror pipeline                          | `/mirror-doctor`     |
 | Fix a broken Compose app                              | `/compose-doctor`    |
+| Build / deploy a subgraph                             | `/subgraph-builder`  |
+| Fix a broken / stalled subgraph                       | `/subgraph-doctor`   |
+| Migrate a subgraph from The Graph                     | `/subgraph-migrate` |
 | Find the right dataset name                           | `/datasets`          |
 | Look up Turbo YAML syntax                             | `/turbo-pipelines`   |
 | Look up Compose manifest, CLI flags, or TaskContext   | `/compose-reference` |
@@ -92,7 +95,9 @@ goldsky-agent/
 │   ├── turbo-operations/      # Lifecycle commands, monitoring, errors
 │   ├── mirror/                # Mirror pipeline deploy, operate, sources/sinks reference
 │   ├── mirror-doctor/         # Diagnose and fix Mirror pipelines
-│   ├── subgraphs/             # Subgraph deploy, GraphQL endpoints, tags
+│   ├── subgraph-builder/      # Author, build & deploy subgraphs; schema/mappings/manifest
+│   ├── subgraph-doctor/       # Diagnose and fix failing/stalled subgraphs
+│   ├── subgraph-migrate/  # Guided migration from The Graph
 │   ├── compose/               # Compose app scaffolding, triggers, wallets
 │   ├── compose-doctor/        # Diagnose and fix Compose apps
 │   ├── compose-reference/     # compose.yaml fields, CLI flags, TaskContext API
@@ -153,7 +158,9 @@ Hosted GraphQL APIs over indexed onchain data.
 
 | Skill | When to use | What's inside |
 | ----- | ----------- | ------------- |
-| `subgraphs` | "Deploy a subgraph / migrate from The Graph / manage GraphQL endpoints" | Deploy paths, GraphQL endpoints, tags, webhooks, cross-chain patterns |
+| `subgraph-builder` | "Build / write / deploy a subgraph; design a schema; write a mapping" | Interactive author→build→deploy; schema design, AssemblyScript mappings, manifest, instant subgraphs, performance, testing; endpoints, tags, webhooks |
+| `subgraph-doctor` | "My subgraph stopped syncing / won't deploy / is throwing errors" | Diagnostic workflow: status + log checks, the `_meta` query, error-pattern matching, preventive mapping-code root causes, fixes |
+| `subgraph-migrate` | "Move my subgraph off The Graph onto Goldsky" | Path selection, deploy, verify sync, migrate tags, swap endpoint |
 
 ### Compose
 
@@ -202,7 +209,7 @@ The skills cover the full Goldsky product surface:
 
 - **Turbo pipelines** — 130+ chain sources (EVM, Solana, Bitcoin, Stellar, Sui, NEAR, Starknet); SQL / TypeScript / dynamic table transforms; PostgreSQL, ClickHouse, Kafka, S3, Webhook, S2, SQS, MySQL, Pub/Sub sinks; streaming and job modes; full lifecycle and monitoring
 - **Mirror pipelines** — Subgraph and direct-indexing sources, sinks, lifecycle, plus interactive diagnosis
-- **Subgraphs** — Deploy, tags, webhooks, cross-chain, migration from The Graph
+- **Subgraphs** — Author/build/deploy (`subgraph-builder`: schema design, AssemblyScript mappings, manifest, instant subgraphs, performance, testing, endpoints/tags/webhooks); interactive diagnosis (`subgraph-doctor`); guided migration from The Graph (`subgraph-migrate`)
 - **Compose** — `compose.yaml` manifest, cron / HTTP / onchain triggers, smart wallets, gas sponsorship, `TaskContext` API, codegen, pricing
 - **Edge RPC** — Capabilities, supported chains, hedged requests, flashblocks, x402, error code lookups
 - **Cross-cutting** — Authentication, secrets, dataset naming, full CLI reference
