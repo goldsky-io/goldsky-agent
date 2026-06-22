@@ -120,7 +120,7 @@ Present a summary (name/version, network, endpoint URL, tag). Point the user to 
 
 - **Confirm GraphQL is actually needed before building a subgraph.** If the user just needs data in a database, steer them to Turbo (`/turbo-builder`) — faster and more reliable. Don't default to a subgraph.
 - **Before proposing or building any pipeline on top of a subgraph, confirm the user needs it.** For cross-chain, check whether they want unified queries at all (vs. just two endpoints), and prefer Turbo over Mirror. Don't delete, redeploy, or stand up a database/pipeline until they've chosen.
-- Subgraphs are **EVM-only**. For Solana/Sui/other non-EVM, use `/turbo-builder` or `/mirror`.
+- Subgraphs are **EVM-only**. For Solana/Sui/other non-EVM, use `/turbo-builder` (Turbo indexes non-EVM chains; subgraphs can't).
 - **Every version is billed separately** (worker + entity storage). Delete old versions you no longer query.
 - Redeploying creates a new immutable version — use **tags** so the frontend URL is stable.
 - Verify the contract address exists on the target chain and use the correct chain slug (a wrong network indexes blocks that don't exist — the #1 silent failure; see `/subgraph-doctor`).

@@ -76,7 +76,8 @@ dataSources:
         - name: MyContract
           file: ./abis/MyContract.json
       eventHandlers:
-        - event: Swap(indexed address,indexed address,int256,int256,uint160,uint128,int24)
+        # Uniswap V2-style Swap — matches the DEX recipe's handleSwap below
+        - event: Swap(indexed address,uint256,uint256,uint256,uint256,indexed address)
           handler: handleSwap
       file: ./src/mapping.ts
 ```
@@ -350,7 +351,7 @@ type NftTransfer @entity(immutable: true) {
 ```
 
 ```ts
-import { Bytes } from "@graphprotocol/graph-ts"
+import { Bytes, ByteArray } from "@graphprotocol/graph-ts"
 import { Transfer as TransferEvent, ERC721 } from "../generated/MyNft/ERC721"
 import { Collection, Nft, NftTransfer } from "../generated/schema"
 
@@ -364,7 +365,7 @@ export function handleTransfer(event: TransferEvent): void {
     collection.save()
   }
 
-  let nftId = event.address.concat(Bytes.fromByteArray(Bytes.fromBigInt(event.params.tokenId)))
+  let nftId = event.address.concat(Bytes.fromByteArray(ByteArray.fromBigInt(event.params.tokenId)))
   let nft = Nft.load(nftId)
   if (nft == null) {
     nft = new Nft(nftId)

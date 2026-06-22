@@ -93,7 +93,7 @@ Then run the **`_meta` query** against the GraphQL endpoint — this is the sing
 
 **Cause:** The manifest's `network`/chain slug points at a different chain than intended, so the subgraph is waiting for blocks that haven't been mined.
 
-**Fix:** Correct the `network` in `subgraph.yaml` (verify the exact chain slug — e.g. it's `liteforge`, not `litvm-testnet`; see `/datasets` and supported-networks docs) and redeploy a new version. Confirm the contract address actually exists on the target chain via a block explorer.
+**Fix:** Correct the `network` in `subgraph.yaml` (verify the exact chain slug against the supported-networks docs at `docs.goldsky.com/chains/supported-networks` — e.g. it's `liteforge`, not `litvm-testnet`) and redeploy a new version. Confirm the contract address actually exists on the target chain via a block explorer.
 
 #### Deploy-time failures
 

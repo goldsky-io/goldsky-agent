@@ -29,7 +29,7 @@ describe("handleTransfer", () => {
   test("creates a Transfer entity", () => {
     handleTransfer(createTransferEvent(Address.zero(), Address.zero(), BigInt.fromI32(100)))
     assert.entityCount("Transfer", 1)
-    assert.fieldEquals("Transfer", "<expected-id>", "value", "100")
+    assert.fieldEquals("Transfer", "<expected-id>", "amount", "100")  // entity field is `amount` (the event param is `value`)
   })
 })
 ```
