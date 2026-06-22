@@ -232,7 +232,7 @@ function parseTurboHelp(helpText) {
 
 function renderTurboSection() {
   const lines = ["## goldsky turbo\n"];
-  lines.push("Manages Turbo streaming pipelines. Delegates to the `turbo` binary.\n");
+  lines.push("Manages Turbo streaming pipelines. Delegates to the `turbo` binary, which is auto-installed on first use — or manually via `curl https://install-turbo.goldsky.com | sh` (see Installation).\n");
 
   let topHelp;
   try {
@@ -298,6 +298,47 @@ function renderTurboSection() {
 
     lines.push(section.join("\n"));
   });
+
+  return lines.join("\n");
+}
+
+// ── Compose (passthrough binary, separate Compose CLI) ──────────────────────
+
+function stripAnsi(str) {
+  // eslint-disable-next-line no-control-regex
+  return str.replace(/\x1b\[[0-9;]*m/g, "");
+}
+
+function renderComposeSection() {
+  const lines = ["## goldsky compose\n"];
+  lines.push(
+    "Build and deploy offchain-to-onchain TypeScript tasks. `goldsky compose` delegates to the standalone Compose CLI (auto-installed on first use, or manually via `curl -fsSL https://compose.goldsky.com/install | sh` — see Installation). For manifest fields, every flag, and the `TaskContext` API, see the **compose-reference** skill; to build one interactively, use the **compose** skill.\n"
+  );
+
+  let help;
+  try {
+    help = execSync("goldsky compose --help 2>&1", { encoding: "utf8" });
+  } catch (e) {
+    lines.push("*Could not run `goldsky compose --help` — is the CLI installed?*");
+    return lines.join("\n");
+  }
+
+  const clean = stripAnsi(stripBanner(help));
+  const cmds = [];
+  const cmdSection = clean.match(/Commands:\s*\n([\s\S]*)/);
+  if (cmdSection) {
+    cmdSection[1].split("\n").forEach((l) => {
+      const m = l.match(/^\s{2,}([a-zA-Z][\w-]*)\b.*?-\s+(.+?)\s*$/);
+      if (m && m[1] !== "help") cmds.push({ name: m[1], describe: m[2].trim() });
+    });
+  }
+
+  if (cmds.length) {
+    lines.push("### Subcommands\n");
+    lines.push("Run `goldsky compose <cmd> --help` for flags; full details live in the compose-reference skill.\n");
+    cmds.forEach(({ name, describe }) => lines.push(`- \`goldsky compose ${name}\` — ${describe}`));
+    lines.push("");
+  }
 
   return lines.join("\n");
 }
@@ -376,13 +417,37 @@ function main() {
   // Frontmatter
   sections.push(`---
 name: cli-reference
-description: "Goldsky CLI command and flag reference — all valid subcommands, arguments, and options for goldsky turbo, pipeline, subgraph, secret, project, dataset, indexed, and telemetry. Consult before suggesting any goldsky command to avoid hallucinating invalid commands or flags."
+description: "Goldsky CLI command and flag reference — all valid subcommands, arguments, and options for goldsky turbo, pipeline, subgraph, secret, project, dataset, indexed, telemetry, and compose. Consult before suggesting any goldsky command to avoid hallucinating invalid commands or flags."
 ---
 
 # Goldsky CLI Reference
 
 > Auto-generated from the Goldsky CLI source and turbo binary (${turboVersion}).
 > Re-run \`node scripts/generate-cli-reference.js\` to update.
+`);
+
+  // Installation (base CLI + delegated turbo/compose binaries)
+  sections.push(`## Installation
+
+Install the base Goldsky CLI (provides \`goldsky\`):
+
+\`\`\`bash
+curl https://goldsky.com | sh
+\`\`\`
+
+\`goldsky turbo\` and \`goldsky compose\` delegate to separate binaries that are installed automatically on first use (the CLI prompts you). To install or update them manually:
+
+\`\`\`bash
+# Turbo — macOS / Linux
+curl https://install-turbo.goldsky.com | sh
+# Turbo — Windows
+irm https://install-turbo.goldsky.com/scripts/install.ps1 | iex
+
+# Compose (installs to ~/.goldsky/bin/compose)
+curl -fsSL https://compose.goldsky.com/install | sh
+# Update Compose later
+goldsky compose update
+\`\`\`
 `);
 
   // Top-level commands (login/logout are simple, no options worth documenting)
@@ -395,13 +460,20 @@ description: "Goldsky CLI command and flag reference — all valid subcommands, 
   // turbo (from binary)
   sections.push(renderTurboSection());
 
-  // TypeScript CLI command groups
+  // TypeScript CLI command groups.
+  // NOTE: `db` is intentionally excluded — it is registered as a hidden command
+  // (`.command("db", false, ...)` in the CLI entrypoint, so it never appears in
+  // `goldsky --help`). We document only surfaced commands. Likewise `chat` is an
+  // unregistered source module (no `.command()`), so it is not a real command.
   const groups = ["pipeline", "subgraph", "secret", "project", "dataset", "indexed", "telemetry"];
   groups.forEach((verb) => {
     const dir = path.join(COMMANDS_DIR, verb);
     if (!fs.existsSync(dir)) return;
     sections.push(renderGroup(verb, dir));
   });
+
+  // compose (passthrough to the standalone Compose CLI; no TS source dir)
+  sections.push(renderComposeSection());
 
   fs.mkdirSync(path.dirname(OUTPUT), { recursive: true });
   fs.writeFileSync(OUTPUT, sections.join("\n---\n\n"));

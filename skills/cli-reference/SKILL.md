@@ -1,12 +1,36 @@
 ---
 name: cli-reference
-description: "Goldsky CLI command and flag reference — all valid subcommands, arguments, and options for goldsky turbo, pipeline, subgraph, secret, project, dataset, indexed, and telemetry. Consult before suggesting any goldsky command to avoid hallucinating invalid commands or flags."
+description: "Goldsky CLI command and flag reference — all valid subcommands, arguments, and options for goldsky turbo, pipeline, subgraph, secret, project, dataset, indexed, telemetry, and compose. Consult before suggesting any goldsky command to avoid hallucinating invalid commands or flags."
 ---
 
 # Goldsky CLI Reference
 
 > Auto-generated from the Goldsky CLI source and turbo binary (turbo 0.9.1).
 > Re-run `node scripts/generate-cli-reference.js` to update.
+
+---
+
+## Installation
+
+Install the base Goldsky CLI (provides `goldsky`):
+
+```bash
+curl https://goldsky.com | sh
+```
+
+`goldsky turbo` and `goldsky compose` delegate to separate binaries that are installed automatically on first use (the CLI prompts you). To install or update them manually:
+
+```bash
+# Turbo — macOS / Linux
+curl https://install-turbo.goldsky.com | sh
+# Turbo — Windows
+irm https://install-turbo.goldsky.com/scripts/install.ps1 | iex
+
+# Compose (installs to ~/.goldsky/bin/compose)
+curl -fsSL https://compose.goldsky.com/install | sh
+# Update Compose later
+goldsky compose update
+```
 
 ---
 
@@ -19,7 +43,7 @@ description: "Goldsky CLI command and flag reference — all valid subcommands, 
 
 ## goldsky turbo
 
-Manages Turbo streaming pipelines. Delegates to the `turbo` binary.
+Manages Turbo streaming pipelines. Delegates to the `turbo` binary, which is auto-installed on first use — or manually via `curl https://install-turbo.goldsky.com | sh` (see Installation).
 
 ### Subcommands
 
@@ -694,3 +718,24 @@ Enable anonymous CLI telemetry
 #### `goldsky telemetry status`
 
 Display the CLI telemetry status
+
+---
+
+## goldsky compose
+
+Build and deploy offchain-to-onchain TypeScript tasks. `goldsky compose` delegates to the standalone Compose CLI (auto-installed on first use, or manually via `curl -fsSL https://compose.goldsky.com/install | sh` — see Installation). For manifest fields, every flag, and the `TaskContext` API, see the **compose-reference** skill; to build one interactively, use the **compose** skill.
+
+### Subcommands
+
+Run `goldsky compose <cmd> --help` for flags; full details live in the compose-reference skill.
+
+- `goldsky compose deploy` — Deploy tasks to the server
+- `goldsky compose start` — Start the server with the given configuration
+- `goldsky compose dev` — Start the server in development mode
+- `goldsky compose callTask` — Calls a locally running task with a json payload
+- `goldsky compose init` — Initialize a new Compose app with Bitcoin price oracle
+- `goldsky compose secret` — Compose secrets
+- `goldsky compose bundle` — Bundle task scripts without starting the server
+- `goldsky compose codegen` — Generate TypeScript classes from contract ABIs in src/contracts
+- `goldsky compose clean` — Bundle task scripts without starting the server
+- `goldsky compose update` — Update Compose CLI to the latest version
