@@ -210,7 +210,7 @@ The plugin runs hooks automatically on `goldsky turbo apply` commands:
 The skills cover the full Goldsky product surface:
 
 - **Turbo pipelines** — 130+ chain sources (EVM, Solana, Bitcoin, Stellar, Sui, NEAR, Starknet); SQL / TypeScript / dynamic table transforms; PostgreSQL, ClickHouse, Kafka, S3, Webhook, S2, SQS, MySQL, Pub/Sub sinks; streaming and job modes; full lifecycle and monitoring
-- **Mirror pipelines** — Subgraph and direct-indexing sources, sinks, lifecycle, plus interactive diagnosis
+- **Mirror pipelines** — Subgraph and direct-indexing sources, sinks, lifecycle, plus interactive diagnosis (legacy — prefer Turbo for new pipelines unless you need a subgraph entity source)
 - **Subgraphs** — Author/build/deploy (`subgraph-builder`: schema design, AssemblyScript mappings, manifest, instant subgraphs, performance, testing, endpoints/tags/webhooks); interactive diagnosis (`subgraph-doctor`); guided migration from The Graph (`subgraph-migrate`)
 - **Compose** — `compose.yaml` manifest, cron / HTTP / onchain triggers, smart wallets, gas sponsorship, `TaskContext` API, codegen, pricing
 - **Edge RPC** — Capabilities, supported chains, hedged requests, flashblocks, x402, error code lookups
