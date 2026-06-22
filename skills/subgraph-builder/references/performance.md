@@ -6,7 +6,7 @@ Tuning knobs for faster indexing and queries on Goldsky-hosted subgraphs. Most a
 
 - **Permanent RPC call cache.** Goldsky permanently caches subgraph RPC calls, so re-syncs of the same or similar subgraph are much faster (cached `eth_call`/log results are reused). You generally don't need to engineer around RPC cost on a resync.
 - **Grafting fully supported** (start a new version from an existing one's data — see schema-and-mappings.md). Note the optimization tradeoff below.
-- **Goldsky can scale your indexer resources.** If a subgraph is slow because of heavy per-event work you *can't* easily restructure (e.g. a migrated/over-modeled subgraph), asking support to allocate more indexing resources is often the **highest-leverage, zero-resync** option — consider it before a costly rebuild, not just as a last resort. Indexing speed otherwise depends on subgraph design (the knobs below).
+- **Indexer resources are not the bottleneck.** Goldsky indexers are not resource-starved, and "ask for more indexing resources" is not a lever (it only ever applied to dedicated indexing, which is being deprecated). Slow indexing is almost always **subgraph design** (heavy per-event work, `eth_calls`, large stored arrays — the knobs below) or **upstream RPC performance**. Fix the design or the RPC path; don't expect more resources to help.
 - **Every version is billed separately** (worker fee + entity storage). Delete old versions you no longer query — this is the cheapest, highest-impact "optimization."
 
 ## Immutable entities + Bytes IDs
@@ -70,7 +70,7 @@ A user who wants their subgraph to "go faster without re-indexing from scratch" 
 - **The biggest speedups break graft compatibility.** Making entities immutable, changing entity storage, or restructuring the schema all change the schema, and **you can't graft across a schema change.** So you can optimize hard *or* graft-to-skip-resync — not both.
 - **Graft-safe changes** are manifest-level and mapping-internal only: declaring `eth_calls`, trimming work inside handlers, removing an unused handler. These keep the schema identical, so a graft is valid — but they often don't touch a design-bound bottleneck (e.g. per-swap USD pricing).
 
-If the only changes that would meaningfully help require schema/storage changes, the realistic options are: ask support to scale indexer resources (no resync), or rebuild leaner and resync from scratch (below).
+If the only changes that would meaningfully help require schema/storage changes, the realistic option is to rebuild leaner and resync from scratch (below). There is no "add more resources" shortcut — the slowness is the design.
 
 ## Optimizing a migrated or over-modeled subgraph
 

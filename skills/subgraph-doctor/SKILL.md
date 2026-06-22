@@ -59,15 +59,14 @@ Subgraph problems fall into a few families. Pick the path that matches the sympt
 Run these and analyze before concluding:
 
 ```bash
-# Recent errors (widen the window if nothing shows)
+# Errors only — START HERE. Widen the window (e.g. --since 24h) if nothing shows.
 goldsky subgraph log <name/version> --since 1h --filter error 2>&1
-
-# Full recent context, not just errors
-goldsky subgraph log <name/version> --since 1h 2>&1
 
 # Subgraph + tag + deployment status
 goldsky subgraph list <name/version> 2>&1
 ```
+
+> **Do not pull unfiltered logs.** Subgraphs emit a huge volume at `info`/`debug` level — running `goldsky subgraph log` without `--filter error` is slow and extremely token-hungry, and rarely adds signal over the error-filtered view. If you genuinely need non-error context, scope it tightly: a very short window (`--since 5m`) and, if possible, grep for a specific string. Lead with errors + the `_meta` query below.
 
 Then run the **`_meta` query** against the GraphQL endpoint — this is the single most useful check for "stuck" or "no data" subgraphs. It reports the latest indexed block:
 
