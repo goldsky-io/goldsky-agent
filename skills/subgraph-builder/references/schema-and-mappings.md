@@ -6,6 +6,8 @@ Authoring reference for code-based Goldsky subgraphs. Goldsky runs standard `gra
 
 Entities are GraphQL types annotated with `@entity`. Each needs an `id` field.
 
+> **Current graph-cli requires an explicit `immutable` argument on every `@entity`.** A bare `type X @entity { … }` fails `graph codegen`/`graph build` with *"@entity directive requires `immutable` argument."* Always write `@entity(immutable: false)` for entities that update and `@entity(immutable: true)` for write-once event logs (see Immutable entities below). All examples here follow this.
+
 ### Scalar type choices
 
 | Use for | Type | Notes |
@@ -32,11 +34,11 @@ Avoid reusing an id across different entity types — overlapping ids cause "Con
 
 - **One-to-many:** store the reference on the *child* and derive on the *parent* with `@derivedFrom`:
   ```graphql
-  type Pool @entity {
+  type Pool @entity(immutable: false) {
     id: Bytes!
     swaps: [Swap!]! @derivedFrom(field: "pool")
   }
-  type Swap @entity {
+  type Swap @entity(immutable: true) {
     id: Bytes!
     pool: Pool!
   }
@@ -165,7 +167,7 @@ Complete, copy-adaptable schema + mapping for the three most common contract typ
 Tracks token metadata, per-holder balances, and an immutable transfer log.
 
 ```graphql
-type Token @entity {
+type Token @entity(immutable: false) {
   id: Bytes!                  # token address
   symbol: String!
   name: String!
@@ -176,7 +178,7 @@ type Token @entity {
   transfers: [Transfer!]! @derivedFrom(field: "token")
 }
 
-type Balance @entity {
+type Balance @entity(immutable: false) {
   id: Bytes!                  # token ++ holder
   token: Token!
   holder: Bytes!
@@ -254,7 +256,7 @@ export function handleTransfer(event: TransferEvent): void {
 Factory deploys pools at runtime → use a **template** (see "Templates" above). Swaps are an immutable log derived on the pool.
 
 ```graphql
-type Pool @entity {
+type Pool @entity(immutable: false) {
   id: Bytes!                  # pool address
   token0: Bytes!
   token1: Bytes!
@@ -326,14 +328,14 @@ export function handleSync(event: SyncEvent): void {
 Tracks collection, per-token ownership, and an immutable transfer log. ERC-1155 is the same shape with `(id ++ tokenId ++ holder)` balances instead of a single `owner`.
 
 ```graphql
-type Collection @entity {
+type Collection @entity(immutable: false) {
   id: Bytes!                  # contract address
   name: String!
   symbol: String!
   tokens: [Nft!]! @derivedFrom(field: "collection")
 }
 
-type Nft @entity {
+type Nft @entity(immutable: false) {
   id: Bytes!                  # collection ++ tokenId
   collection: Collection!
   tokenId: BigInt!

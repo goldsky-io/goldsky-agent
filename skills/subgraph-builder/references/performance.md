@@ -5,8 +5,8 @@ Tuning knobs for faster indexing and queries on Goldsky-hosted subgraphs. Most a
 ## Goldsky-confirmed facts
 
 - **Permanent RPC call cache.** Goldsky permanently caches subgraph RPC calls, so re-syncs of the same or similar subgraph are much faster (cached `eth_call`/log results are reused). You generally don't need to engineer around RPC cost on a resync.
-- **Grafting fully supported** (start a new version from an existing one's data — see schema-and-mappings.md).
-- **Indexing speed depends on subgraph design.** If indexing or queries are slow after applying the below, contact support to tune the indexer.
+- **Grafting fully supported** (start a new version from an existing one's data — see schema-and-mappings.md). Note the optimization tradeoff below.
+- **Goldsky can scale your indexer resources.** If a subgraph is slow because of heavy per-event work you *can't* easily restructure (e.g. a migrated/over-modeled subgraph), asking support to allocate more indexing resources is often the **highest-leverage, zero-resync** option — consider it before a costly rebuild, not just as a last resort. Indexing speed otherwise depends on subgraph design (the knobs below).
 - **Every version is billed separately** (worker fee + entity storage). Delete old versions you no longer query — this is the cheapest, highest-impact "optimization."
 
 ## Immutable entities + Bytes IDs
@@ -18,7 +18,7 @@ Mark write-once entities `@entity(immutable: true)` and use `Bytes` ids. graph-n
 Storing a growing array on a parent entity degrades badly as it grows — every update rewrites the whole array, and very large arrays (tens of thousands of elements) time out. Model the relationship on the child and derive on the parent:
 
 ```graphql
-type Pool @entity { id: Bytes!  swaps: [Swap!]! @derivedFrom(field: "pool") }
+type Pool @entity(immutable: false) { id: Bytes!  swaps: [Swap!]! @derivedFrom(field: "pool") }
 type Swap @entity(immutable: true) { id: Bytes!  pool: Pool! }
 ```
 
@@ -61,6 +61,27 @@ indexerHints:
 ```
 
 `auto` keeps the minimum history needed. Trade-off: **you cannot graft at a pruned block**, and historical time-travel queries below the pruned range won't work. Use `never` if you need full history or plan to graft from old blocks.
+
+## Grafting and optimization: the tradeoff
+
+A user who wants their subgraph to "go faster without re-indexing from scratch" usually has grafting in mind. Be clear about what grafting does and doesn't do:
+
+- **Grafting doesn't make indexing faster by itself.** It copies an existing version's already-indexed data up to a graft block so you skip re-processing *those* blocks; the *remaining* blocks only go faster if the new code does less work.
+- **The biggest speedups break graft compatibility.** Making entities immutable, changing entity storage, or restructuring the schema all change the schema, and **you can't graft across a schema change.** So you can optimize hard *or* graft-to-skip-resync — not both.
+- **Graft-safe changes** are manifest-level and mapping-internal only: declaring `eth_calls`, trimming work inside handlers, removing an unused handler. These keep the schema identical, so a graft is valid — but they often don't touch a design-bound bottleneck (e.g. per-swap USD pricing).
+
+If the only changes that would meaningfully help require schema/storage changes, the realistic options are: ask support to scale indexer resources (no resync), or rebuild leaner and resync from scratch (below).
+
+## Optimizing a migrated or over-modeled subgraph
+
+A subgraph deployed via `--from-ipfs-hash`/`--from-url` (migrated from The Graph) carries the **entire upstream codebase's complexity** — not a thin instant-subgraph config. If the user can't see the source ("I just did the instant deploy"), **don't assume it's simple**: introspect the live GraphQL schema (or fetch the manifest by IPFS hash) to see what it actually models. A full DEX subgraph (USD pricing, day/hour aggregates, ticks, positions, per-swap `eth_calls`) is slow by design, and the bottleneck is usually that per-event work — not something a few graft-safe tweaks will fix.
+
+**Lean-rebuild recipe** (common fix for an over-modeled migrated subgraph when the user accepts a resync): author a code-based subgraph against the same contract that keeps only what's queried and drops the expensive machinery —
+- **Keep:** live state entities (mutable) + raw event logs as `@entity(immutable: true)` with `Bytes` ids and `@derivedFrom` collections.
+- **Drop:** USD/price derivation (Bundle/`derivedETH`/`amountUSD`), token metadata you don't query, day/hour aggregates, ticks/positions, and **all `eth_call`s**.
+- **Deploy under a NEW name** (`<name>-lean`) and leave the original running — the lean schema is **not a drop-in**; any dApp query using the dropped fields breaks. Cut over only after the lean version syncs and the frontend is updated.
+
+This routinely turns a multi-day sync into hours because each block does far less work. See the protocol recipes in schema-and-mappings.md for the lean entity shapes.
 
 ## Quick checklist
 

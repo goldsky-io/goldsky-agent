@@ -84,6 +84,8 @@ goldsky subgraph init my-subgraph/1.0.0 --target-path ./my-subgraph --build
 
 ## Step 5: Deploy
 
+> **Confirm the target project first.** `deploy` uses the CLI's currently-selected project silently, which may not be the one you expect — and every deployment is a billed worker. Run `goldsky project list` to confirm the active project (or switch it) before deploying, especially when tagging `prod`.
+
 ```bash
 # From a local code-based build
 goldsky subgraph deploy my-subgraph/1.0.0 --path .
@@ -124,6 +126,7 @@ Present a summary (name/version, network, endpoint URL, tag). Point the user to 
 - **Every version is billed separately** (worker + entity storage). Delete old versions you no longer query.
 - Redeploying creates a new immutable version — use **tags** so the frontend URL is stable.
 - Verify the contract address exists on the target chain and use the correct chain slug (a wrong network indexes blocks that don't exist — the #1 silent failure; see `/subgraph-doctor`).
+- **`startBlock` must be a block number on the chain being indexed** — not from another chain or a vanity value. Use the contract's deployment (creation) block: find it on the chain's block explorer (the contract's creation transaction) or via the no-code wizard, which auto-detects it. Starting at `0` works but wastes time scanning empty history.
 - Goldsky has a **permanent RPC call cache**, so re-syncs of the same/similar subgraph are much faster.
 - Prefer instant subgraphs when there's no custom logic; reach for code-based only when entity modeling or handler logic requires it.
 
