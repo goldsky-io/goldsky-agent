@@ -86,12 +86,18 @@ goldsky subgraph log my-subgraph/1.0.0 --format json
 ```
 For diagnosing failures from these logs, use `/subgraph-doctor`.
 
-## Cross-chain
+## Combining or composing multiple subgraphs
 
-A subgraph indexes **one chain**, so covering multiple chains means one subgraph per chain. How — or whether — to combine them depends on what the user actually needs. Confirm the goal before building anything:
+> **Goldsky does not offer native subgraph composition.** If the user asks to "compose subgraphs," combine/merge/aggregate multiple subgraphs into one API, or build a subgraph on top of other subgraphs (The Graph's `kind: subgraph` composition), there is no equivalent native feature on Goldsky — don't point them at `kind: subgraph` / `specVersion 1.3.0`. The way to combine subgraph data on Goldsky is to route it through a pipeline (Mirror or Turbo). Detect this intent and steer accordingly.
 
-1. **Two subgraphs, two endpoints (simplest — start here).** Deploy per chain; the frontend picks the endpoint by chain. No pipeline, no database.
-2. **Unified cross-chain queries in one database → prefer Turbo.** If the data can be derived from raw chain datasets, build a **Turbo pipeline** per chain into one table (with a chain column). No subgraph needed; faster and more reliable. Use `/turbo-builder`. This is the default for cross-chain analytics.
-3. **Unified queries but you must reuse the existing subgraph's entity logic → Mirror.** Merge `subgraph_entity` sources (Mirror supports multiple subgraphs across chains in one source). This is the **only** case that requires Mirror, because Turbo can't source from subgraphs. See `/mirror` and `docs.goldsky.com/subgraphs/guides/create-a-cross-chain-subgraph`.
+A subgraph indexes **one chain** and produces **one GraphQL API**, so combining always means deploying each subgraph separately, then merging downstream. Confirm what the user actually needs before building anything:
 
-Don't delete/redeploy subgraphs or stand up a database until the user has picked an option.
+1. **Just separate APIs (simplest — start here).** Deploy each subgraph; the frontend/app queries each endpoint directly. No pipeline, no database. Often all they need.
+2. **Unified queries in one database, data derivable from raw chain data → prefer Turbo.** Build a **Turbo pipeline** per chain/contract into one table (e.g. with a chain column) and query across it. No subgraph needed; faster and more reliable — the default for combined analytics. Use `/turbo-builder`.
+3. **Unified queries that must reuse the subgraphs' entity logic → Mirror.** The **only** case that requires Mirror, because Turbo can't source from subgraphs:
+   - **Same-schema subgraphs** (the same protocol across chains, or multiple deployments of one schema) → one Mirror `subgraph_entity` source listing all of them, merged into a single table. Mirror requires the subgraphs share a GraphQL schema. See `docs.goldsky.com/subgraphs/guides/create-a-cross-chain-subgraph`.
+   - **Different-schema subgraphs** (e.g. a DEX subgraph + a lending subgraph) → sync each into the same database as separate tables via Mirror, then join across them in SQL. There is no single "merged source" for differing schemas.
+
+See `/mirror` for the pipeline setup. Don't delete/redeploy subgraphs or stand up a database until the user has picked an option.
+
+**Cross-chain** (same contract/schema on multiple chains) is just the same-schema case above: one subgraph per chain, then two endpoints (option 1), or a Turbo (option 2) or Mirror (option 3) merge.
