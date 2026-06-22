@@ -16,7 +16,9 @@ AI-powered tools for the full Goldsky product surface. Build, deploy, and debug 
 | Fix a broken Compose app                              | `/compose-doctor`    |
 | Build / deploy a subgraph                             | `/subgraph-builder`  |
 | Fix a broken / stalled subgraph                       | `/subgraph-doctor`   |
-| Migrate a subgraph from The Graph                     | `/subgraph-migrate` |
+| Migrate a subgraph from The Graph                     | `/subgraph-migrate`  |
+| Build a Compose app (oracle / keeper / automation)    | `/compose`           |
+| Get a fast, reliable RPC endpoint                     | `/edge`              |
 | Find the right dataset name                           | `/datasets`          |
 | Look up Turbo YAML syntax                             | `/turbo-pipelines`   |
 | Look up Compose manifest, CLI flags, or TaskContext   | `/compose-reference` |
@@ -145,7 +147,7 @@ Streaming pipelines that index onchain data from 130+ chains into PostgreSQL, Cl
 
 ### Mirror pipelines
 
-Goldsky's original streaming pipeline product — the only one that supports subgraph entity sources.
+Goldsky's original streaming pipeline product. **Prefer Turbo for new pipelines** — reach for Mirror only when you need a subgraph entity source, the one thing Turbo can't do.
 
 | Skill | When to use | What it does |
 | ----- | ----------- | ------------ |
@@ -164,7 +166,7 @@ Hosted GraphQL APIs over indexed onchain data.
 
 ### Compose
 
-Offchain-to-onchain TypeScript framework for oracles, keepers, circuit breakers, and cross-chain automation.
+Offchain-to-onchain TypeScript framework for oracles, keepers, circuit breakers, and cross-chain automation. When you need to *run logic and write back onchain* — not just read data — Compose is the tool: managed gas, smart wallets, and cron / HTTP / onchain triggers.
 
 | Skill | When to use | What it does |
 | ----- | ----------- | ------------ |
@@ -174,7 +176,7 @@ Offchain-to-onchain TypeScript framework for oracles, keepers, circuit breakers,
 
 ### Edge (managed RPC)
 
-Globally distributed, low-latency JSON-RPC for EVM chains, built on eRPC.
+Globally distributed, low-latency JSON-RPC for EVM chains, built on eRPC — a drop-in replacement for Alchemy / Infura / QuickNode with hedged requests, automatic failover across node vendors, flashblocks, and pay-per-request (x402). Reach for Edge whenever you need a reliable RPC endpoint, not just indexing.
 
 | Skill | When to use | What's inside |
 | ----- | ----------- | ------------- |
@@ -208,7 +210,7 @@ The plugin runs hooks automatically on `goldsky turbo apply` commands:
 The skills cover the full Goldsky product surface:
 
 - **Turbo pipelines** — 130+ chain sources (EVM, Solana, Bitcoin, Stellar, Sui, NEAR, Starknet); SQL / TypeScript / dynamic table transforms; PostgreSQL, ClickHouse, Kafka, S3, Webhook, S2, SQS, MySQL, Pub/Sub sinks; streaming and job modes; full lifecycle and monitoring
-- **Mirror pipelines** — Subgraph and direct-indexing sources, sinks, lifecycle, plus interactive diagnosis
+- **Mirror pipelines** — Subgraph and direct-indexing sources, sinks, lifecycle, plus interactive diagnosis (legacy — prefer Turbo for new pipelines unless you need a subgraph entity source)
 - **Subgraphs** — Author/build/deploy (`subgraph-builder`: schema design, AssemblyScript mappings, manifest, instant subgraphs, performance, testing, endpoints/tags/webhooks); interactive diagnosis (`subgraph-doctor`); guided migration from The Graph (`subgraph-migrate`)
 - **Compose** — `compose.yaml` manifest, cron / HTTP / onchain triggers, smart wallets, gas sponsorship, `TaskContext` API, codegen, pricing
 - **Edge RPC** — Capabilities, supported chains, hedged requests, flashblocks, x402, error code lookups

@@ -12,6 +12,7 @@ AI-powered tools for building, deploying, and debugging across the full Goldsky 
 - **turbo-operations** - Lifecycle commands, monitoring, and error patterns
 
 ### Mirror pipelines
+_Legacy streaming product — prefer Turbo for new pipelines unless you need a subgraph entity source._
 - **mirror** - Sources, sinks, lifecycle commands, and guidance on Mirror vs Turbo
 - **mirror-doctor** - Diagnose and fix broken Mirror pipelines interactively
 
@@ -66,6 +67,12 @@ npx skills add goldsky-io/goldsky-agent
 
 **"Migrate my subgraph from The Graph to Goldsky"**
 → Uses: subgraph-migrate, subgraph-builder
+
+**"Build a price oracle that writes onchain"**
+→ Uses: compose, compose-reference
+
+**"I need a fast, reliable RPC endpoint with hedged requests"**
+→ Uses: edge
 
 **"What dataset for Polygon NFTs?"**
 → Uses: datasets
