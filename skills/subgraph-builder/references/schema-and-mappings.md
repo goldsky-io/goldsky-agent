@@ -155,12 +155,240 @@ let scaled = amount.toBigDecimal().div(
 
 Instant (no-code) subgraphs configure indexing via JSON instead of AssemblyScript. You can still enrich entities with `eth_call` results and computed expressions. The expression runtime context exposes `event` (or `call`), the parent `entity` (already saved before enrichment), and `calls` (results of previously executed eth_calls). Mark a call `required` to force ordering. **Declared calls** (`declared: true`) run in parallel for a big perf boost but only work for calls with no mapping-handler dependency (computable from event params alone), and are ignored on call handlers. See performance.md and `docs.goldsky.com/subgraphs/guides/create-a-low-code-subgraph`.
 
-## Protocol recipes (schema sketches)
+## Protocol recipes
 
-- **ERC-20:** `Token` (immutable: symbol, name, decimals) + `Account` + `Balance(account+token id)` updated on `Transfer`; optional `Transfer` (immutable) log.
-- **ERC-721/1155:** `Collection` + `Token(tokenId)` + `Account` + `Transfer` (immutable); track `owner` on `Token`.
-- **DEX (Uniswap-style):** `Factory` template → `Pool`; `Swap`/`Mint`/`Burn` (immutable) `@derivedFrom` on `Pool`; `Token` with `derivedETH`/USD pricing computed via `try_` calls.
-- **Lending:** `Market`, `Account`, `Position`, immutable `Borrow`/`Repay`/`Liquidation` events.
-- **Governance:** `Proposal`, `Vote`, `Delegate`; track vote weights as `BigInt`.
+Complete, copy-adaptable schema + mapping for the three most common contract types. All follow the rules above: `Bytes` ids, immutable entities for append-only event logs, `@derivedFrom` for the "list of X under Y" queries dApps need, and revert-safe `try_` calls. After editing the schema/manifest, re-run codegen before building. These are standard graph-node patterns and deploy unchanged on Goldsky.
 
-Keep event records immutable and use `@derivedFrom` for the "list of X under Y" queries dApps need.
+### ERC-20 token tracker
+
+Tracks token metadata, per-holder balances, and an immutable transfer log.
+
+```graphql
+type Token @entity {
+  id: Bytes!                  # token address
+  symbol: String!
+  name: String!
+  decimals: Int!
+  totalSupply: BigInt!
+  holderCount: BigInt!
+  balances: [Balance!]! @derivedFrom(field: "token")
+  transfers: [Transfer!]! @derivedFrom(field: "token")
+}
+
+type Balance @entity {
+  id: Bytes!                  # token ++ holder
+  token: Token!
+  holder: Bytes!
+  amount: BigInt!
+}
+
+type Transfer @entity(immutable: true) {
+  id: Bytes!                  # txHash ++ logIndex
+  token: Token!
+  from: Bytes!
+  to: Bytes!
+  amount: BigInt!
+  blockNumber: BigInt!
+  timestamp: BigInt!
+}
+```
+
+```ts
+import { BigInt, Bytes, Address } from "@graphprotocol/graph-ts"
+import { Transfer as TransferEvent, ERC20 } from "../generated/MyToken/ERC20"
+import { Token, Balance, Transfer } from "../generated/schema"
+
+const ZERO_ADDRESS = Address.zero()
+
+function getOrCreateToken(address: Bytes): Token {
+  let token = Token.load(address)
+  if (token == null) {
+    token = new Token(address)
+    let c = ERC20.bind(Address.fromBytes(address))
+    let sym = c.try_symbol();     token.symbol = sym.reverted ? "???" : sym.value
+    let nm = c.try_name();        token.name = nm.reverted ? "Unknown" : nm.value
+    let dec = c.try_decimals();   token.decimals = dec.reverted ? 18 : dec.value
+    let sup = c.try_totalSupply(); token.totalSupply = sup.reverted ? BigInt.zero() : sup.value
+    token.holderCount = BigInt.zero()
+    token.save()
+  }
+  return token
+}
+
+function applyDelta(tokenAddr: Bytes, holder: Bytes, delta: BigInt): void {
+  let id = tokenAddr.concat(holder)
+  let bal = Balance.load(id)
+  if (bal == null) {
+    bal = new Balance(id)
+    bal.token = tokenAddr
+    bal.holder = holder
+    bal.amount = BigInt.zero()
+    let token = getOrCreateToken(tokenAddr)
+    token.holderCount = token.holderCount.plus(BigInt.fromI32(1))
+    token.save()
+  }
+  bal.amount = bal.amount.plus(delta)
+  bal.save()
+}
+
+export function handleTransfer(event: TransferEvent): void {
+  let token = getOrCreateToken(event.address)
+
+  let t = new Transfer(event.transaction.hash.concatI32(event.logIndex.toI32()))
+  t.token = token.id
+  t.from = event.params.from
+  t.to = event.params.to
+  t.amount = event.params.value
+  t.blockNumber = event.block.number
+  t.timestamp = event.block.timestamp
+  t.save()
+
+  if (event.params.from != ZERO_ADDRESS) applyDelta(event.address, event.params.from, event.params.value.neg())
+  if (event.params.to != ZERO_ADDRESS) applyDelta(event.address, event.params.to, event.params.value)
+}
+```
+
+### DEX / AMM (Uniswap-style, factory + pool template)
+
+Factory deploys pools at runtime → use a **template** (see "Templates" above). Swaps are an immutable log derived on the pool.
+
+```graphql
+type Pool @entity {
+  id: Bytes!                  # pool address
+  token0: Bytes!
+  token1: Bytes!
+  reserve0: BigInt!
+  reserve1: BigInt!
+  txCount: BigInt!
+  swaps: [Swap!]! @derivedFrom(field: "pool")
+}
+
+type Swap @entity(immutable: true) {
+  id: Bytes!
+  pool: Pool!
+  sender: Bytes!
+  amount0In: BigInt!
+  amount1In: BigInt!
+  amount0Out: BigInt!
+  amount1Out: BigInt!
+  timestamp: BigInt!
+}
+```
+
+```ts
+// factory handler — instantiate the pool template (no per-event eth_call needed:
+// token0/token1 come from the PairCreated event payload)
+import { Pool as PoolTemplate } from "../generated/templates"
+import { Pool, Swap } from "../generated/schema"
+
+export function handlePairCreated(event: PairCreatedEvent): void {
+  let pool = new Pool(event.params.pair)
+  pool.token0 = event.params.token0
+  pool.token1 = event.params.token1
+  pool.reserve0 = BigInt.zero()
+  pool.reserve1 = BigInt.zero()
+  pool.txCount = BigInt.zero()
+  pool.save()
+  PoolTemplate.create(event.params.pair)   // start indexing the new pool
+}
+
+// pool template handlers
+export function handleSwap(event: SwapEvent): void {
+  let pool = Pool.load(event.address)
+  if (pool == null) return            // pool must exist; created by the factory above
+  let s = new Swap(event.transaction.hash.concatI32(event.logIndex.toI32()))
+  s.pool = pool.id
+  s.sender = event.params.sender
+  s.amount0In = event.params.amount0In
+  s.amount1In = event.params.amount1In
+  s.amount0Out = event.params.amount0Out
+  s.amount1Out = event.params.amount1Out
+  s.timestamp = event.block.timestamp
+  s.save()
+  pool.txCount = pool.txCount.plus(BigInt.fromI32(1))
+  pool.save()
+}
+
+export function handleSync(event: SyncEvent): void {
+  let pool = Pool.load(event.address)
+  if (pool == null) return
+  pool.reserve0 = event.params.reserve0
+  pool.reserve1 = event.params.reserve1
+  pool.save()
+}
+```
+
+> For per-swap token metadata or pricing, prefer **declared eth_calls** in the manifest over inline `try_` calls in the handler — see performance.md.
+
+### ERC-721 NFT collection
+
+Tracks collection, per-token ownership, and an immutable transfer log. ERC-1155 is the same shape with `(id ++ tokenId ++ holder)` balances instead of a single `owner`.
+
+```graphql
+type Collection @entity {
+  id: Bytes!                  # contract address
+  name: String!
+  symbol: String!
+  tokens: [Nft!]! @derivedFrom(field: "collection")
+}
+
+type Nft @entity {
+  id: Bytes!                  # collection ++ tokenId
+  collection: Collection!
+  tokenId: BigInt!
+  owner: Bytes!
+  tokenURI: String
+}
+
+type NftTransfer @entity(immutable: true) {
+  id: Bytes!
+  nft: Nft!
+  from: Bytes!
+  to: Bytes!
+  timestamp: BigInt!
+}
+```
+
+```ts
+import { Bytes } from "@graphprotocol/graph-ts"
+import { Transfer as TransferEvent, ERC721 } from "../generated/MyNft/ERC721"
+import { Collection, Nft, NftTransfer } from "../generated/schema"
+
+export function handleTransfer(event: TransferEvent): void {
+  let collection = Collection.load(event.address)
+  if (collection == null) {
+    collection = new Collection(event.address)
+    let c = ERC721.bind(event.address)
+    let nm = c.try_name();   collection.name = nm.reverted ? "Unknown" : nm.value
+    let sym = c.try_symbol(); collection.symbol = sym.reverted ? "???" : sym.value
+    collection.save()
+  }
+
+  let nftId = event.address.concat(Bytes.fromByteArray(Bytes.fromBigInt(event.params.tokenId)))
+  let nft = Nft.load(nftId)
+  if (nft == null) {
+    nft = new Nft(nftId)
+    nft.collection = event.address
+    nft.tokenId = event.params.tokenId
+    let c = ERC721.bind(event.address)
+    let uri = c.try_tokenURI(event.params.tokenId)
+    nft.tokenURI = uri.reverted ? null : uri.value
+  }
+  nft.owner = event.params.to       // persist BEFORE returning — never skip .save() on a null path
+  nft.save()
+
+  let xfer = new NftTransfer(event.transaction.hash.concatI32(event.logIndex.toI32()))
+  xfer.nft = nft.id
+  xfer.from = event.params.from
+  xfer.to = event.params.to
+  xfer.timestamp = event.block.timestamp
+  xfer.save()
+}
+```
+
+### Lending / governance (sketches)
+
+- **Lending:** `Market`, `Account`, `Position(market ++ user)`; immutable `Borrow` / `Repay` / `Liquidation` event logs `@derivedFrom` on `Market`.
+- **Governance:** `Proposal` (with a `ProposalState` enum), `Vote(immutable)` `@derivedFrom` on `Proposal`, `Delegate`; vote weights as `BigInt`.
+
+Both follow the same rules: immutable event logs, `@derivedFrom` collections, `Bytes` ids.
