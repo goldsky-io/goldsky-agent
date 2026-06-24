@@ -11,10 +11,11 @@ This skill is the single source of truth for the procedure. It merges the runnab
 
 ## Mode Detection
 
-Check whether the `Bash` tool is available before running anything:
+Pick the mode from the tools available to you:
 
-- **Bash available (CLI / local-agent mode):** execute the steps below directly, parse output, and substitute captured values into later commands.
-- **Bash NOT available (webapp chatbot / reference mode):** you cannot scaffold or deploy from a shell. First reply with a plain 2-3 sentence explanation of what the app does, then ask the user to confirm before generating code. Generate `compose.yaml` + task files inline, wire the shared contract address, and present the deploy card / one command at a time. Point them at `npx skills add goldsky-io/goldsky-agent` to run this with Bash locally.
+- **A `deployComposeApp` tool is available (Goldsky webapp chatbot) — this is the preferred in-app flow.** Do NOT emit `goldsky` terminal commands or `cliCommand` cards, and do NOT use Step 0 / `degit` / `forge` / `goldsky compose deploy`. Instead: give a 2-3 sentence plain explanation, then ask the config questions one at a time with `askUser` (tag the recommended option with `recommendedIndex`). Use the shared, fully-unpermissioned Base Sepolia oracle (Step 3, Branch A) so there is nothing to deploy and the smart wallet is auto-created and gas-sponsored — never tell the user to create or fund a wallet. Scaffold `compose.yaml`, `src/contracts/PriceOracle.json` (the verbatim ABI in Step 3), and the wired task, then **call `deployComposeApp` to present the in-app deploy card in the same turn** — do not ask the user to confirm first and do not make them run anything in a terminal. After the deploy card, print nothing else.
+- **`Bash` is available (local CLI / coding agent):** execute the steps below directly, parse output, and substitute captured values into later commands.
+- **Neither (pure reference Q&A):** explain what the app does; only if asked for step-by-step help, output one command at a time and have the user paste output back. Point them at `npx skills add goldsky-io/goldsky-agent` to run it locally with Bash.
 
 ## Non-negotiables
 
