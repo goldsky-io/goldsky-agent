@@ -525,6 +525,27 @@ update a secret
 
 ---
 
+## goldsky hosted-sink
+
+Commands related to Goldsky-hosted databases. Provisions a managed Postgres (Neon) database and stores its credentials as a Goldsky secret you can reference from a pipeline sink — no external database account required.
+
+> Requires the **Scale plan or above**. On accounts without access the command fails with a message pointing to the team's billing page (`https://app.goldsky.com/teams/<teamId>/billing`).
+
+### Subcommands
+
+#### `goldsky hosted-sink create`
+
+Provision a Goldsky-hosted database
+
+**Options:**
+- `--type <string>` — the type of hosted database to provision *(choices: postgres)* *(required)*
+- `--name <string>` — the name of the hosted database secret (auto-generated as `hosted-postgres-<random>` when omitted)
+- `--description <string>` — the description of the hosted database secret
+
+On success it prints the created secret's **name**, **ID**, and **type**. The database connection string is intentionally never printed; use the secret name as the sink `secret_name` in a pipeline.
+
+---
+
 ## goldsky project
 
 Commands related to project management
