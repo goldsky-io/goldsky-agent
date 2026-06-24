@@ -539,7 +539,7 @@ Provision a Goldsky-hosted database
 
 **Options:**
 - `--type <string>` — the type of hosted database to provision *(choices: postgres)* *(required)*
-- `--name <string>` — the name of the hosted database secret (auto-generated as `hosted-postgres-<random>` when omitted)
+- `--name <string>` — the name of the hosted database secret (auto-generated as `HOSTED_POSTGRES_<RANDOM>` when omitted)
 - `--description <string>` — the description of the hosted database secret
 
 On success it prints the created secret's **name**, **ID**, and **type**. The database connection string is intentionally never printed; use the secret name as the sink `secret_name` in a pipeline.
