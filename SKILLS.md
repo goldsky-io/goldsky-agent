@@ -26,6 +26,13 @@ _Legacy streaming product — prefer Turbo for new pipelines unless you need a s
 - **compose-doctor** - Diagnose and fix broken Compose apps interactively
 - **compose-reference** - `compose.yaml` fields, every `goldsky compose` flag, `TaskContext` / wallet / Collection APIs
 
+#### Compose examples
+End-to-end worked examples — each scaffolds a real app from `goldsky-io/documentation-examples` and walks build → deploy → smoke test. For a custom app that isn't one of these, use **compose**.
+- **compose-bitcoin-oracle** - Cron task writing BTC/USD from CoinGecko to an onchain `PriceOracle` contract
+- **compose-vrf** - Onchain-event task fulfilling randomness requests with drand verifiable randomness
+- **compose-copy-trader** - Turbo pipeline + Compose app that mirrors Polymarket trades from watched wallets
+- **compose-dividend-distribution** - Pays a cap table pro-rata via a job-mode Turbo snapshot + gas-sponsored on-chain payouts; idempotent and crash-safe
+
 ### Edge (managed RPC)
 - **edge** - Managed RPC endpoints, capabilities, supported chains, error code lookups
 
@@ -69,7 +76,13 @@ npx skills add goldsky-io/goldsky-agent
 → Uses: subgraph-migrate, subgraph-builder
 
 **"Build a price oracle that writes onchain"**
+→ Uses: compose-bitcoin-oracle, compose-reference
+
+**"Build a custom Compose app that isn't one of the examples"**
 → Uses: compose, compose-reference
+
+**"Build provably fair onchain randomness" / "mirror Polymarket trades" / "distribute dividends to a cap table"**
+→ Uses: compose-vrf / compose-copy-trader / compose-dividend-distribution
 
 **"I need a fast, reliable RPC endpoint with hedged requests"**
 → Uses: edge

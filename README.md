@@ -1,7 +1,7 @@
 # Goldsky Agent
 
 [![Install with npx](https://img.shields.io/badge/install-npx%20skills%20add-blue)](https://github.com/goldsky-io/goldsky-agent#installation)
-[![Skills](https://img.shields.io/badge/skills-18-green)](#skills)
+[![Skills](https://img.shields.io/badge/skills-22-green)](#skills)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 AI-powered tools for the full Goldsky product surface. Build, deploy, and debug Turbo pipelines, Mirror pipelines, Subgraphs, Compose apps, and Edge RPC — from natural-language prompts.
@@ -18,6 +18,10 @@ AI-powered tools for the full Goldsky product surface. Build, deploy, and debug 
 | Fix a broken / stalled subgraph                       | `/subgraph-doctor`   |
 | Migrate a subgraph from The Graph                     | `/subgraph-migrate`  |
 | Build a Compose app (oracle / keeper / automation)    | `/compose`           |
+| Build a BTC/USD price oracle (worked example)         | `/compose-bitcoin-oracle` |
+| Build onchain verifiable randomness (worked example)  | `/compose-vrf`       |
+| Build a Polymarket copy-trader (worked example)       | `/compose-copy-trader` |
+| Distribute dividends to a cap table (worked example)  | `/compose-dividend-distribution` |
 | Get a fast, reliable RPC endpoint                     | `/edge`              |
 | Find the right dataset name                           | `/datasets`          |
 | Look up Turbo YAML syntax                             | `/turbo-pipelines`   |
@@ -173,6 +177,17 @@ Offchain-to-onchain TypeScript framework for oracles, keepers, circuit breakers,
 | `compose` | "Build a price oracle / keeper / cross-chain bot in TypeScript" | Walks through scaffolding, task triggers (cron, HTTP, onchain), wallets, gas sponsorship |
 | `compose-doctor` | "My Compose app is in error state / crashlooping" | Runs `status`, `logs`, `secret list`, `wallet list` and diagnoses |
 | `compose-reference` | "What fields does `compose.yaml` accept? What's the `TaskContext` API?" | Manifest fields, every `goldsky compose` flag, TaskContext / wallet / Collection APIs |
+
+#### Compose examples
+
+End-to-end worked examples — each scaffolds a real app from [`goldsky-io/documentation-examples`](https://github.com/goldsky-io/documentation-examples/tree/main/compose) and walks build → wire → deploy → smoke test under your own account. Trigger one with a short prompt (e.g. "build a bitcoin price oracle"); for a custom app that isn't one of these, use `/compose`.
+
+| Skill | When to use | What it does |
+| ----- | ----------- | ------------ |
+| `compose-bitcoin-oracle` | "Build a BTC/USD price oracle that writes onchain" | Cron task → CoinGecko → `PriceOracle` contract via a Compose wallet; collection for history |
+| `compose-vrf` | "Build provably fair onchain randomness" | Onchain-event task → drand verifiable randomness → `fulfillRandomness` writeback |
+| `compose-copy-trader` | "Mirror Polymarket trades from watched wallets" | Turbo pipeline indexes `OrderFilled` → webhook → Compose mirrors on the CLOB; cron redeems winnings |
+| `compose-dividend-distribution` | "Pay dividends pro-rata to a cap table of shareholders" | One HTTP request: job-mode Turbo snapshot at a record block → concurrent gas-sponsored `pay()` → on-chain audit trail; idempotent and crash-safe |
 
 ### Edge (managed RPC)
 
