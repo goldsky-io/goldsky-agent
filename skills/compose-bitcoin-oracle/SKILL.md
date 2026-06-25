@@ -13,7 +13,22 @@ This skill is the single source of truth for the procedure. It merges the runnab
 
 Pick the mode from the tools available to you:
 
-- **A `deployComposeApp` tool is available (Goldsky webapp chatbot) — this is the preferred in-app flow.** Do NOT emit `goldsky` terminal commands or `cliCommand` cards, and do NOT use Step 0 / `degit` / `forge` / `goldsky compose deploy`. Instead: give a 2-3 sentence plain explanation, then ask the config questions one at a time with `askUser` (tag the recommended option with `recommendedIndex`). Use the shared, fully-unpermissioned Base Sepolia oracle (Step 3, Branch A) so there is nothing to deploy and the smart wallet is auto-created and gas-sponsored — never tell the user to create or fund a wallet. Scaffold the files in-memory and pass them to `deployComposeApp` (do NOT degit): `compose.yaml` (a single cron task on the chosen schedule, app named per the user's answer), `src/contracts/PriceOracle.json` (the verbatim ABI in Step 3), and `src/tasks/bitcoin-oracle.ts` (fetch BTC/USD from CoinGecko, then `evm.contracts.PriceOracle.write(toBytes32(timestamp), toBytes32(Math.round(price*100)))` on the chosen chain via a gas-sponsored Compose smart wallet, wired to the shared oracle address, appending each price to a `bitcoin_prices` collection). Then **call `deployComposeApp` in the SAME turn to present the in-app deploy card** — do not ask the user to confirm first, do not emit any `goldsky` command, and do not make them run anything in a terminal. After the deploy card, print nothing else. **In this mode, ignore Steps 0–8 below entirely** — they are the CLI/local procedure.
+- **A `deployComposeApp` tool is available (Goldsky webapp chatbot) — this is the preferred in-app flow.** Do NOT emit `goldsky` terminal commands or `cliCommand` cards, and do NOT use Step 0 / `degit` / `forge` / `goldsky compose deploy`. Instead: give a 2-3 sentence plain explanation, then ask the config questions one at a time with `askUser` (tag the recommended option with `recommendedIndex`). Use the shared, fully-unpermissioned Base Sepolia oracle (Step 3, Branch A) so there is nothing to deploy and the smart wallet is auto-created and gas-sponsored — never tell the user to create or fund a wallet. Scaffold the files in-memory and pass them to `deployComposeApp` (do NOT degit): `compose.yaml`, `src/contracts/PriceOracle.json` (the verbatim ABI in Step 3), and `src/tasks/bitcoin-oracle.ts` (fetch BTC/USD from CoinGecko, then `evm.contracts.PriceOracle.write(toBytes32(timestamp), toBytes32(Math.round(price*100)))` on the chosen chain via a gas-sponsored Compose smart wallet, wired to the shared oracle address, appending each price to a `bitcoin_prices` collection). Use EXACTLY this `compose.yaml` (note the task key is `triggers:` — a list — NOT `trigger:`; the only allowed task fields are `name`, `path`, `retry_config`, `triggers`; substitute the app name and cron expression from the answers):
+
+```yaml
+name: "<app name>"
+api_version: "stable"
+tasks:
+  - path: "./src/tasks/bitcoin-oracle.ts"
+    name: "bitcoin_oracle"
+    triggers:
+      - type: "cron"
+        expression: "* * * * *"
+    retry_config:
+      max_attempts: 2
+      initial_interval_ms: 1000
+      backoff_factor: 1
+``` Then **call `deployComposeApp` in the SAME turn to present the in-app deploy card** — do not ask the user to confirm first, do not emit any `goldsky` command, and do not make them run anything in a terminal. After the deploy card, print nothing else. **In this mode, ignore Steps 0–8 below entirely** — they are the CLI/local procedure.
 - **`Bash` is available (local CLI / coding agent):** execute the steps below directly, parse output, and substitute captured values into later commands.
 - **Neither (pure reference Q&A):** explain what the app does; only if asked for step-by-step help, output one command at a time and have the user paste output back. Point them at `npx skills add goldsky-io/goldsky-agent` to run it locally with Bash.
 
