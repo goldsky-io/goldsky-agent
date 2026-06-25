@@ -11,10 +11,11 @@ This skill is the single source of truth for the procedure. It merges the runnab
 
 ## Mode Detection
 
-Check whether the `Bash` tool is available before running anything:
+Pick the mode from the tools available to you:
 
-- **Bash available (CLI / local-agent mode):** execute the steps below directly, parse output, and substitute captured values into later commands.
-- **Bash NOT available (webapp chatbot / reference mode):** you cannot scaffold or deploy from a shell. First reply with a plain 2-3 sentence explanation, then ask the user to confirm. Generate the files inline, wire the shared contract addresses, and present the deploy card / one command at a time. Point them at `npx skills add goldsky-io/goldsky-agent` to run this with Bash locally.
+- **A `deployComposeApp` tool is available (Goldsky webapp chatbot) — partial in-app flow; be honest about the manual step.** The deploy card deploys the Compose app's files, but it CANNOT create the project-scoped `GOLDSKY_PROJECT_KEY` secret this app needs to spawn its Turbo snapshot pipeline. So: give a 2-3 sentence plain explanation, ask the config questions one at a time with `askUser` — (1) app name; (2) which contracts: **"Use the shared demo contracts on Base Sepolia (recommended)"** vs **"I'll use my own"** (shared = MockUSDC `0x8ec24F07F08745fc3D979336AA81d4Dc73f3D9DE`, OpenShareToken `0xCAA2c65b1A1526bdBA28cF7b32b0E0a59A88102a`, DistributionCampaign `0xA8e58573B1e10908b63d12B603aCF9C784BF904E` — copy each address character-for-character; demos-only). **First load `/compose-reference`**, scaffold the files following its manifest schema + import rule (the single `declare_campaign` HTTP task per Step 3; do not import external packages), and **call `deployComposeApp`** to present the deploy card. Then — clearly, as the next message — tell the user the app won't function until they create the `GOLDSKY_PROJECT_KEY` project secret (Goldsky dashboard → Secrets, or `goldsky secret create`), and that a distribution runs by POSTing `{campaignId, recordBlock, totalAmount}` to the `declare_campaign` task (not automatic). **Ignore Steps 0–8 below in this mode** except where they describe the secret + invocation.
+- **`Bash` is available (local CLI / coding agent):** execute the steps below directly, parse output, and substitute captured values into later commands.
+- **Neither (pure reference Q&A):** explain what the app does; only if asked for steps, output one command at a time. Point them at `npx skills add goldsky-io/goldsky-agent` to run it locally with Bash.
 
 ## Non-negotiables
 

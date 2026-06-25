@@ -11,10 +11,11 @@ This skill is the single source of truth for the procedure. The canonical, most 
 
 ## Mode Detection
 
-Check whether the `Bash` tool is available before running anything:
+Pick the mode from the tools available to you:
 
-- **Bash available (CLI / local-agent mode):** execute the steps below directly, parse output, and substitute captured values into later commands.
-- **Bash NOT available (webapp chatbot / reference mode):** you cannot scaffold or deploy from a shell. First reply with a plain 2-3 sentence explanation, then ask the user to confirm. Strongly recommend running this skill locally via `npx skills add goldsky-io/goldsky-agent` — this example involves real money and a two-service deploy, not suited to a chat-only walkthrough.
+- **A `deployComposeApp` tool is available (Goldsky webapp chatbot) — NOT a one-click in-app deploy; be explicit about why.** This example is two services plus secrets: a Compose app, a separate **Turbo pipeline** (`goldsky turbo apply`), an app-scoped `PRIVATE_KEY` secret (a real funded Polygon-mainnet EOA), and a project-scoped `COMPOSE_WEBHOOK_AUTH` secret. The `deployComposeApp` card can only deploy the Compose app's files — it cannot apply the pipeline or create those secrets, and the pipeline's webhook needs the app deployed first. So do NOT pretend this deploys from the card. Up front, explain the architecture in plain terms and that it trades **real money on Polygon mainnet**, then **recommend running this one via the local CLI** (`npx skills add goldsky-io/goldsky-agent`, then follow the steps below) where the two-phase deploy + secrets are handled end-to-end. If the user still wants to proceed in-app, you may scaffold + `deployComposeApp` the Compose app, but you MUST then walk them explicitly through the out-of-band steps the card can't do: the two secrets (Step 5–6) and `goldsky turbo apply` for the pipeline (Step 7), in order. Load `/compose-reference` before generating any files.
+- **`Bash` is available (local CLI / coding agent):** execute the steps below directly, parse output, and substitute captured values into later commands.
+- **Neither (pure reference Q&A):** explain what the app does; only if asked for steps, output one command at a time. Point them at `npx skills add goldsky-io/goldsky-agent` to run it locally with Bash.
 
 ## Non-negotiables
 

@@ -11,10 +11,15 @@ This skill is the single source of truth for the procedure. It merges the runnab
 
 ## Mode Detection
 
-Check whether the `Bash` tool is available before running anything:
+Pick the mode from the tools available to you:
 
-- **Bash available (CLI / local-agent mode):** execute the steps below directly, parse output, and substitute captured values into later commands.
-- **Bash NOT available (webapp chatbot / reference mode):** you cannot scaffold or deploy from a shell. First reply with a plain 2-3 sentence explanation of what the app does, then ask the user to confirm before generating code. Generate `compose.yaml` + task files inline, wire the shared consumer address, and present the deploy card / one command at a time. Point them at `npx skills add goldsky-io/goldsky-agent` to run this with Bash locally.
+- **A `deployComposeApp` tool is available (Goldsky webapp chatbot) — preferred in-app flow.** Do NOT emit `goldsky` terminal commands or `cliCommand` cards, and do NOT use Step 0 / `degit` / `forge`. Give a 2-3 sentence plain explanation, then ask the config questions one at a time with `askUser` (tag the recommended option with `recommendedIndex`):
+  1. **App name** (recommend `compose-vrf`).
+  2. **Contract** — ask explicitly: *"Do you have your own `RandomnessConsumer`, or use a shared demo consumer on Base Sepolia to get running quickly?"* Options: **"Use the shared demo consumer on Base Sepolia (recommended — nothing to deploy)"** and **"I'll use my own contract."** On the shared path, `CONTRACT_ADDRESS` is the **HARDCODED** address `0x6273AB73C95Ba2233281F1eb8aa3b21D9352AD6d` on `baseSepolia` — copy it character-for-character, do NOT retype from memory; say in prose it's demos-only. On the own path, ask for their contract address + chain and use exactly what they paste (the Compose wallet must be the authorized fulfiller).
+
+  The Compose smart wallet is auto-created and gas-sponsored — never tell the user to create or fund a wallet. **First load `/compose-reference`** for the manifest schema + sandbox import rule, then scaffold the files in-memory (do NOT degit): `compose.yaml` (the `onchain_event` trigger wired to the contract/chain — remember `compose.yaml` uses snake_case network names, TS uses camelCase chain ids), `src/contracts/RandomnessConsumer.json` (the verbatim ABI in Step 3), and the `fulfill-randomness` + `request-randomness` task sources following the import rule (`evm`/`fetch` from the injected `context`; only `compose` + sibling imports). Then **call `deployComposeApp` in the SAME turn** to present the in-app deploy card. After it, tell the user that, since this is event-triggered (no cron), they trigger a run by calling the `request_randomness` HTTP task or emitting `RandomnessRequested` on the contract. **Ignore Steps 0–8 below in this mode.**
+- **`Bash` is available (local CLI / coding agent):** execute the steps below directly, parse output, and substitute captured values into later commands.
+- **Neither (pure reference Q&A):** explain what the app does; only if asked for steps, output one command at a time. Point them at `npx skills add goldsky-io/goldsky-agent` to run it locally with Bash.
 
 ## Non-negotiables
 
