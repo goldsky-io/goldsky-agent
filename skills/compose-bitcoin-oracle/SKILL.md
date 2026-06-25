@@ -28,7 +28,49 @@ tasks:
       max_attempts: 2
       initial_interval_ms: 1000
       backoff_factor: 1
-``` Then **call `deployComposeApp` in the SAME turn to present the in-app deploy card** — do not ask the user to confirm first, do not emit any `goldsky` command, and do not make them run anything in a terminal. After the deploy card, print nothing else. **In this mode, ignore Steps 0–8 below entirely** — they are the CLI/local procedure.
+```
+
+  **Compose sandbox import rule:** task files may import ONLY the `compose` module and sibling files. `evm`, `fetch`, and `collection` come from the injected `context` — do NOT `import` `ethers`, `viem`, `@goldsky/compose-evm`, or any HTTP client (the bundler rejects them). Pass these two files verbatim (set `ORACLE_CONTRACT` to the chosen oracle and `evm.chains.<chain>` to the chosen chain — shared path is the address below on `baseSepolia`):
+
+  `src/lib/utils.ts`:
+  ```ts
+  export function toBytes32(value: number): string {
+    return `0x${value.toString(16).padStart(64, "0")}`;
+  }
+  ```
+
+  `src/tasks/bitcoin-oracle.ts`:
+  ```ts
+  import { TaskContext } from "compose";
+  import { toBytes32 } from "../lib/utils";
+
+  const ORACLE_CONTRACT = "0x53deB3fF6E6e82A3b5E96f14E185e3Fe66BF5113";
+
+  export async function main(context: TaskContext) {
+    const { fetch, evm, collection } = context;
+    const wallet = await evm.wallet({ name: "bitcoin-oracle-wallet" });
+    // Typed contract generated from src/contracts/PriceOracle.json
+    const oracle = new evm.contracts.PriceOracle(
+      ORACLE_CONTRACT,
+      evm.chains.baseSepolia,
+      wallet
+    );
+    const response = await fetch<{ bitcoin: { usd: number } }>(
+      "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd",
+      { max_attempts: 3, initial_interval_ms: 1000, backoff_factor: 2 }
+    );
+    if (!response) throw new Error("Failed to fetch Bitcoin price");
+    const bitcoinPrice = response.bitcoin.usd;
+    const timestamp = Date.now();
+    const { hash } = await oracle.write(
+      toBytes32(timestamp),
+      toBytes32(Math.round(bitcoinPrice * 100))
+    );
+    const priceHistory = await collection("bitcoin_prices");
+    const { id } = await priceHistory.insertOne({ price: bitcoinPrice, timestamp });
+    return { success: true, oracleHash: hash, price: bitcoinPrice, timestamp, priceId: id };
+  }
+  ``` Then **call `deployComposeApp` in the SAME turn to present the in-app deploy card** — do not ask the user to confirm first, do not emit any `goldsky` command, and do not make them run anything in a terminal. After the deploy card, print nothing else. **In this mode, ignore Steps 0–8 below entirely** — they are the CLI/local procedure.
 - **`Bash` is available (local CLI / coding agent):** execute the steps below directly, parse output, and substitute captured values into later commands.
 - **Neither (pure reference Q&A):** explain what the app does; only if asked for step-by-step help, output one command at a time and have the user paste output back. Point them at `npx skills add goldsky-io/goldsky-agent` to run it locally with Bash.
 
