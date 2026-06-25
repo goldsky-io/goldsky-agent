@@ -66,7 +66,7 @@ Do NOT ask about the cap-table source, the trigger, or batching — the example 
 
 ## Step 2 — Wire the contract addresses
 
-- **Shared path (recommended):** edit `src/lib/constants.ts` (use grep anchors) so `CONFIG` points at the three shared Base Sepolia addresses above, the chain is `baseSepolia`, and `shareTokenDeployBlock` is the block OpenShareToken was deployed at (already set in the repo for the shared contracts; if absent, read it from `https://sepolia.basescan.org/address/0xCAA2c65b1A1526bdBA28cF7b32b0E0a59A88102a`). The snapshot pipeline filters `block_number BETWEEN <shareTokenDeployBlock> AND <recordBlock>`, so this lower bound matters.
+- **Shared path (recommended):** edit `src/lib/constants.ts` (use grep anchors) so `CONFIG` points at the three shared Base Sepolia addresses above on chain `baseSepolia`. Note the repo's checked-in `shareToken`/`shareTokenDeployBlock` are the example author's OWN demo share token (a different ERC-20, symbol `EIS`), NOT the open-mint OSHARE — so you MUST overwrite `shareToken` with the OSHARE address `0xCAA2c65b1A1526bdBA28cF7b32b0E0a59A88102a` AND set `shareTokenDeployBlock` to OSHARE's own deploy block (look it up at `https://sepolia.basescan.org/address/0xCAA2c65b1A1526bdBA28cF7b32b0E0a59A88102a` → first tx; do not keep the repo's `42275958`, which is for the EIS token). The snapshot pipeline filters `block_number BETWEEN <shareTokenDeployBlock> AND <recordBlock>`, so a wrong lower bound silently yields an empty cap table.
 - **Deploy-your-own path:** the example deploys MockUSDC + ShareToken + DistributionCampaign via Foundry. Show, then (on confirmation) run:
   ```bash
   PRIVATE_KEY=0x<deployer with a little ETH> ./scripts/deploy.sh

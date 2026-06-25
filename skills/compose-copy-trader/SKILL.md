@@ -5,7 +5,7 @@ description: "Build and deploy the Goldsky Compose + Turbo copy-trader under the
 
 # Build: Compose copy-trader
 
-Stand up the copy-trader under the user's own Goldsky account. Two moving parts: a Turbo pipeline (`pipeline/polymarket-ctf-events.yaml`) that indexes Polymarket `OrderFilled` events on Polygon for watched wallets and webhooks them into Compose, and a Compose app (`compose.yaml`) whose tasks mirror each fill and manage positions — `copy_trade` (http; parse fill → Gamma lookup → sign EIP-712 order → POST to CLOB via proxy), `redeem` (cron; redeem winning positions), `setup_approvals` (http, one-time), `status` (http; JSON snapshot), plus `reconcile`, `pull_trades`, `liquidate`, `debug_attempts`.
+Stand up the copy-trader under the user's own Goldsky account. Two moving parts: a Turbo pipeline (`pipeline/polymarket-ctf-events.yaml`) that indexes Polymarket `OrderFilled` events on Polygon for watched wallets and webhooks them into Compose, and a Compose app (`compose.yaml`) whose tasks mirror each fill and manage positions — `copy_trade` (http; parse fill → Gamma lookup → sign order → POST to CLOB via proxy); `redeem`, `reconcile`, and `pull_trades` (each a 5-minute cron `0 */5 * * * *`, also HTTP-callable); and `setup_approvals`, `status`, `liquidate`, `debug_attempts` (http).
 
 This skill is the single source of truth for the procedure. The canonical, most complete code lives in `goldsky-io/copy-trader` (scaffolded in Step 0); `documentation-examples/compose/copy-trader` is a simplified mirror. This is the most complex example and **trades real money on Polygon mainnet** — do not skip any preflight or ordering step.
 
@@ -24,7 +24,7 @@ Pick the mode from the tools available to you:
 - **Order of operations matters:** deploy the Compose app *first*, because the pipeline YAML's webhook URL contains the Compose app name. Deploy the pipeline before the app exists (or with a stale name) and every webhook 404s.
 - **The `PRIVATE_KEY` secret is a real funded EOA on Polygon mainnet.** Not a testnet. Compose stores it encrypted and uses it only to sign orders. Never print, commit, or log it. CLOB orders execute for real money.
 - **US geo-blocking:** Polymarket's CLOB API blocks US IPs and Compose tasks run from `us-west`. The default `CLOB_HOST` (`https://fly-polymarket-proxy.fly.dev`, deployed in Amsterdam) forwards through an EU IP. For production, deploy your own proxy.
-- **Compose tasks reach the network only through `ctx.fetch`.** Deno task binaries get no `--allow-net`, so any SDK that does its own HTTP (axios, node-fetch) fails with `getaddrinfo EPERM`. The template reuses `@polymarket/clob-client`'s pure signing utilities (local crypto only) and routes every request via `ctx.fetch`. Don't "fix" this by importing an HTTP client.
+- **Compose tasks reach the network only through `ctx.fetch`.** copy-trader ships a `package.json`, so its npm deps are esbuild-bundled and importable for LOCAL use — it signs orders with `viem` and uses `@polymarket/clob-client` only for L1/L2 auth-header crypto (local, no network). The hard limit is the network: tasks get no `--allow-net`, so any SDK that does its own HTTP (axios, node-fetch, the CLOB client's HTTP layer) fails with `getaddrinfo EPERM`. Route every request through `ctx.fetch`; don't "fix" anything by importing an HTTP client.
 - **The `OrderFilled` ABI in the pipeline must mark `orderHash`, `maker`, and `taker` as `indexed`** or Turbo silently drops every event.
 
 ## Variable handling for agents
@@ -55,7 +55,7 @@ Ask one question at a time; translate readable answers to machine values yoursel
 
 1. **"App name?"** (recommend `copy-trader`) → `name:` in `compose.yaml`. Also a path segment in the pipeline's webhook `url:`; renaming means updating both (Step 4).
 2. **"Which whale wallets to mirror?"** — one or more Polygon EOAs, lowercase, comma-separated. Require the user to paste them (don't pick for them). Point them at the Polymarket leaderboard for ideas: https://polymarket.com/leaderboard/overall/today/profit.
-3. **"Position sizing?"** — the template uses `TRADE_AMOUNT_USD` (default `"1"`, the Polymarket minimum notional). Keep `"1"` for the first run.
+3. **"Position sizing?"** — the bot sizes each mirror **proportionally**: `WHALE_FRACTION` (default `0.01` = 1% of the whale's notional), floored at the market minimum and **capped at `MAX_TRADE_USD` (default `$25`)**. `TRADE_AMOUNT_USD` is only a legacy fallback (used if `WHALE_FRACTION` is unset). For a safe first run, cap exposure by setting a low `MAX_TRADE_USD` (e.g. `"1"`). Note `WHALE_FRACTION`/`MAX_TRADE_USD` default in code and aren't in the scaffolded `env.cloud` — add them there to override.
 4. **"Proxy — shared (default) or your own?"** — default `https://fly-polymarket-proxy.fly.dev` is fine for testing. For production, deploy your own EU proxy and set `CLOB_HOST`.
 5. **"EOA that signs CLOB orders — one you control, or a fresh one?"** — this EOA holds USDC.e and signs orders. Fresh: `cast wallet new` prints `(address, private_key)`. Record both.
 6. **"Publish to a new GitHub repo?"** — optional.
@@ -71,7 +71,7 @@ npm install
 Use grep anchors (keys are unique):
 - Top-level `name:` → `"<app name>"`
 - `env.cloud.WATCHED_WALLETS:` → `"<comma-separated lowercase addresses>"`
-- `env.cloud.TRADE_AMOUNT_USD:` → `"<size>"` (keep `"1"` for first run)
+- Sizing: add `env.cloud.MAX_TRADE_USD:` → `"1"` for a tiny first-run cap (and optionally `WHALE_FRACTION:`, default `0.01`). `TRADE_AMOUNT_USD` in the scaffold is a legacy fallback only.
 - `env.cloud.CLOB_HOST:` → only change if the user has their own proxy.
 
 ## Step 4 — Edit `pipeline/polymarket-ctf-events.yaml`
@@ -123,7 +123,7 @@ The pipeline starts indexing from `latest` (real-time fills).
 
 ## Step 8 — Fund the EOA with USDC.e on Polygon
 
-Derive the address: `cast wallet address --private-key "0x<hex>"` → `$EOA_ADDRESS`. Send **USDC.e** (`0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174` on Polygon mainnet), starting balance ~$5–10 (covers several $1 mirror trades and the $1.10 floor the bot enforces). **Do not send MATIC** — Compose sponsors gas; the EOA only needs USDC.e. Verify:
+Derive the address: `cast wallet address --private-key "0x<hex>"` → `$EOA_ADDRESS`. Send **USDC.e** (`0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174` on Polygon mainnet), starting balance ~$5–10. Note the V2 trading collateral is **pUSD** — `setup_approvals` (Step 9) wraps your USDC.e 1:1 into pUSD via the CollateralOnramp, and the bot checks the pUSD balance before each BUY (skips with `BALANCE_LOW` if pUSD is below ~`tradeAmount × 1.05`). **Do not send MATIC** — Compose sponsors gas; the EOA only needs USDC.e. Verify:
 
 ```bash
 cast call 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174 \
@@ -134,14 +134,14 @@ cast call 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174 \
 
 ## Step 9 — Run one-time approvals
 
-`setup_approvals` grants the exchanges permission to pull USDC and CTF shares from the EOA. Idempotent. Deployed with `authentication: "auth_token"`, so call it over HTTP with the token from Step 6 (`goldsky compose callTask` only works against local servers):
+`setup_approvals` does the one-time V2 setup: approve USDC.e → CollateralOnramp, approve pUSD → the V2 exchanges, `setApprovalForAll` on ConditionalTokens → the V2 exchanges, and **wrap** any sitting USDC.e into pUSD. Idempotent. Deployed with `authentication: "auth_token"`, so call it over HTTP with the token from Step 6 (`goldsky compose callTask` only works against local servers):
 
 ```bash
 curl -X POST -H "Authorization: Bearer $COMPOSE_TOKEN" \
   "https://api.goldsky.com/api/admin/compose/v1/<app name>/tasks/setup_approvals"
 ```
 
-Expect sponsored on-chain approvals (USDC + CTF `setApprovalForAll` across the exchanges). Tail `goldsky compose logs` to confirm.
+Expect several sponsored on-chain txs (the approvals above + the USDC.e→pUSD wrap). Tail `goldsky compose logs` to confirm.
 
 ## Step 10 — Optional: publish to a new GitHub repo
 
@@ -163,7 +163,7 @@ gh repo create <user's repo name> --<public|private> --source=. --push
 ```bash
 curl -X POST -H "Authorization: Bearer $COMPOSE_TOKEN" -H "Content-Type: application/json" \
   https://api.goldsky.com/api/admin/compose/v1/<app name>/tasks/copy_trade \
-  -d '{"id":"test-1","block_number":1,"log_index":0,"transaction_hash":"0xtest","block_timestamp":"2026-01-01T00:00:00Z","maker":"<one watched wallet lowercase>","taker":"0x0000000000000000000000000000000000000000","maker_asset_id":"0","taker_asset_id":"999","maker_amount":1,"taker_amount":1,"fee":0}'
+  -d '{"id":"test-1","block_number":1,"log_index":0,"transaction_hash":"0xtest","block_timestamp":"2026-01-01T00:00:00Z","maker":"<one watched wallet lowercase>","taker":"0x0000000000000000000000000000000000000000","side":0,"token_id":"999","maker_amount":1,"taker_amount":1,"fee":0}'
 # → expect status: "MARKET_NOT_FOUND"
 ```
 
@@ -174,7 +174,7 @@ curl -X POST -H "Authorization: Bearer $COMPOSE_TOKEN" -H "Content-Type: applica
 - **Edits don't take effect after redeploy.** Stale `.compose/` bundle cache. `rm -rf .compose/` and redeploy.
 - **Webhook returns 401.** `COMPOSE_WEBHOOK_AUTH` is wrong/missing. Re-create per Step 6.
 - **Webhook returns 404.** Pipeline `url:` path segment doesn't match the deployed app name.
-- **`copy_trade` returns `BALANCE_LOW`.** EOA below $1.10 USDC.e. Top up.
+- **`copy_trade` returns `BALANCE_LOW`.** The wallet's **pUSD** balance is below ~`tradeAmount × 1.05`. Top up USDC.e and re-run `setup_approvals` (which wraps it into pUSD), or send pUSD directly.
 - **`copy_trade` returns `MARKET_NOT_FOUND` for real fills.** Token ID doesn't resolve in Gamma — likely a stale or non-CTF token. Check the fill on Polymarket.
 - **`TRADE_FAILED: ... geo-block`.** `CLOB_HOST` isn't routing through the EU. Re-check `CLOB_HOST`; consider a private proxy.
 - **`getaddrinfo EPERM` / SDK network errors.** Something is doing HTTP outside `ctx.fetch`. Route it through `ctx.fetch`.

@@ -15,7 +15,7 @@ Pick the mode from the tools available to you:
 
 - **A `deployComposeApp` tool is available (Goldsky webapp chatbot) — preferred in-app flow.** Do NOT emit `goldsky` terminal commands or `cliCommand` cards, and do NOT use Step 0 / `degit` / `forge`. Give a 2-3 sentence plain explanation, then ask the config questions one at a time with `askUser` (tag the recommended option with `recommendedIndex`):
   1. **App name** (recommend `compose-vrf`).
-  2. **Contract** — ask explicitly: *"Do you have your own `RandomnessConsumer`, or use a shared demo consumer on Base Sepolia to get running quickly?"* Options: **"Use the shared demo consumer on Base Sepolia (recommended — nothing to deploy)"** and **"I'll use my own contract."** On the shared path, `CONTRACT_ADDRESS` is the **HARDCODED** address `0x6273AB73C95Ba2233281F1eb8aa3b21D9352AD6d` on `baseSepolia` — copy it character-for-character, do NOT retype from memory; say in prose it's demos-only. On the own path, ask for their contract address + chain and use exactly what they paste (the Compose wallet must be the authorized fulfiller).
+  2. **Contract** — ask explicitly: *"Do you have your own `RandomnessConsumer`, or use a shared demo consumer on Base Sepolia to get running quickly?"* Options: **"Use the shared demo consumer on Base Sepolia (recommended — nothing to deploy)"** and **"I'll use my own contract."** On the shared path, `CONTRACT_ADDRESS` is the **HARDCODED** address `0x6273AB73C95Ba2233281F1eb8aa3b21D9352AD6d` on `baseSepolia` — copy it character-for-character, do NOT retype from memory; say in prose it's demos-only. On the own path, ask for their contract address + chain and use exactly what they paste (their contract just needs to emit `RandomnessRequested(uint256,address)` and expose `fulfillRandomness` — no fulfiller authorization needed, fulfillment is permissionless).
 
   The Compose smart wallet is auto-created and gas-sponsored — never tell the user to create or fund a wallet. **First load `/compose-reference`** for the manifest schema + sandbox import rule, then scaffold the files in-memory (do NOT degit): `compose.yaml` (the `onchain_event` trigger wired to the contract/chain — remember `compose.yaml` uses snake_case network names, TS uses camelCase chain ids), `src/contracts/RandomnessConsumer.json` (the verbatim ABI in Step 3), and the `fulfill-randomness` + `request-randomness` task sources following the import rule (`evm`/`fetch` from the injected `context`; only `compose` + sibling imports). Then **call `deployComposeApp` in the SAME turn** to present the in-app deploy card. After it, tell the user that, since this is event-triggered (no cron), they trigger a run by calling the `request_randomness` HTTP task or emitting `RandomnessRequested` on the contract. **Ignore Steps 0–8 below in this mode.**
 - **`Bash` is available (local CLI / coding agent):** execute the steps below directly, parse output, and substitute captured values into later commands.
@@ -25,7 +25,7 @@ Pick the mode from the tools available to you:
 
 - **The shared consumer at `0x6273AB73C95Ba2233281F1eb8aa3b21D9352AD6d` on Base Sepolia is fully unpermissioned.** It exists for getting started and demos only. Tell the user, in prose, that it must NOT be used in production. It only exists on Base Sepolia.
 - **Never run `forge create`, `goldsky compose deploy`, `git push`, or `gh repo create` without showing the exact command first and getting explicit confirmation.** Output the command, wait.
-- **Deploy-your-own path only:** the authorized fulfiller on the contract must be the Compose-managed wallet, or `fulfillRandomness` reverts with `OnlyFulfiller()`. This is the #1 failure mode. The shared consumer is already configured, so this does not apply on the recommended path.
+- **`fulfillRandomness` is PERMISSIONLESS — any caller may fulfill.** The contract does not gate fulfillment on the caller (it only checks the request exists and isn't already fulfilled). The constructor's `_fulfiller` arg and the `OnlyFulfiller()` error are an informational deploy-time label + a guard on `setFulfiller` only — they do NOT block the Compose wallet from fulfilling. So you do NOT need to authorize the Compose wallet, and you do NOT need its address before deploying a contract. (This is why the shared consumer works for everyone.)
 - **Three files share the same contract address.** If it changes, change all three.
 - **`compose.yaml` uses snake_case network names (e.g. `base_sepolia`); TS code uses camelCase chain ids (e.g. `baseSepolia`).**
 
@@ -74,10 +74,7 @@ Ask one question at a time; translate readable answers to machine values yoursel
 ## Step 2 — Wallet
 
 - **Shared-consumer path (recommended):** nothing to do. The Compose smart wallet is auto-created at runtime and fully gas-sponsored on Base Sepolia. Do NOT tell the user to create or fund a wallet.
-- **Deploy-your-own path:** the contract's constructor takes the authorized fulfiller, which must be the Compose wallet — so you need its address *before* deploying. Provision the named wallet (matches `evm.wallet({ name: "randomness-fulfiller" })` in `src/tasks/fulfill-randomness.ts`) and capture the address as `$COMPOSE_WALLET`:
-  ```bash
-  goldsky compose wallet create randomness-fulfiller
-  ```
+- **Deploy-your-own path:** the smart wallet is still auto-created and gas-sponsored — and since fulfillment is permissionless you do NOT need the wallet address before deploying the contract. (The constructor's `_fulfiller` arg is just an informational label; pass any address, e.g. your own.) The example also ships a `generate_wallet` HTTP task that returns the Compose wallet address if you want it for other reasons: `goldsky compose callTask generate_wallet '{}'`. Note the example uses two wallet names — `randomness-fulfiller` (in `fulfill-randomness.ts` / `generate-wallet.ts`) and `randomness-requester` (in `request-randomness.ts`); both are auto-created/sponsored.
 
 ## Step 3 — Contract
 
@@ -89,17 +86,17 @@ Ask one question at a time; translate readable answers to machine values yoursel
 [{"type":"constructor","inputs":[{"name":"_fulfiller","type":"address","internalType":"address"}],"stateMutability":"nonpayable"},{"type":"function","name":"fulfillRandomness","inputs":[{"name":"requestId","type":"uint256","internalType":"uint256"},{"name":"randomness","type":"bytes32","internalType":"bytes32"},{"name":"round","type":"uint64","internalType":"uint64"},{"name":"signature","type":"bytes","internalType":"bytes"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"fulfiller","inputs":[],"outputs":[{"name":"","type":"address","internalType":"address"}],"stateMutability":"view"},{"type":"function","name":"getRandomness","inputs":[{"name":"requestId","type":"uint256","internalType":"uint256"}],"outputs":[{"name":"randomness","type":"bytes32","internalType":"bytes32"},{"name":"round","type":"uint64","internalType":"uint64"},{"name":"signature","type":"bytes","internalType":"bytes"}],"stateMutability":"view"},{"type":"function","name":"isFulfilled","inputs":[{"name":"requestId","type":"uint256","internalType":"uint256"}],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"view"},{"type":"function","name":"nextRequestId","inputs":[],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"requestRandomness","inputs":[],"outputs":[{"name":"requestId","type":"uint256","internalType":"uint256"}],"stateMutability":"nonpayable"},{"type":"function","name":"setFulfiller","inputs":[{"name":"_fulfiller","type":"address","internalType":"address"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"event","name":"RandomnessRequested","inputs":[{"name":"requestId","type":"uint256","indexed":true,"internalType":"uint256"},{"name":"requester","type":"address","indexed":true,"internalType":"address"}],"anonymous":false},{"type":"error","name":"OnlyFulfiller","inputs":[]}]
 ```
 
-(The full contract ABI in the example also exposes `RandomnessFulfilled`, `requests`, `AlreadyFulfilled`, and `RequestNotFound`; the subset above is what the task wires against.) Output this for the user to run with their own funded EOA (constructor arg authorizes the Compose wallet from Step 2):
+(The full contract ABI in the example also exposes `RandomnessFulfilled`, `requests`, `AlreadyFulfilled`, and `RequestNotFound`; the subset above is what the task wires against.) Output this for the user to run with their own funded EOA (the `--constructor-args` value just sets the informational `fulfiller` label — any address works since fulfillment is permissionless; their own EOA is fine):
 
 ```bash
 forge create contracts/RandomnessConsumer.sol:RandomnessConsumer \
   --rpc-url <RPC_URL_FOR_CHOSEN_CHAIN> \
   --private-key $PRIVATE_KEY \
-  --constructor-args $COMPOSE_WALLET \
+  --constructor-args <any address — informational fulfiller label; your own EOA is fine> \
   --broadcast
 ```
 
-RPC URLs: `base_sepolia` → `https://sepolia.base.org`, `base` → `https://mainnet.base.org`, `arbitrum_sepolia` → `https://sepolia-rollup.arbitrum.io/rpc`, `optimism_sepolia` → `https://sepolia.optimism.io`. Capture `Deployed to: 0x...` as `$CONTRACT_ADDRESS`. (Bringing an existing contract? Run its `setFulfiller($COMPOSE_WALLET)` from the current fulfiller and use that address.)
+RPC URLs: `base_sepolia` → `https://sepolia.base.org`, `base` → `https://mainnet.base.org`, `arbitrum_sepolia` → `https://sepolia-rollup.arbitrum.io/rpc`, `optimism_sepolia` → `https://sepolia.optimism.io`. Capture `Deployed to: 0x...` as `$CONTRACT_ADDRESS`. (Bringing an existing contract? Just give its address — as long as it emits `RandomnessRequested(uint256,address)` and exposes `fulfillRandomness`, no fulfiller setup is needed.)
 
 ## Step 4 — Wire the contract address and chain into code
 
@@ -164,7 +161,7 @@ cast call $CONTRACT_ADDRESS "isFulfilled(uint256)" <requestId> --rpc-url <RPC_UR
 ## Troubleshooting
 
 - **Edits don't take effect after redeploy.** Stale `.compose/` bundle cache. `rm -rf .compose/` and redeploy.
-- **`OnlyFulfiller()` revert (deploy-your-own only).** The contract's authorized fulfiller isn't the Compose wallet. Only the current fulfiller can rotate it (`setFulfiller`); if the wrong address went in at constructor time, redeploy is the only recovery. (Can't happen on the shared consumer.)
+- **Fulfillment never reverts with `OnlyFulfiller()`** — `fulfillRandomness` is permissionless. If a fulfill fails, it's `RequestNotFound` (no matching request id) or `AlreadyFulfilled` (already done), not an authorization problem. (`OnlyFulfiller()` only guards `setFulfiller`, which this flow never calls.)
 - **Task doesn't fire on the event.** Check `compose.yaml` has the exact contract address and correct `network`; confirm the deploy succeeded and the trigger is active with `goldsky compose status`.
 - **`insufficient funds for gas`.** Only on a non-sponsored chain with deploy-your-own. Fund `$COMPOSE_WALLET`.
 - **drand fetch fails.** The default endpoint is public; the retry config handles transient failures. If persistent, check https://api.drand.sh/chains.
