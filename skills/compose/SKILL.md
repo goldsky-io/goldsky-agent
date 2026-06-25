@@ -105,6 +105,8 @@ A task is a TypeScript file exporting `async function main(context, params?)`. E
 
 Every task receives `{ env, fetch, callTask, logEvent, evm, collection }`. Secrets flatten into `context.env` — there is no separate `secrets` namespace. See `/compose-reference` for the full API.
 
+> **Import rule (or the deploy fails to bundle):** task files import ONLY the `compose` module (for types) and sibling files. Get `evm`, `fetch`, `collection`, etc. from the `context` argument — never `import` `ethers`, `viem`, `@goldsky/compose-evm`, `axios`, or any npm package. **Before generating `compose.yaml` and task files to deploy (especially an in-app `deployComposeApp` deploy), load `/compose-reference`** and follow its manifest schema and sandbox import rule — do not synthesize the manifest shape or imports from memory.
+
 ### Wallets
 
 Two kinds:

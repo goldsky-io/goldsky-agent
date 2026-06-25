@@ -9,6 +9,8 @@ Reference for the `compose.yaml` manifest, the full `goldsky compose` CLI surfac
 
 > **Always validate the manifest before deploying.** `goldsky compose dev` catches schema errors fast.
 
+> **Sandbox import rule — tasks fail to bundle otherwise.** A task file may import ONLY (a) the `compose` module, for types like `TaskContext` (`import type { TaskContext } from "compose"`), and (b) sibling project files (e.g. `./lib/utils`, `../contracts/Foo`). Everything else comes from the injected `context` argument — `env`, `fetch`, `callTask`, `logEvent`, `evm` (wallets, chains, contracts, `decodeEventLog`), and `collection`. Do NOT `import` `ethers`, `viem`, `@goldsky/compose-evm`, `axios`, `node-fetch`, or any other npm package: the Compose bundler rejects non-sibling imports and the deploy fails at the bundle step. If an SDK is unavoidable, reuse only its pure/local helpers and route all network I/O through `context.fetch`. (Chains are re-exported from viem internally, but you reach them via `context.evm.chains.<name>` — never by importing `viem`.)
+
 ## Quick Reference
 
 Most common lookups:
@@ -152,7 +154,7 @@ type TaskContext = {
   callTask: <Args, T>(name: string, args: Args, retryConfig?: RetryConfig) => Promise<T>;
   logEvent: (event: { code: string; message: string; data?: unknown }) => Promise<void>;
   evm: {
-    chains: Record<string, Chain>;              // re-exported from viem/chains
+    chains: Record<string, Chain>;              // re-exported from viem internally — access via context.evm.chains.<name>, do NOT import viem
     wallet: (config: WalletConfig) => Promise<IWallet>;
     decodeEventLog: <T>(abi: AbiItem[], log: EventLog) => Promise<T>;
     contracts: Record<string, ContractClass>;   // populated by codegen
