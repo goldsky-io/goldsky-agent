@@ -64,7 +64,7 @@ Every record includes a `_gs_op` column that tracks the operation type: `'i'` (i
 
 ## Key SQL Functions
 
-Quick reference for the most-used functions. For the complete function reference, see the Turbo SQL function docs at [docs.goldsky.com](https://docs.goldsky.com).
+Quick reference for the most-used functions. For the complete function reference, see [SQL transforms](https://docs.goldsky.com/turbo-pipelines/transforms/sql) in the docs.
 
 ### `evm_log_decode()` — Decode Raw EVM Logs
 

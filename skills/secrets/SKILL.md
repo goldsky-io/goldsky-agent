@@ -96,7 +96,7 @@ Run `goldsky secret list` to confirm creation.
 
 ## Secret Types
 
-Each secret type maps to a `type` field value. For the full field spec and examples of each, see the secrets reference in the [Goldsky docs](https://docs.goldsky.com).
+Each secret type maps to a `type` field value. For the full field spec and examples of each, see [Secret Formats](https://docs.goldsky.com/turbo-pipelines/pipeline-config#secret-formats) in the docs.
 
 | Secret Type    | Type Field      | Use Case                        |
 | -------------- | --------------- | ------------------------------- |
