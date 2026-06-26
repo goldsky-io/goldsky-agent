@@ -1,7 +1,7 @@
 # Goldsky Agent
 
 [![Install with npx](https://img.shields.io/badge/install-npx%20skills%20add-blue)](https://github.com/goldsky-io/goldsky-agent#installation)
-[![Skills](https://img.shields.io/badge/skills-18-green)](#skills)
+[![Skills](https://img.shields.io/badge/skills-19-green)](#skills)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 AI-powered tools for the full Goldsky product surface. Build, deploy, and debug Turbo pipelines, Mirror pipelines, Subgraphs, Compose apps, and Edge RPC — from natural-language prompts.
@@ -18,6 +18,7 @@ AI-powered tools for the full Goldsky product surface. Build, deploy, and debug 
 | Fix a broken / stalled subgraph                       | `/subgraph-doctor`   |
 | Migrate a subgraph from The Graph                     | `/subgraph-migrate`  |
 | Build a Compose app (oracle / keeper / automation)    | `/compose`           |
+| Build a BTC/USD price oracle (worked example)         | `/compose-bitcoin-oracle` |
 | Get a fast, reliable RPC endpoint                     | `/edge`              |
 | Find the right dataset name                           | `/datasets`          |
 | Look up Turbo YAML syntax                             | `/turbo-pipelines`   |
@@ -170,6 +171,14 @@ Offchain-to-onchain TypeScript framework for oracles, keepers, circuit breakers,
 | `compose` | "Build a price oracle / keeper / cross-chain bot in TypeScript" | Walks through scaffolding, task triggers (cron, HTTP, onchain), wallets, gas sponsorship |
 | `compose-doctor` | "My Compose app is in error state / crashlooping" | Runs `status`, `logs`, `secret list`, `wallet list` and diagnoses |
 | `compose-reference` | "What fields does `compose.yaml` accept? What's the `TaskContext` API?" | Manifest fields, every `goldsky compose` flag, TaskContext / wallet / Collection APIs |
+
+#### Compose example
+
+End-to-end worked example — scaffolds a real app from [`goldsky-io/documentation-examples`](https://github.com/goldsky-io/documentation-examples/tree/main/compose) and walks build → wire → deploy → smoke test under your own account. Trigger it with a short prompt (e.g. "build a bitcoin price oracle"); for a custom app that isn't this one, use `/compose`.
+
+| Skill | When to use | What it does |
+| ----- | ----------- | ------------ |
+| `compose-bitcoin-oracle` | "Build a BTC/USD price oracle that writes onchain" | Cron task → CoinGecko → `PriceOracle` contract via a Compose wallet; collection for history |
 
 ### Edge (managed RPC)
 
