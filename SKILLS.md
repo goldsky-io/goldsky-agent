@@ -31,6 +31,7 @@ End-to-end worked examples — each carries the full app source and walks build 
 - **compose-bitcoin-oracle** - Cron task writing BTC/USD from CoinGecko to an onchain `PriceOracle` contract
 - **compose-vrf** - Fetches verifiable randomness from drand and fulfills onchain `RandomnessRequested` events
 - **compose-dividend-distribution** - Pays token holders pro-rata for a corporate action; Compose orchestrates a Turbo job-mode pipeline to snapshot holders, then pays each onchain
+- **compose-compliance-oracle** - Compliance-gated payments: escrow contract + Webacy wallet screening + approve/reject callback. Single-payee or P2P. Local TEVM fork default
 
 ### Edge (managed RPC)
 - **edge** - Managed RPC endpoints, capabilities, supported chains, error code lookups
@@ -72,6 +73,9 @@ npx skills add goldsky-io/goldsky-agent
 
 **"Migrate my subgraph from The Graph to Goldsky"**
 → Uses: subgraph-migrate, subgraph-builder
+
+**"Build a compliance-gated payment system" / "wallet screening oracle" / "AML-gated transfers"**
+→ Uses: compose-compliance-oracle, compose-reference
 
 **"Build a price oracle that writes onchain"**
 → Uses: compose-bitcoin-oracle, compose-reference

@@ -1,7 +1,7 @@
 # Goldsky Agent
 
 [![Install with npx](https://img.shields.io/badge/install-npx%20skills%20add-blue)](https://github.com/goldsky-io/goldsky-agent#installation)
-[![Skills](https://img.shields.io/badge/skills-19-green)](#skills)
+[![Skills](https://img.shields.io/badge/skills-21-green)](#skills)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 AI-powered tools for the full Goldsky product surface. Build, deploy, and debug Turbo pipelines, Mirror pipelines, Subgraphs, Compose apps, and Edge RPC — from natural-language prompts.
@@ -21,6 +21,7 @@ AI-powered tools for the full Goldsky product surface. Build, deploy, and debug 
 | Build a BTC/USD price oracle (worked example)         | `/compose-bitcoin-oracle` |
 | Build onchain verifiable randomness (worked example)  | `/compose-vrf`       |
 | Distribute a dividend / corporate action pro-rata     | `/compose-dividend-distribution` |
+| Build a compliance-gated payment system (worked example) | `/compose-compliance-oracle` |
 | Get a fast, reliable RPC endpoint                     | `/edge`              |
 | Find the right dataset name                           | `/datasets`          |
 | Look up Turbo YAML syntax                             | `/turbo-pipelines`   |
@@ -104,6 +105,7 @@ goldsky-agent/
 │   ├── subgraph-doctor/       # Diagnose and fix failing/stalled subgraphs
 │   ├── subgraph-migrate/  # Guided migration from The Graph
 │   ├── compose/               # Compose app scaffolding, triggers, wallets
+│   ├── compose-compliance-oracle/  # Compliance-gated payments (worked example)
 │   ├── compose-doctor/        # Diagnose and fix Compose apps
 │   ├── compose-reference/     # compose.yaml fields, CLI flags, TaskContext API
 │   ├── edge/                  # Managed RPC capabilities, error codes, pricing
@@ -183,6 +185,7 @@ End-to-end worked examples — each carries the full app source and walks build 
 | `compose-bitcoin-oracle` | "Build a BTC/USD price oracle that writes onchain" | Cron task → CoinGecko → `PriceOracle` contract via a Compose wallet; collection for history |
 | `compose-vrf` | "Build a verifiable random function / onchain randomness" | Event-triggered task → drand beacon → `fulfillRandomness` on a `RandomnessConsumer` contract, verifiable by anyone |
 | `compose-dividend-distribution` | "Distribute dividends / a corporate action to token holders pro-rata" | HTTP task orchestrates a Turbo job-mode pipeline to snapshot holders at a record block, then pays each pro-rata onchain (CLI-driven) |
+| `compose-compliance-oracle` | "Build a compliance-gated payment system with wallet screening" | Onchain-event task → escrow contract → Webacy AML screening → approve/reject callback; single-payee (payment gateway) or multi-payee (P2P); local TEVM fork default |
 
 ### Edge (managed RPC)
 
