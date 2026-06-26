@@ -98,7 +98,7 @@ Start small and scale up — defensive sizing avoids wasted resources.
 | Data lake            | `s3_sink`            | Long-term archival, batch processing           |
 | Testing              | `blackhole`          | Validate pipeline without writing data         |
 
-For full sink field specifications, read `references/sink-reference.md`.
+For full sink field specifications, see the sink reference in the [Goldsky docs](https://docs.goldsky.com).
 
 ### Streaming vs Job Mode
 
@@ -267,7 +267,7 @@ Effective max throughput ≈ `max_batch_size / min_batch_interval` records per s
 
 ### Sink Configuration
 
-Quick examples for common sinks. For full field specs of all sink types, read `references/sink-reference.md`.
+Quick examples for common sinks. For full field specs of all sink types, see the sink reference in the [Goldsky docs](https://docs.goldsky.com).
 
 #### PostgreSQL
 

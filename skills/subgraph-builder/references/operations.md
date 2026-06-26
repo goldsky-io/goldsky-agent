@@ -1,6 +1,6 @@
 # Subgraph Operations Reference
 
-Conceptual reference for what the CLI help doesn't explain. For exhaustive flags, use `/cli-reference` or `goldsky subgraph <cmd> --help`.
+Conceptual reference for what the CLI help doesn't explain. For exhaustive flags, use `goldsky subgraph <cmd> --help`.
 
 ## When to use Subgraphs vs. Turbo vs. Mirror
 

@@ -10,7 +10,6 @@ Write, understand, and debug SQL, TypeScript, and dynamic table transforms for T
 Identify what the user needs (decode, filter, reshape, combine, custom logic, or lookup joins), then use the relevant section below. If generating a complete pipeline YAML (not just a transform snippet), always validate with `goldsky turbo validate` before presenting it to the user.
 
 **Reference files for specialized topics:**
-- `references/sql-functions.md` — Complete Goldsky SQL function reference (decode, hash, U256, array, JSON, time)
 - `references/evm-patterns.md` — Advanced EVM patterns (decode-once-filter-many, UNION ALL, schema normalization)
 - `references/typescript-transforms.md` — TypeScript/WASM script transforms and handler transforms
 - `references/dynamic-tables.md` — Dynamic table transforms (allowlists, lookup joins)
@@ -65,7 +64,7 @@ Every record includes a `_gs_op` column that tracks the operation type: `'i'` (i
 
 ## Key SQL Functions
 
-Quick reference for the most-used functions. For the complete function reference, read `references/sql-functions.md`.
+Quick reference for the most-used functions. For the complete function reference, see the Turbo SQL function docs at [docs.goldsky.com](https://docs.goldsky.com).
 
 ### `evm_log_decode()` — Decode Raw EVM Logs
 

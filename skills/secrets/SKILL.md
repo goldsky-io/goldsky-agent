@@ -94,25 +94,23 @@ Run `goldsky secret list` to confirm creation.
 
 ---
 
-## Secret JSON Schemas
+## Secret Types
 
-> **JSON schema files are available in the `schemas/` folder.** Each file contains the full schema with examples.
+Each secret type maps to a `type` field value. For the full field spec and examples of each, see the secrets reference in the [Goldsky docs](https://docs.goldsky.com).
 
-| Secret Type   | Schema File          | Type Field      | Use Case                        |
-| ------------- | -------------------- | --------------- | ------------------------------- |
-| PostgreSQL    | `postgres.json`      | `jdbc`          | Database sink                   |
-| MySQL         | `postgres.json`      | `jdbc`          | Database sink (protocol: mysql) |
-| ClickHouse    | `clickhouse.json`    | `clickHouse`    | Analytics database              |
-| Kafka         | `kafka.json`         | `kafka`         | Event streaming                 |
-| AWS S3        | `s3.json`            | `s3`            | Object storage                  |
-| Google Pub/Sub| —                    | `pubsub`        | GCP Pub/Sub topic (Turbo-only)  |
-| ElasticSearch | `elasticsearch.json` | `elasticSearch` | Search engine                   |
-| DynamoDB      | `dynamodb.json`      | `dynamodb`      | NoSQL database                  |
-| SQS           | `sqs.json`           | `sqs`           | Message queue                   |
-| OpenSearch    | `opensearch.json`    | `opensearch`    | Search/analytics                |
-| Webhook       | `webhook.json`       | `httpauth`      | HTTP endpoints                  |
-
-**Schema location:** `schemas/` (relative to this skill's directory)
+| Secret Type    | Type Field      | Use Case                        |
+| -------------- | --------------- | ------------------------------- |
+| PostgreSQL     | `jdbc`          | Database sink                   |
+| MySQL          | `jdbc`          | Database sink (protocol: mysql) |
+| ClickHouse     | `clickHouse`    | Analytics database              |
+| Kafka          | `kafka`         | Event streaming                 |
+| AWS S3         | `s3`            | Object storage                  |
+| Google Pub/Sub | `pubsub`        | GCP Pub/Sub topic (Turbo-only)  |
+| ElasticSearch  | `elasticSearch` | Search engine                   |
+| DynamoDB       | `dynamodb`      | NoSQL database                  |
+| SQS            | `sqs`           | Message queue                   |
+| OpenSearch     | `opensearch`    | Search/analytics                |
+| Webhook        | `httpauth`      | HTTP endpoints                  |
 
 ### Quick Reference Examples
 

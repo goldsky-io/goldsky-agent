@@ -33,7 +33,6 @@ _Legacy streaming product — prefer Turbo for new pipelines unless you need a s
 - **datasets** - Chain prefixes, dataset types, 130+ chains
 - **secrets** - Credential management for sinks (PostgreSQL, ClickHouse, Kafka, etc.)
 - **auth-setup** - CLI installation and authentication
-- **cli-reference** - All valid `goldsky` subcommands, arguments, and flags (auto-generated)
 
 ## Quick Start
 
@@ -60,7 +59,7 @@ npx skills add goldsky-io/goldsky-agent
 → Uses: mirror, secrets
 
 **"Build me a subgraph for an ERC-721 contract"**
-→ Uses: subgraph-builder, cli-reference
+→ Uses: subgraph-builder
 
 **"My subgraph stopped syncing / won't deploy"**
 → Uses: subgraph-doctor, subgraph-builder
