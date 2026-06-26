@@ -5,6 +5,8 @@ description: "Set up Goldsky CLI authentication and project configuration. Use t
 
 # Goldsky Authentication & Project Setup
 
+> **Reference lookups:** for exact fields/flags/functions, search the Goldsky docs MCP or see https://docs.goldsky.com. No MCP? https://docs.goldsky.com/mcp-server
+
 Set up the Goldsky CLI, authenticate your account, and configure projects for your pipelines and subgraphs.
 
 ## Prerequisites

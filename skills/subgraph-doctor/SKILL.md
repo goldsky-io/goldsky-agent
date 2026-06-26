@@ -5,6 +5,8 @@ description: "Diagnose and fix broken Goldsky Subgraphs. Use this skill whenever
 
 # Subgraph Doctor
 
+> **Reference lookups:** for exact fields/flags/functions, search the Goldsky docs MCP or see https://docs.goldsky.com. No MCP? https://docs.goldsky.com/mcp-server
+
 Diagnose and fix existing Goldsky Subgraph problems by running CLI commands, reading logs, identifying root causes, and executing fixes.
 
 ## Boundaries

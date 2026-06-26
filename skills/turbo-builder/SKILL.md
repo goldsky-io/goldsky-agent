@@ -5,6 +5,8 @@ description: "Build and deploy new Goldsky Turbo pipelines from scratch. Trigger
 
 # Pipeline Builder
 
+> **Reference lookups:** for exact fields/flags/functions, search the Goldsky docs MCP or see https://docs.goldsky.com. No MCP? https://docs.goldsky.com/mcp-server
+
 ## Boundaries
 
 - Build NEW pipelines. Do not diagnose broken pipelines — that belongs to `/turbo-doctor`.

@@ -5,6 +5,8 @@ description: "Migrate a subgraph from The Graph to Goldsky as a drop-in replacem
 
 # Migrate a Subgraph from The Graph
 
+> **Reference lookups:** for exact fields/flags/functions, search the Goldsky docs MCP or see https://docs.goldsky.com. No MCP? https://docs.goldsky.com/mcp-server
+
 Migrating an existing subgraph from The Graph to Goldsky is a **drop-in replacement** — you don't change your subgraph code. You point Goldsky at your published subgraph (by URL or IPFS hash) or redeploy from source, then swap the endpoint your app queries.
 
 > **Worth a quick check first: do they still need a subgraph?**

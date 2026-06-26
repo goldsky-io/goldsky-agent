@@ -5,6 +5,8 @@ description: "Diagnose and fix broken Goldsky Mirror pipelines. Use this skill w
 
 # Mirror Pipeline Doctor
 
+> **Reference lookups:** for exact fields/flags/functions, search the Goldsky docs MCP or see https://docs.goldsky.com. No MCP? https://docs.goldsky.com/mcp-server
+
 Diagnose and fix existing Mirror pipeline problems by running CLI commands, identifying root causes, and executing fixes.
 
 ## Boundaries

@@ -5,6 +5,8 @@ description: "Use this skill when the user asks about Goldsky Compose — the of
 
 # Goldsky Compose
 
+> **Reference lookups:** for exact fields/flags/functions, search the Goldsky docs MCP or see https://docs.goldsky.com. No MCP? https://docs.goldsky.com/mcp-server
+
 Goldsky Compose is the offchain-to-onchain framework for high-stakes systems. Write TypeScript **tasks** that run in verifiable sandboxes — triggered by cron, HTTP, or onchain events — with smart wallets, gas sponsorship, and durable collections. Typical use cases: custom price oracles, keepers, circuit breakers, prediction-market resolvers, cross-chain automation, identity/attestation flows, and notifications.
 
 ## Boundaries

@@ -5,6 +5,8 @@ description: "Build, author, and deploy Goldsky Subgraphs — hosted GraphQL API
 
 # Subgraph Builder
 
+> **Reference lookups:** for exact fields/flags/functions, search the Goldsky docs MCP or see https://docs.goldsky.com. No MCP? https://docs.goldsky.com/mcp-server
+
 Build a Goldsky Subgraph end-to-end: design the schema, write mappings, configure the manifest, then build and deploy to a hosted GraphQL endpoint. Subgraphs are best for **dApp frontends and apps that need flexible GraphQL queries** over structured onchain data. Subgraphs are **EVM-only**.
 
 > **Default to Turbo unless the user specifically needs GraphQL.**

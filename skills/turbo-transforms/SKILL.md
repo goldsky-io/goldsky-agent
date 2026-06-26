@@ -5,6 +5,8 @@ description: "Write SQL, TypeScript, and dynamic table transforms for Turbo pipe
 
 # Turbo Transforms
 
+> **Reference lookups:** for exact fields/flags/functions, search the Goldsky docs MCP or see https://docs.goldsky.com. No MCP? https://docs.goldsky.com/mcp-server
+
 Write, understand, and debug SQL, TypeScript, and dynamic table transforms for Turbo pipeline configurations.
 
 Identify what the user needs (decode, filter, reshape, combine, custom logic, or lookup joins), then use the relevant section below. If generating a complete pipeline YAML (not just a transform snippet), always validate with `goldsky turbo validate` before presenting it to the user.

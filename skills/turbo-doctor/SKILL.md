@@ -5,6 +5,8 @@ description: "Diagnose and fix broken Goldsky Turbo pipelines interactively. Tri
 
 # Pipeline Doctor
 
+> **Reference lookups:** for exact fields/flags/functions, search the Goldsky docs MCP or see https://docs.goldsky.com. No MCP? https://docs.goldsky.com/mcp-server
+
 ## Boundaries
 
 - Diagnose and fix EXISTING pipeline problems interactively.

@@ -5,6 +5,8 @@ description: "Diagnose and fix broken Goldsky Compose apps interactively. Trigge
 
 # Compose Doctor
 
+> **Reference lookups:** for exact fields/flags/functions, search the Goldsky docs MCP or see https://docs.goldsky.com. No MCP? https://docs.goldsky.com/mcp-server
+
 Diagnose and fix broken Compose apps. Workflow-oriented: we walk through auth → app identification → status → logs → secrets → wallets → manifest → diagnosis → fix.
 
 ## Boundaries
