@@ -24,14 +24,15 @@ sources:
 
 ## Dataset Reference Files
 
-> **Detailed dataset and chain information is in the `data/` folder.**
+> **Chain prefix and chain ID information is in the `data/` folder.**
 
-| File                     | Contents                                                     |
-| ------------------------ | ------------------------------------------------------------ |
-| `verified-datasets.json` | All validated datasets with versions, schemas, and use cases |
-| `chain-prefixes.json`    | All chain prefixes, chain IDs, and common mistakes           |
+| File                  | Contents                                           |
+| --------------------- | -------------------------------------------------- |
+| `chain-prefixes.json` | All chain prefixes, chain IDs, and common mistakes |
 
 **Data location:** `data/` (relative to this skill's directory)
+
+> **Dataset versions are not pinned in this skill.** Version numbers drift as datasets are revised, so confirm the exact version with `goldsky turbo validate file.yaml` (fast, ~3s) rather than trusting a static list. The dataset-type and schema tables below are stable references; treat any version number in them as a starting point to validate, not ground truth.
 
 ---
 

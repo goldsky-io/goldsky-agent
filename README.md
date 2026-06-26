@@ -106,10 +106,7 @@ goldsky-agent/
 │   ├── edge/                  # Managed RPC capabilities, error codes, pricing
 │   ├── datasets/              # Chain prefixes, dataset types
 │   ├── secrets/               # Credential management
-│   ├── auth-setup/            # CLI installation, login
-│   └── cli-reference/         # All valid CLI commands + flags (auto-generated)
-├── scripts/             # Maintenance scripts
-│   └── generate-cli-reference.js  # Regenerates cli-reference skill from installed CLI
+│   └── auth-setup/            # CLI installation, login
 ├── hooks/               # Pre/post deploy automation
 │   └── scripts/               # Validation, secret checking
 └── .claude-plugin/      # Plugin manifest
@@ -191,7 +188,6 @@ Used across multiple products.
 | `auth-setup` | "Install the CLI / log in / switch projects / fix unauthorized errors" | Walks through CLI installation, login, and project switching |
 | `secrets` | "Create credentials for PostgreSQL / ClickHouse / Kafka / webhook sinks" | Guides credential creation and secret management |
 | `datasets` | "What's the dataset name for Polygon NFTs? What prefix does Solana use?" | Chain prefixes, dataset types, naming conventions |
-| `cli-reference` | Consulted automatically before any `goldsky` command | All valid subcommands, arguments, and flags — generated from the installed CLI |
 
 ## Pre-Deploy Hooks
 
@@ -202,8 +198,6 @@ The plugin runs hooks automatically on `goldsky turbo apply` commands:
 | `pre-deploy-validate` | Runs `goldsky turbo validate`, blocks on failure |
 | `secret-check` | Verifies all `secret_name` references exist |
 | `post-deploy-inspect` | Suggests `goldsky turbo inspect` after deploy |
-
-> To regenerate the CLI reference after a CLI update: `bash scripts/generate-cli-reference.js`
 
 ## Coverage
 
