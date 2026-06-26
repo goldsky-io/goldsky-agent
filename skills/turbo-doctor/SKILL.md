@@ -55,7 +55,15 @@ Based on the status:
 
 Run `goldsky turbo logs <pipeline-name> --tail 100 2>&1` to get recent logs.
 
-Analyze the output for known error patterns. Reference the error patterns in the `/turbo-operations` skill, including:
+For a fast first pass, run the bundled log-analysis helper, which scans logs for common error patterns and prints findings with recommended fixes:
+
+```bash
+bash scripts/analyze-logs.sh <pipeline-name> --tail 100
+# or pipe logs in directly:
+goldsky turbo logs <pipeline-name> --tail 100 | bash scripts/analyze-logs.sh -
+```
+
+Analyze the output for known error patterns (the full catalog lives in `data/error-patterns.json`), including:
 
 - **Connection errors** — sink unreachable, auth failed, timeout
 - **Schema errors** — column mismatch, type mismatch, missing columns
@@ -117,7 +125,8 @@ Common fixes:
 
 ## Related
 
-- **`/turbo-operations`** — CLI commands, lifecycle operations, and error pattern reference
+- **`scripts/analyze-logs.sh`** + **`data/error-patterns.json`** — bundled log-analysis tooling and error-pattern catalog (used in Step 4)
+- **`/turbo-operations`** — CLI commands and lifecycle operations reference
 - **`/turbo-builder`** — Build and deploy new pipelines
 - **`/turbo-pipelines`** — YAML configuration and architecture reference
 - **`/secrets`** — Manage sink credentials

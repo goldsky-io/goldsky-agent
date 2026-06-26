@@ -122,18 +122,16 @@ Always use `-p`. Always include it in every `inspect` command you suggest.
 
 ### Log Analysis Script
 
-Use the helper script to quickly analyze pipeline logs:
+The log-analysis tooling (`analyze-logs.sh` + the `error-patterns.json` catalog) now lives in the `/turbo-doctor` skill. To quickly scan pipeline logs for common error patterns and get recommended fixes, run the helper from there:
 
 ```bash
-./scripts/analyze-logs.sh <pipeline-name>
-./scripts/analyze-logs.sh <pipeline-name> --tail 100
+bash skills/turbo-doctor/scripts/analyze-logs.sh <pipeline-name>
+bash skills/turbo-doctor/scripts/analyze-logs.sh <pipeline-name> --tail 100
 ```
-
-The script checks for common error patterns and reports findings with recommendations.
 
 ## Common Error Patterns
 
-> **Detailed error patterns and solutions are in `data/error-patterns.json`.**
+> **Detailed error patterns and solutions are in the `/turbo-doctor` skill's `data/error-patterns.json`.**
 
 | Error Pattern             | Likely Cause               | Fix                                            |
 | ------------------------- | -------------------------- | ---------------------------------------------- |

@@ -66,6 +66,22 @@ Ask about:
 - **End block:** Only for job-mode/backfill pipelines. Omit for streaming.
 - **Source-level filter:** Optional filter to reduce data at the source (e.g., specific contract address)
 
+#### Choosing your architecture
+
+Use this to drive the source-type and data-flow choice offline:
+
+**Source type:**
+- **`dataset`** — default. Use for decoding contract events (`raw_logs` + `_gs_log_decode()`), token transfers, and any case needing historical backfill (`start_at: earliest`).
+- **`kafka`** — high-throughput external/streaming state (e.g. live `latest_balances_v2` topics, real-time snapshots). No `version`/`start_at`. Topic names come from Goldsky support.
+
+**Data-flow pattern:**
+- **Linear** — single source → single sink, straightforward decode/filter/reshape. (`s`/`m`)
+- **Fan-out** — one source → multiple sinks, each a different view/subset of the same data (add one SQL transform per view, point each sink's `from:` at it). (`m`)
+- **Fan-in** — multiple event types or chains normalized to a common schema and combined with `UNION ALL` into one table (activity feeds, cross-chain views). (`l`)
+- **Multi-chain (templated)** — same logic across chains with independent lifecycles → separate pipeline file per chain, not one multi-source pipeline.
+
+> For the full architecture decision matrix + validation checklist, see https://docs.goldsky.com/turbo-pipelines/reference/architecture (or search the Goldsky docs MCP).
+
 ### Step 5: Configure Transforms (if needed)
 
 If the user needs transforms, use the `/turbo-transforms` skill to help:
