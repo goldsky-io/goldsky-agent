@@ -60,6 +60,18 @@ goldsky secret create --name SUGGESTED_NAME
 
 ### Step 4: Provider-Specific Quick Paths
 
+**No database yet? Provision a Goldsky-hosted Postgres (Scale plan or above):**
+
+If the user doesn't already have a Postgres database, Goldsky can provision a managed Postgres (Neon) database and store its credentials as a secret in one step — no external database account required:
+
+```bash
+goldsky hosted-sink create --type postgres
+```
+
+- `--type postgres` is required; `--name` (auto-generated as `HOSTED_POSTGRES_<RANDOM>` when omitted) and `--description` are optional.
+- On success it prints the created secret's **name**, **ID**, and **type**. The connection string is intentionally never printed; reference the secret by **name** as the sink `secret_name`, or run `goldsky secret reveal <name>` to view the connection string later.
+- Requires the **Scale plan or above**. Without access the command fails with a Scale-plan upgrade message pointing to the team's billing page — fall back to bringing an external Postgres below.
+
 **Neon:**
 
 - Connection string format: `postgresql://USER:PASS@ep-XXX.REGION.aws.neon.tech/neondb`
@@ -94,25 +106,23 @@ Run `goldsky secret list` to confirm creation.
 
 ---
 
-## Secret JSON Schemas
+## Secret Types
 
-> **JSON schema files are available in the `schemas/` folder.** Each file contains the full schema with examples.
+Each secret type maps to a `type` field value. For the full field spec and examples of each, see [Secret Formats](https://docs.goldsky.com/turbo-pipelines/pipeline-config#secret-formats) in the docs.
 
-| Secret Type   | Schema File          | Type Field      | Use Case                        |
-| ------------- | -------------------- | --------------- | ------------------------------- |
-| PostgreSQL    | `postgres.json`      | `jdbc`          | Database sink                   |
-| MySQL         | `postgres.json`      | `jdbc`          | Database sink (protocol: mysql) |
-| ClickHouse    | `clickhouse.json`    | `clickHouse`    | Analytics database              |
-| Kafka         | `kafka.json`         | `kafka`         | Event streaming                 |
-| AWS S3        | `s3.json`            | `s3`            | Object storage                  |
-| Google Pub/Sub| —                    | `pubsub`        | GCP Pub/Sub topic (Turbo-only)  |
-| ElasticSearch | `elasticsearch.json` | `elasticSearch` | Search engine                   |
-| DynamoDB      | `dynamodb.json`      | `dynamodb`      | NoSQL database                  |
-| SQS           | `sqs.json`           | `sqs`           | Message queue                   |
-| OpenSearch    | `opensearch.json`    | `opensearch`    | Search/analytics                |
-| Webhook       | `webhook.json`       | `httpauth`      | HTTP endpoints                  |
-
-**Schema location:** `schemas/` (relative to this skill's directory)
+| Secret Type    | Type Field      | Use Case                        |
+| -------------- | --------------- | ------------------------------- |
+| PostgreSQL     | `jdbc`          | Database sink                   |
+| MySQL          | `jdbc`          | Database sink (protocol: mysql) |
+| ClickHouse     | `clickHouse`    | Analytics database              |
+| Kafka          | `kafka`         | Event streaming                 |
+| AWS S3         | `s3`            | Object storage                  |
+| Google Pub/Sub | `pubsub`        | GCP Pub/Sub topic (Turbo-only)  |
+| ElasticSearch  | `elasticSearch` | Search engine                   |
+| DynamoDB       | `dynamodb`      | NoSQL database                  |
+| SQS            | `sqs`           | Message queue                   |
+| OpenSearch     | `opensearch`    | Search/analytics                |
+| Webhook        | `httpauth`      | HTTP endpoints                  |
 
 ### Quick Reference Examples
 

@@ -9,6 +9,12 @@ Reference for the `compose.yaml` manifest, the full `goldsky compose` CLI surfac
 
 > **Always validate the manifest before deploying.** `goldsky compose dev` catches schema errors fast.
 
+> **Sandbox import rule — get this wrong and the task fails to bundle or crashes at runtime.** Two things are NEVER imported: the Compose runtime capabilities and the EVM SDK. `env`, `fetch`, `callTask`, `logEvent`, `evm` (wallets, chains, contracts, `decodeEventLog`), and `collection` all come from the injected `context` argument — there is no `@goldsky/compose-evm` (or similar) package to import; reach chains via `context.evm.chains.<name>`, never by importing `viem` for them. Beyond that, what you may import depends on whether the app has a `package.json`:
+> - **No `package.json` (Deno-style app, e.g. bitcoin-oracle):** import ONLY the `compose` module (for types, `import type { TaskContext } from "compose"`) and sibling project files (`./lib/utils`, `../contracts/Foo`). Any other bare import is rejected by the bundler.
+> - **Has a `package.json` (esbuild-bundled, e.g. copy-trader with `viem`/`@ethersproject/wallet`, solana with `gill`):** npm deps declared there ARE bundled and importable for **local/pure** use (crypto, signing, encoding). The hard limit is the network: Compose tasks run in a sandbox with no outbound socket of their own, so any package that does its own HTTP at runtime (`axios`, `node-fetch`, an SDK's built-in HTTP client) fails — route every network call through `context.fetch` and use only the SDK's pure utilities.
+>
+> So: match the example you're scaffolding from. If it ships a `package.json`, keep its npm imports; if it doesn't, don't introduce any.
+
 ## Quick Reference
 
 Most common lookups:
@@ -152,7 +158,7 @@ type TaskContext = {
   callTask: <Args, T>(name: string, args: Args, retryConfig?: RetryConfig) => Promise<T>;
   logEvent: (event: { code: string; message: string; data?: unknown }) => Promise<void>;
   evm: {
-    chains: Record<string, Chain>;              // re-exported from viem/chains
+    chains: Record<string, Chain>;              // re-exported from viem internally — access via context.evm.chains.<name>, do NOT import viem
     wallet: (config: WalletConfig) => Promise<IWallet>;
     decodeEventLog: <T>(abi: AbiItem[], log: EventLog) => Promise<T>;
     contracts: Record<string, ContractClass>;   // populated by codegen

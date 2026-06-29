@@ -1,7 +1,7 @@
 # Goldsky Agent
 
 [![Install with npx](https://img.shields.io/badge/install-npx%20skills%20add-blue)](https://github.com/goldsky-io/goldsky-agent#installation)
-[![Skills](https://img.shields.io/badge/skills-18-green)](#skills)
+[![Skills](https://img.shields.io/badge/skills-19-green)](#skills)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 AI-powered tools for the full Goldsky product surface. Build, deploy, and debug Turbo pipelines, Mirror pipelines, Subgraphs, Compose apps, and Edge RPC — from natural-language prompts.
@@ -18,6 +18,7 @@ AI-powered tools for the full Goldsky product surface. Build, deploy, and debug 
 | Fix a broken / stalled subgraph                       | `/subgraph-doctor`   |
 | Migrate a subgraph from The Graph                     | `/subgraph-migrate`  |
 | Build a Compose app (oracle / keeper / automation)    | `/compose`           |
+| Build a BTC/USD price oracle (worked example)         | `/compose-bitcoin-oracle` |
 | Get a fast, reliable RPC endpoint                     | `/edge`              |
 | Find the right dataset name                           | `/datasets`          |
 | Look up Turbo YAML syntax                             | `/turbo-pipelines`   |
@@ -106,10 +107,7 @@ goldsky-agent/
 │   ├── edge/                  # Managed RPC capabilities, error codes, pricing
 │   ├── datasets/              # Chain prefixes, dataset types
 │   ├── secrets/               # Credential management
-│   ├── auth-setup/            # CLI installation, login
-│   └── cli-reference/         # All valid CLI commands + flags (auto-generated)
-├── scripts/             # Maintenance scripts
-│   └── generate-cli-reference.js  # Regenerates cli-reference skill from installed CLI
+│   └── auth-setup/            # CLI installation, login
 ├── hooks/               # Pre/post deploy automation
 │   └── scripts/               # Validation, secret checking
 └── .claude-plugin/      # Plugin manifest
@@ -174,6 +172,14 @@ Offchain-to-onchain TypeScript framework for oracles, keepers, circuit breakers,
 | `compose-doctor` | "My Compose app is in error state / crashlooping" | Runs `status`, `logs`, `secret list`, `wallet list` and diagnoses |
 | `compose-reference` | "What fields does `compose.yaml` accept? What's the `TaskContext` API?" | Manifest fields, every `goldsky compose` flag, TaskContext / wallet / Collection APIs |
 
+#### Compose example
+
+End-to-end worked example — scaffolds a real app from [`goldsky-io/documentation-examples`](https://github.com/goldsky-io/documentation-examples/tree/main/compose) and walks build → wire → deploy → smoke test under your own account. Trigger it with a short prompt (e.g. "build a bitcoin price oracle"); for a custom app that isn't this one, use `/compose`.
+
+| Skill | When to use | What it does |
+| ----- | ----------- | ------------ |
+| `compose-bitcoin-oracle` | "Build a BTC/USD price oracle that writes onchain" | Cron task → CoinGecko → `PriceOracle` contract via a Compose wallet; collection for history |
+
 ### Edge (managed RPC)
 
 Globally distributed, low-latency JSON-RPC for EVM chains, built on eRPC — a drop-in replacement for Alchemy / Infura / QuickNode with hedged requests, automatic failover across node vendors, flashblocks, and pay-per-request (x402). Reach for Edge whenever you need a reliable RPC endpoint, not just indexing.
@@ -191,7 +197,6 @@ Used across multiple products.
 | `auth-setup` | "Install the CLI / log in / switch projects / fix unauthorized errors" | Walks through CLI installation, login, and project switching |
 | `secrets` | "Create credentials for PostgreSQL / ClickHouse / Kafka / webhook sinks" | Guides credential creation and secret management |
 | `datasets` | "What's the dataset name for Polygon NFTs? What prefix does Solana use?" | Chain prefixes, dataset types, naming conventions |
-| `cli-reference` | Consulted automatically before any `goldsky` command | All valid subcommands, arguments, and flags — generated from the installed CLI |
 
 ## Pre-Deploy Hooks
 
@@ -202,8 +207,6 @@ The plugin runs hooks automatically on `goldsky turbo apply` commands:
 | `pre-deploy-validate` | Runs `goldsky turbo validate`, blocks on failure |
 | `secret-check` | Verifies all `secret_name` references exist |
 | `post-deploy-inspect` | Suggests `goldsky turbo inspect` after deploy |
-
-> To regenerate the CLI reference after a CLI update: `bash scripts/generate-cli-reference.js`
 
 ## Coverage
 

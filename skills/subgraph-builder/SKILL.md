@@ -15,7 +15,7 @@ Build a Goldsky Subgraph end-to-end: design the schema, write mappings, configur
 - Build and author NEW subgraphs (schema, mappings, manifest, deploy, endpoints, tags, webhooks).
 - Do not diagnose broken/stalled subgraphs — use `/subgraph-doctor`.
 - Do not run The Graph migrations — use `/subgraph-migrate`.
-- For exhaustive `goldsky subgraph` flags, use `/cli-reference` or `goldsky subgraph <cmd> --help` — this skill covers the workflow, not a flag dump.
+- For exhaustive `goldsky subgraph` flags, use `goldsky subgraph <cmd> --help` — this skill covers the workflow, not a flag dump.
 
 ## Choose an approach first
 
@@ -58,7 +58,7 @@ A code-based subgraph is three files: `subgraph.yaml` (manifest), `schema.graphq
 goldsky subgraph init my-subgraph/1.0.0 --target-path ./my-subgraph
 ```
 
-Useful flags: `--abi`, `--contract`, `--contract-events`, `--network`, `--start-block`. See `/cli-reference`.
+Useful flags: `--abi`, `--contract`, `--contract-events`, `--network`, `--start-block`. See `goldsky subgraph init --help`.
 
 ### Step 2: Design the schema
 
@@ -141,6 +141,5 @@ Present a summary (name/version, network, endpoint URL, tag). Point the user to 
 
 - **`/subgraph-doctor`** — Diagnose a failing, stalled, or won't-deploy subgraph
 - **`/subgraph-migrate`** — Migrate an existing subgraph off The Graph
-- **`/cli-reference`** — Exhaustive `goldsky subgraph` commands and flags
 - **`/turbo-builder`** — Stream raw chain data to a database instead of a GraphQL API (the preferred default for non-GraphQL use cases, including cross-chain)
 - **`/mirror`** — Sync existing subgraph entities into a database — the one case Turbo can't cover (e.g. merging subgraph entities cross-chain)

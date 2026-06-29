@@ -13,7 +13,7 @@ Diagnose and fix existing Goldsky Subgraph problems by running CLI commands, rea
 - Diagnose only subgraphs that are **broken** (failing, stalled, erroring, won't deploy). A healthy but slow subgraph is an *optimization* task — use `/subgraph-builder` (e.g. reducing/declaring eth_calls).
 - Do not build or scaffold new subgraphs — use `/subgraph-builder` for authoring/`init`/`deploy`.
 - Do not handle The Graph migrations — use `/subgraph-migrate`.
-- Do not serve as a command reference — use `/subgraph-builder` or `/cli-reference` for CLI syntax and flag lookups.
+- Do not serve as a command reference — use `/subgraph-builder` or `goldsky subgraph <cmd> --help` for CLI syntax and flag lookups.
 - Do not handle Turbo or Mirror pipelines — use `/turbo-doctor` or `/mirror-doctor`.
 - **Customer-facing only.** Use only `goldsky` CLI commands, the dashboard, and GraphQL queries. Never suggest `graphman`, `kubectl`, Datadog, or direct database access — those are internal Goldsky tooling. When a problem needs them, escalate to support (see Step 6).
 
