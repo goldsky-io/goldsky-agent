@@ -60,6 +60,18 @@ goldsky secret create --name SUGGESTED_NAME
 
 ### Step 4: Provider-Specific Quick Paths
 
+**No database yet? Provision a Goldsky-hosted Postgres (Scale plan or above):**
+
+If the user doesn't already have a Postgres database, Goldsky can provision a managed Postgres (Neon) database and store its credentials as a secret in one step — no external database account required:
+
+```bash
+goldsky hosted-sink create --type postgres
+```
+
+- `--type postgres` is required; `--name` (auto-generated as `HOSTED_POSTGRES_<RANDOM>` when omitted) and `--description` are optional.
+- On success it prints the created secret's **name**, **ID**, and **type**. The connection string is intentionally never printed; reference the secret by **name** as the sink `secret_name`, or run `goldsky secret reveal <name>` to view the connection string later.
+- Requires the **Scale plan or above**. Without access the command fails with a Scale-plan upgrade message pointing to the team's billing page — fall back to bringing an external Postgres below.
+
 **Neon:**
 
 - Connection string format: `postgresql://USER:PASS@ep-XXX.REGION.aws.neon.tech/neondb`

@@ -111,6 +111,14 @@ goldsky secret list
 
 If it doesn't exist, help create it using the `/secrets` skill.
 
+**No Postgres database yet?** On the Scale plan (or above), you can provision a Goldsky-hosted Postgres (Neon) database and have its credentials stored as a secret in one step:
+
+```bash
+goldsky hosted-sink create --type postgres
+```
+
+This prints the created secret's **name**, **ID**, and **type** (the connection string is never printed). Use the printed **name** as the sink `secret_name`. If the account lacks access, the command returns a Scale-plan upgrade message with the team's billing URL — fall back to bringing an external Postgres via the `/secrets` skill.
+
 ### Step 7: Choose Mode
 
 Use the `/turbo-pipelines` skill for guidance:
