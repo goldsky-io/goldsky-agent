@@ -20,6 +20,18 @@ Goldsky Compose is the offchain-to-onchain framework for high-stakes systems. Wr
 - **Any field, flag, manifest shape, or API signature** — load `/compose-reference`. It's the full reference docs. Consult it before writing any `compose.yaml` or task file.
 - **A broken app** — `/compose-doctor`.
 
+## Template catalog
+
+The worked-example templates are starting points for whole classes of app, not just their literal use case. Match a new app against this catalog by **scope and pattern**, not by name:
+
+| Template | Scope / pattern | Start here when the app is… |
+| --- | --- | --- |
+| `/compose-bitcoin-oracle` | cron → fetch offchain data → `writeContract` | a keeper or oracle that periodically pushes a value onchain |
+| `/compose-vrf` | `onchain_event` → fetch → write back with proof | event-driven request/response, verifiable callbacks |
+| `/compose-dividend-distribution` | CLI-driven; spawns a Turbo pipeline; gas-sponsored pro-rata payouts | batch payouts, snapshot-then-distribute, cap-table style |
+
+The survey against this catalog is a required build step — see **Step 3** below.
+
 ## Golden rules (all modes, including the in-app deploy card)
 
 - **Never assume anything about the app on the user's behalf.** Derive what you can from what the user actually said; for anything material to how the app is built or behaves that you cannot derive — contract address, chain, ABI, trigger cadence, wallet choice, secret values — **ask the user**. Do not invent it, guess it, or carry a value over from an example.
@@ -258,9 +270,16 @@ From the user's natural-language prompt, **derive** as many of these as possible
 
 Only ask the user for fields you couldn't derive.
 
-### Step 3 — Scaffold
+### Step 3 — Match against the worked examples, then scaffold
 
-`goldsky compose init <name>`. Inspect the scaffold to see the canonical file layout.
+**If a template skill is already loaded** (the user asked for that specific example), skip the survey and build from it.
+
+**Otherwise the survey is required before scaffolding.** Compare the derived trigger + behavior against the Template catalog above:
+
+- **A template matches in scope** → load it (`/compose-<name>`) and start from its source instead of a blank init.
+- **None match** → say so in one line, then `goldsky compose init <name>` and inspect the scaffold for the canonical file layout.
+
+Never build a custom app without doing this comparison first.
 
 ### Step 4 — Edit the manifest
 
