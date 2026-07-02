@@ -7,6 +7,10 @@ description: "Always load this skill whenever the conversation is about Goldsky 
 
 Goldsky Compose is the offchain-to-onchain framework for high-stakes systems. Write TypeScript **tasks** that run in verifiable sandboxes — triggered by cron, HTTP, or onchain events — with smart wallets, gas sponsorship, and durable collections. Typical use cases: custom price oracles, keepers, circuit breakers, prediction-market resolvers, cross-chain automation, identity/attestation flows, and notifications.
 
+## Step 0 — Load the reference first
+
+**Before anything else — before you write any `compose.yaml` or task file, quote a field / flag / API shape, or scaffold or deploy an app — load `Skill(compose-reference)`.** It's the full manifest / CLI / `TaskContext` / wallet / gas-sponsorship reference. This skill gives the rules and the shape of a build; `compose-reference` gives the exact fields and signatures — and per the Golden rules below, the manifest / CLI / API must never be synthesized from memory. Do not emit a manifest or task without it loaded.
+
 ## Skill family — load `compose` first
 
 `compose` is the entry point for anything Goldsky Compose: **load it first, then pull in the others as needed.**
