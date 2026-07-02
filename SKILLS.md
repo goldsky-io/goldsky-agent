@@ -26,9 +26,10 @@ _Legacy streaming product — prefer Turbo for new pipelines unless you need a s
 - **compose-doctor** - Diagnose and fix broken Compose apps interactively
 - **compose-reference** - `compose.yaml` fields, every `goldsky compose` flag, `TaskContext` / wallet / Collection APIs
 
-#### Compose example
-End-to-end worked example — scaffolds a real app from `goldsky-io/documentation-examples` and walks build → deploy → smoke test. For a custom app that isn't this one, use **compose**.
+#### Compose examples
+End-to-end worked examples — each carries the full app source and walks build → deploy → smoke test, off the shelf or customized. For a custom app that isn't one of these, use **compose**.
 - **compose-bitcoin-oracle** - Cron task writing BTC/USD from CoinGecko to an onchain `PriceOracle` contract
+- **compose-vrf** - Fetches verifiable randomness from drand and fulfills onchain `RandomnessRequested` events
 
 ### Edge (managed RPC)
 - **edge** - Managed RPC endpoints, capabilities, supported chains, error code lookups
