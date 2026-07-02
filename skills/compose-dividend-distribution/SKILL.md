@@ -9,7 +9,7 @@ Stand up the corporate-actions distributor under the user's own Goldsky account.
 
 One HTTP task (`declare_campaign`) drives the whole lifecycle: declare → escrow USDC → spawn snapshot pipeline → poll → compute pro-rata → pay up to 25 holders concurrently → verify `escrowRemaining == 0` → delete the pipeline. Re-POSTing the same `campaignId` resumes cleanly after any failure; the contract is the sole source of truth for "did this holder get paid?", so double-pays are structurally impossible.
 
-The recommended path uses **shared, permissionless demo contracts on Base Sepolia** (open `mint` on MockUSDC, open `declare()` on the campaign), so there's nothing to deploy. Assume the user has never used Goldsky Compose before. Do not skip preflight.
+This template supplies only what's specific to the dividend/corporate-actions app — how it works and its source. It's part of the Compose skill family: **load `/compose` first.** Its golden rules (never assume anything about the app on the user's behalf; ask when unsure) and `/compose-reference` (manifest / field / API shapes) govern this build and are not repeated here. The recommended path uses **shared, permissionless demo contracts on Base Sepolia** (open `mint` on MockUSDC, open `declare()` on the campaign), so there's nothing to deploy.
 
 ## Mode Detection
 
@@ -28,10 +28,6 @@ Pick the mode from the tools available to you:
 - **The deployer `PRIVATE_KEY` (deploy-your-own path only) is a real EOA key.** Do not print it, commit it, or log it; pass it only as an env var to `scripts/deploy.sh`.
 - **Resumable by design — never worry about double-pay.** Re-POSTing the same `campaignId` drives the existing campaign forward. A per-holder on-chain `isPaid()` check plus the contract's `require(!paid[id][holder])` guard mean Compose can crash/restart at any point with zero risk of double-paying.
 - **This example does not run in a local/dev Compose cluster without Turbo pipeline infra.** It deploys against real Goldsky (app.goldsky.com), which is where a user runs it anyway.
-
-## Variable handling for agents
-
-When this skill says `$FOO`, capture the literal value from the prior command's output and substitute it directly into the next command. Do not rely on shell variables persisting between separate Bash tool invocations — each invocation gets a fresh shell with no env carryover from earlier commands.
 
 ## The manifest and demo config
 
@@ -102,11 +98,11 @@ If the user already cloned the example, skip this and `cd` into it.
 
 ## Preflight
 
-1. **`goldsky` CLI** — `goldsky --version`. Install per https://docs.goldsky.com/reference/cli.
-2. **`goldsky` authenticated** — `goldsky project list`. If it errors, stop and tell the user: "Please run `goldsky login` in your terminal — browser flow. Tell me to continue when you see the success message." Do not spawn `goldsky login` from Bash; it requires an interactive browser.
-3. **Project API key** — the user needs a Compose/project API key from the Goldsky dashboard (https://app.goldsky.com). It's used both as the `-t` deploy token and as the `GOLDSKY_PROJECT_KEY` secret. Ask them to have it ready; do not print it back.
-4. **`node` + `npm`** — `npm --version`, then `npm install` (the app bundles `viem`).
-5. **`foundry`** — `cast --version` / `forge --version`. Needed only on the deploy-your-own path (Step 1, Branch B) and for minting/verifying via `cast`.
+The `goldsky` CLI and auth checks are the standard Compose preflight — see `/compose` and `/auth-setup`. Dividend-specific:
+
+1. **Project API key** — the user needs a Compose/project API key from the Goldsky dashboard (https://app.goldsky.com). It's used both as the `-t` deploy token and as the `GOLDSKY_PROJECT_KEY` secret. Ask them to have it ready; do not print it back.
+2. **`node` + `npm`** — `npm --version`, then `npm install` (the app bundles `viem`).
+3. **`foundry`** — `cast --version` / `forge --version`. Needed only on the deploy-your-own path (Step 1, Branch B) and for minting/verifying via `cast`.
 
 ## Step 1 — Contracts
 
