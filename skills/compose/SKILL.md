@@ -1,11 +1,26 @@
 ---
 name: compose
-description: "Use this skill when the user asks about Goldsky Compose — the offchain-to-onchain TypeScript framework for onchain oracles, keepers, circuit breakers, and cross-chain automation. Triggers on: 'goldsky compose', 'compose.yaml', 'compose deploy/init/dev', 'compose task', 'cron task onchain', 'sponsored gas', 'writeContract from TypeScript', 'build a price oracle', 'resolve prediction market', 'onchain event listener', 'HTTP-triggered task', 'smart wallet'. Also use when the user wants to run TypeScript against EVM chains with managed gas, schedule onchain writes via cron, react to onchain events, or deploy a serverless task with secrets and a smart wallet. For debugging a broken app, use /compose-doctor. For manifest/CLI/API lookups, use /compose-reference. Do NOT trigger on Goldsky Turbo, Mirror, Subgraphs, Edge, or Datasets — those belong to their respective skills."
+description: "Always load this skill whenever the conversation is about Goldsky Compose (the offchain-to-onchain TypeScript framework for oracles, keepers, circuit breakers, and cross-chain automation) — no matter what the user wants to do with it. That includes: asking what Compose is, its docs, pricing, functionality, or limits; building, deploying, or iterating on an app; wiring cron / HTTP / onchain-event triggers, smart wallets, gas sponsorship, secrets, or collections; deploying a worked example; or debugging an existing app. This is the entry point for the Compose skill family — load it FIRST, then pull in the others it points to: /compose-reference for concrete manifest/CLI/API rules, a worked-example template (compose-bitcoin-oracle, compose-vrf, compose-dividend-distribution) when the user wants that specific app, and /compose-doctor for hands-on debugging. Do NOT load for Goldsky Turbo, Mirror, Subgraphs, Edge, or Datasets — those have their own skills."
 ---
 
 # Goldsky Compose
 
 Goldsky Compose is the offchain-to-onchain framework for high-stakes systems. Write TypeScript **tasks** that run in verifiable sandboxes — triggered by cron, HTTP, or onchain events — with smart wallets, gas sponsorship, and durable collections. Typical use cases: custom price oracles, keepers, circuit breakers, prediction-market resolvers, cross-chain automation, identity/attestation flows, and notifications.
+
+## Skill family — load `compose` first
+
+`compose` is the entry point for anything Goldsky Compose: **load it first, then pull in the others as needed.**
+
+- **General build rules and concepts** — this skill. It governs every Compose conversation, in-app or local.
+- **A specific example** (bitcoin oracle, VRF, dividend distribution) — also load the matching template (`/compose-bitcoin-oracle`, `/compose-vrf`, `/compose-dividend-distribution`). Each carries that app's source and specifics and relies on the rules here; it does not repeat them.
+- **Any field, flag, manifest shape, or API signature** — load `/compose-reference`. It's the full reference docs. Consult it before writing any `compose.yaml` or task file.
+- **A broken app** — `/compose-doctor`.
+
+## Golden rules (all modes, including the in-app deploy card)
+
+- **Never assume anything about the app on the user's behalf.** Derive what you can from what the user actually said; for anything material to how the app is built or behaves that you cannot derive — contract address, chain, ABI, trigger cadence, wallet choice, secret values — **ask the user**. Do not invent it, guess it, or carry a value over from an example.
+- **Never synthesize the manifest, CLI, or API shape from memory.** Load `/compose-reference` and follow it before emitting `compose.yaml` or a task file. This applies equally to the in-app `deployComposeApp` flow.
+- **When unsure about anything that affects how the app works, ask rather than proceed.**
 
 ## Boundaries
 

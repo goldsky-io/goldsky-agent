@@ -1,11 +1,13 @@
 ---
 name: compose-reference
-description: "Use this skill when the user asks about a Goldsky Compose field, flag, type, or API shape — lookup reference for compose.yaml fields, every `goldsky compose` CLI flag, the TaskContext API (env, fetch, callTask, logEvent, evm, collection), wallet APIs (smart wallet, BYO EOA), gas sponsorship, contract codegen, dashboard URL, and pricing. Triggers on: 'compose.yaml fields', 'cron syntax for compose', 'http trigger auth', 'onchain_event format', 'TaskContext API', 'evm.wallet options', 'sponsorGas default', 'IWallet methods', 'Collection methods', 'compose codegen', 'compose pricing', 'compose status JSON output', 'goldsky compose flags'. Consult before suggesting a field, flag, or API shape — avoids hallucinating nonexistent options. For step-by-step building, use /compose. For debugging, use /compose-doctor. Do NOT trigger on Turbo, Mirror, Subgraphs, or Edge lookups — those belong to their own reference skills."
+description: "Load this skill whenever building, editing, or deploying a Goldsky Compose app — it is the reference layer that gives the concrete rules for how to build one: the exact shape of compose.yaml (every top-level, task, and trigger field), every `goldsky compose` CLI flag, the TaskContext API (env, fetch, callTask, logEvent, evm, collection), wallet APIs (smart wallet, BYO EOA), gas sponsorship, contract codegen, the dashboard URL, and pricing. Consult it before writing or editing any compose.yaml or task file — do not synthesize the manifest/CLI/API shape from memory — and also to answer any user question about how Compose works or what a field, flag, or API does. Pairs with /compose (the entry-point build guide, loaded first); use /compose-doctor to debug a broken app. Do NOT load for Turbo, Mirror, Subgraphs, or Edge — those have their own reference skills."
 ---
 
 # Goldsky Compose Reference
 
 Reference for the `compose.yaml` manifest, the full `goldsky compose` CLI surface, the `TaskContext` API, wallets, gas sponsorship, contract codegen, the dashboard, and pricing. For interactive build flows use `/compose`; for debugging use `/compose-doctor`.
+
+> This is the **reference layer** of the Compose skill family. `/compose` (loaded first) carries the general build rules and concepts; the template skills (`/compose-bitcoin-oracle`, `/compose-vrf`, `/compose-dividend-distribution`) carry example app source. Load this skill for any concrete field, flag, manifest shape, or API signature — and always before writing a `compose.yaml` or task file, rather than synthesizing the shape from memory.
 
 > **Always validate the manifest before deploying.** `goldsky compose dev` catches schema errors fast.
 
@@ -37,7 +39,7 @@ Most common lookups:
 | `api_version` | string               | deploy-only | semver (e.g. `0.1.0`) or `stable` / `preview` / `canary`                              |
 | `tasks`       | array                | yes         | Non-empty                                                                             |
 | `secrets`     | string[]             | no          | Names only — values set via `compose secret set`                                      |
-| `env`         | `{ local?, cloud? }` | no          | Each is `Record<string, string>`, flattened into `context.env`                        |
+| `env`         | `{ local?, cloud? }` | no          | **`env`'s only valid children are `local` and `cloud`** — each a `Record<string, string>` flattened into `context.env`. A bare `env.MY_VAR` (a var name directly under `env`) is rejected: "not a valid key". A hardcoded per-app constant belongs in the task file, not here. |
 
 ### Task fields
 
