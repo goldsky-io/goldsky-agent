@@ -7,7 +7,16 @@ description: "Build and deploy the Goldsky Compose VRF (verifiable random functi
 
 Stand up the VRF example under the user's own Goldsky account. The app listens for a `RandomnessRequested(uint256,address)` event on an EVM contract, fetches verifiable randomness from the **drand** beacon (BLS12-381 threshold signatures, verifiable by anyone), and writes it back on-chain via `fulfillRandomness(requestId, randomness, round, signature)`. Trust comes from the stored drand `round` + `signature`, not from the caller, so the shared example contract is safe to leave open.
 
-This template supplies only what's specific to the VRF app — how it works and its **full source** (below). It's part of the Compose skill family: **load `/compose` first.** Its golden rules (never assume anything about the app on the user's behalf; ask when unsure) and `/compose-reference` (manifest / field / API shapes — consult before writing any `compose.yaml` or task) govern this build and are not repeated here. The recommended path uses a **shared, fully-unpermissioned `RandomnessConsumer` on Base Sepolia** at `0x6273AB73C95Ba2233281F1eb8aa3b21D9352AD6d`, so the user deploys nothing and the Compose smart wallet is auto-created and gas-sponsored.
+This template supplies only what's specific to the VRF app — how it works and its **full source** (below). The recommended path uses a **shared, fully-unpermissioned `RandomnessConsumer` on Base Sepolia** at `0x6273AB73C95Ba2233281F1eb8aa3b21D9352AD6d`, so the user deploys nothing and the Compose smart wallet is auto-created and gas-sponsored.
+
+## Step 0 — Load the base skills first
+
+**Before anything else — before you answer, ask a question, scaffold a file, or call `deployComposeApp` — load the two base skills this template depends on:**
+
+1. **`Skill(compose)`** — the always-on Compose guide: the golden rules (never assume anything about the app on the user's behalf; ask when unsure) and general build guidance.
+2. **`Skill(compose-reference)`** — the manifest / field / API reference; consult before writing any `compose.yaml` or task file.
+
+This template deliberately omits those rules and that reference — they are **required** to build correctly and are not repeated here. Do not proceed until both are loaded.
 
 ## Mode Detection
 

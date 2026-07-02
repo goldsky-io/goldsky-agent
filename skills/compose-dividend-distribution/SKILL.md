@@ -9,7 +9,16 @@ Stand up the corporate-actions distributor under the user's own Goldsky account.
 
 One HTTP task (`declare_campaign`) drives the whole lifecycle: declare → escrow USDC → spawn snapshot pipeline → poll → compute pro-rata → pay up to 25 holders concurrently → verify `escrowRemaining == 0` → delete the pipeline. Re-POSTing the same `campaignId` resumes cleanly after any failure; the contract is the sole source of truth for "did this holder get paid?", so double-pays are structurally impossible.
 
-This template supplies only what's specific to the dividend/corporate-actions app — how it works and its source. It's part of the Compose skill family: **load `/compose` first.** Its golden rules (never assume anything about the app on the user's behalf; ask when unsure) and `/compose-reference` (manifest / field / API shapes) govern this build and are not repeated here. The recommended path uses **shared, permissionless demo contracts on Base Sepolia** (open `mint` on MockUSDC, open `declare()` on the campaign), so there's nothing to deploy.
+This template supplies only what's specific to the dividend/corporate-actions app — how it works and its source. The recommended path uses **shared, permissionless demo contracts on Base Sepolia** (open `mint` on MockUSDC, open `declare()` on the campaign), so there's nothing to deploy.
+
+## Step 0 — Load the base skills first
+
+**Before anything else — before you answer, ask a question, scaffold a file, or run any command — load the two base skills this template depends on:**
+
+1. **`Skill(compose)`** — the always-on Compose guide: the golden rules (never assume anything about the app on the user's behalf; ask when unsure) and general build guidance.
+2. **`Skill(compose-reference)`** — the manifest / field / API reference; consult before writing any `compose.yaml` or task file.
+
+This template deliberately omits those rules and that reference — they are **required** to build correctly and are not repeated here. Do not proceed until both are loaded.
 
 ## Mode Detection
 
