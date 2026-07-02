@@ -19,6 +19,7 @@ AI-powered tools for the full Goldsky product surface. Build, deploy, and debug 
 | Migrate a subgraph from The Graph                     | `/subgraph-migrate`  |
 | Build a Compose app (oracle / keeper / automation)    | `/compose`           |
 | Build a BTC/USD price oracle (worked example)         | `/compose-bitcoin-oracle` |
+| Build onchain verifiable randomness (worked example)  | `/compose-vrf`       |
 | Get a fast, reliable RPC endpoint                     | `/edge`              |
 | Find the right dataset name                           | `/datasets`          |
 | Look up Turbo YAML syntax                             | `/turbo-pipelines`   |
@@ -172,13 +173,14 @@ Offchain-to-onchain TypeScript framework for oracles, keepers, circuit breakers,
 | `compose-doctor` | "My Compose app is in error state / crashlooping" | Runs `status`, `logs`, `secret list`, `wallet list` and diagnoses |
 | `compose-reference` | "What fields does `compose.yaml` accept? What's the `TaskContext` API?" | Manifest fields, every `goldsky compose` flag, TaskContext / wallet / Collection APIs |
 
-#### Compose example
+#### Compose examples
 
-End-to-end worked example — scaffolds a real app from [`goldsky-io/documentation-examples`](https://github.com/goldsky-io/documentation-examples/tree/main/compose) and walks build → wire → deploy → smoke test under your own account. Trigger it with a short prompt (e.g. "build a bitcoin price oracle"); for a custom app that isn't this one, use `/compose`.
+End-to-end worked examples — each carries the full app source and walks build → wire → deploy → smoke test under your own account. Trigger one with a short prompt (e.g. "build a bitcoin price oracle", "build a VRF"); for a custom app that isn't one of these, use `/compose`.
 
 | Skill | When to use | What it does |
 | ----- | ----------- | ------------ |
 | `compose-bitcoin-oracle` | "Build a BTC/USD price oracle that writes onchain" | Cron task → CoinGecko → `PriceOracle` contract via a Compose wallet; collection for history |
+| `compose-vrf` | "Build a verifiable random function / onchain randomness" | Event-triggered task → drand beacon → `fulfillRandomness` on a `RandomnessConsumer` contract, verifiable by anyone |
 
 ### Edge (managed RPC)
 
