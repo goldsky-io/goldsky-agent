@@ -1,6 +1,6 @@
 ---
 name: compose
-description: "Always load this skill whenever the conversation is about Goldsky Compose (the offchain-to-onchain TypeScript framework for oracles, keepers, circuit breakers, and cross-chain automation) — no matter what the user wants to do with it. That includes: asking what Compose is, its docs, pricing, functionality, or limits; building, deploying, or iterating on an app; wiring cron / HTTP / onchain-event triggers, smart wallets, gas sponsorship, secrets, or collections; deploying a worked example; or debugging an existing app. This is the entry point for the Compose skill family — load it FIRST, then pull in the others it points to: /compose-reference for concrete manifest/CLI/API rules, a worked-example template (compose-bitcoin-oracle, compose-vrf, compose-dividend-distribution) when the user wants that specific app, and /compose-doctor for hands-on debugging. Do NOT load for Goldsky Turbo, Mirror, Subgraphs, Edge, or Datasets — those have their own skills."
+description: "Always load this skill whenever the conversation is about Goldsky Compose (the offchain-to-onchain TypeScript framework for oracles, keepers, circuit breakers, and cross-chain automation) — no matter what the user wants to do with it. That includes: asking what Compose is, its docs, pricing, functionality, or limits; building, deploying, or iterating on an app; wiring cron / HTTP / onchain-event triggers, smart wallets, gas sponsorship, secrets, or collections; deploying a worked example; or debugging an existing app. This is the entry point for the Compose skill family — load it FIRST, then pull in the others it points to: /compose-reference for concrete manifest/CLI/API rules, a worked-example template (compose-bitcoin-oracle, compose-vrf, compose-dividend-distribution, compose-compliance-oracle) when the user wants that specific app, and /compose-doctor for hands-on debugging. Do NOT load for Goldsky Turbo, Mirror, Subgraphs, Edge, or Datasets — those have their own skills."
 ---
 
 # Goldsky Compose
@@ -16,7 +16,7 @@ Goldsky Compose is the offchain-to-onchain framework for high-stakes systems. Wr
 `compose` is the entry point for anything Goldsky Compose: **load it first, then pull in the others as needed.**
 
 - **General build rules and concepts** — this skill. It governs every Compose conversation, in-app or local.
-- **A specific example** (bitcoin oracle, VRF, dividend distribution) — also load the matching template (`/compose-bitcoin-oracle`, `/compose-vrf`, `/compose-dividend-distribution`). Each carries that app's source and specifics and relies on the rules here; it does not repeat them.
+- **A specific example** (bitcoin oracle, VRF, dividend distribution, compliance-gated payments) — also load the matching template (`/compose-bitcoin-oracle`, `/compose-vrf`, `/compose-dividend-distribution`, `/compose-compliance-oracle`). Each carries that app's source and specifics and relies on the rules here; it does not repeat them.
 - **Any field, flag, manifest shape, or API signature** — load `/compose-reference`. It's the full reference docs. Consult it before writing any `compose.yaml` or task file.
 - **A broken app** — `/compose-doctor`.
 
@@ -29,6 +29,7 @@ The worked-example templates are starting points for whole classes of app, not j
 | `/compose-bitcoin-oracle` | cron → fetch offchain data → `writeContract` | a keeper or oracle that periodically pushes a value onchain |
 | `/compose-vrf` | `onchain_event` → fetch → write back with proof | event-driven request/response, verifiable callbacks |
 | `/compose-dividend-distribution` | CLI-driven; spawns a Turbo pipeline; gas-sponsored pro-rata payouts | batch payouts, snapshot-then-distribute, cap-table style |
+| `/compose-compliance-oracle` | `onchain_event` → screen via external API → `writeContract` approve/reject callback | a payment or action held in escrow that an offchain check (AML/KYC, risk, allowlist) must approve or reject before it settles |
 
 The survey against this catalog is a required build step — see **Step 3** below.
 
