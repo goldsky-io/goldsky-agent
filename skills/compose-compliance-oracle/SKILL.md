@@ -1,6 +1,6 @@
 ---
 name: compose-compliance-oracle
-description: "Build and deploy the Goldsky Compose compliance-oracle example under the user's own account — a compliance-gated payment gateway where a smart contract holds a USDC payment in escrow, Compose screens the sender wallet via the Webacy AML API on the emitted TransferRequested event, then calls back to approve (funds to the business wallet) or reject (funds returned to sender). Ships a second cron task that reconciles stuck transfers, and a demo driver that runs approve/reject scenarios end to end. Triggers on: 'build a compliance oracle', 'compliance-gated payments', 'AML screening onchain', 'KYC payment gateway', 'escrow with compliance check', 'wallet screening oracle', 'gated transfers', 'Webacy oracle'. The escrow contract's approve/reject are oracle-permissioned, so there is no shared no-deploy contract — each user deploys their own instance bound to their oracle wallet (recommended path: Base Sepolia + a MockUSDC). The oracle signs via a private-key secret with sponsored gas. For a custom/novel Compose app, use /compose. For debugging a deployed app, use /compose-doctor. For manifest/CLI/API field lookups, use /compose-reference."
+description: "Build and deploy the Goldsky Compose compliance-oracle example under the user's own account — a compliance-gated payment gateway where a smart contract holds a USDC payment in escrow, Compose screens the sender wallet via the Webacy AML API on the emitted TransferRequested event, then calls back to approve (funds to the business wallet) or reject (funds returned to sender). Ships a second cron task that reconciles stuck transfers. Triggers on: 'build a compliance oracle', 'compliance-gated payments', 'AML screening onchain', 'KYC payment gateway', 'escrow with compliance check', 'wallet screening oracle', 'gated transfers', 'Webacy oracle'. The escrow contract's approve/reject are oracle-permissioned, so there is no shared no-deploy contract — each user deploys their own instance bound to their oracle wallet (recommended path: Base Sepolia + a MockUSDC). The oracle signs via a private-key secret with sponsored gas. For a custom/novel Compose app, use /compose. For debugging a deployed app, use /compose-doctor. For manifest/CLI/API field lookups, use /compose-reference."
 ---
 
 # Build: Compose compliance-oracle
@@ -36,12 +36,12 @@ When this skill says `$FOO`, capture the literal value from the prior command's 
 - **The oracle wallet address must equal the contract's `oracle`.** The contract is deployed with `--constructor-args <USDC> <ORACLE_ADDRESS>`, where `ORACLE_ADDRESS = cast wallet address $ORACLE_PRIVATE_KEY`. The Compose task loads that same key via `evm.wallet({ privateKey: env.ORACLE_PRIVATE_KEY })`. If they don't match, every `approveTransfer`/`rejectTransfer` reverts with `not oracle`.
 - **Gas sponsorship:** the oracle wallet uses `sponsorGas: true` — it never needs native token for gas on sponsored chains (Base, Base Sepolia). The `ORACLE_PRIVATE_KEY` EOA only needs gas to *deploy the contract* with `forge`, never at task runtime.
 - **`ORACLE_PRIVATE_KEY` is a real EOA private key.** Never print it, commit it, or log it. It is set once as a Compose secret and passed to `deploy.sh` as an env var — nowhere else.
-- **Do not import external packages in task code.** `evm`, `fetch`, `collection`, `env`, and `logger` all come from the injected `context` argument. The only import allowed in tasks is `compose` (for types) and sibling project files. (The `scripts/demo` driver is a separate standalone Node project and *does* use `viem` — that's fine, it's not a Compose task.)
+- **Do not import external packages in task code.** `evm`, `fetch`, `collection`, `env`, and `logger` all come from the injected `context` argument. The only import allowed in tasks is `compose` (for types) and sibling project files.
 - **Never run `forge create`, `goldsky compose deploy`, `goldsky compose secret set`, `git push`, or `gh repo create` without showing the exact command first and getting explicit confirmation.**
 
 ## The app (full source)
 
-This is the complete compliance app, verbatim from the reference implementation (`goldsky-io/compose-compliance-oracle-demo`, `benny/webacy` branch). Scaffold these files as-is; only edit `compose.yaml` and `src/lib/constants.ts` to wire in your deployed contract address and chain (Step 4). The source ships pointed at Base **mainnet** with native USDC — the recommended getting-started path swaps that to Base Sepolia + a MockUSDC in Step 4.
+This is the complete compliance app. Scaffold these files verbatim (Step 0 writes them to disk; the in-app flow scaffolds them in-memory) — there is nothing to clone. Only edit `compose.yaml` and `src/lib/constants.ts` to wire in your deployed contract address and chain (Step 3). The source below is pointed at Base **mainnet** with native USDC — the recommended getting-started path swaps that to Base Sepolia + a MockUSDC in Step 3.
 
 ### `compose.yaml`
 
@@ -503,17 +503,16 @@ libs = ["lib"]
 
 > **The steps below are the Bash / local-CLI procedure. If a `deployComposeApp` tool is available (webapp chatbot), do NOT follow them — this example is CLI-driven; see Mode Detection above.**
 
-## Step 0 — Scaffold the example
+## Step 0 — Scaffold the project
 
-Pull the reference implementation into a fresh directory. It lives in a standalone repo (not `documentation-examples`); the current Webacy version is on the `benny/webacy` branch:
+Create the directory layout and write each file from **The app (full source)** above — there is nothing to clone.
 
 ```bash
-git clone --depth 1 --branch benny/webacy \
-  https://github.com/goldsky-io/compose-compliance-oracle-demo.git compliance-oracle
+mkdir -p compliance-oracle/src/tasks compliance-oracle/src/lib compliance-oracle/contracts
 cd compliance-oracle
 ```
 
-If the user can't reach that repo, scaffold the files from **The app (full source)** above by hand instead (`compose.yaml`, `tsconfig.json`, `foundry.toml`, `contracts/*.sol`, `src/lib/{constants,webacy}.ts`, `src/tasks/{on-transfer-requested,reconcile}.ts`). Either way, the wiring in Step 4 is the same.
+Write these files verbatim from the source above: `compose.yaml`, `tsconfig.json`, `foundry.toml`, `contracts/ComplianceGatedTransfer.sol`, `contracts/MockUSDC.sol`, `src/lib/constants.ts`, `src/lib/webacy.ts`, `src/tasks/on-transfer-requested.ts`, and `src/tasks/reconcile.ts`. Then wire the deployed address and chain in Step 3. Add a `.gitignore` containing `.env`, `lib/`, and `.compose/`.
 
 ## Preflight
 
@@ -522,7 +521,6 @@ The `goldsky` CLI and auth checks are the standard Compose preflight — see `/c
 1. **`forge` + `cast`** — `forge --version`. Install with `curl -L https://foundry.paradigm.xyz | bash && foundryup` if missing. Required to deploy the contract.
 2. **OpenZeppelin contracts** — the escrow contract imports `IERC20` (and MockUSDC imports `ERC20`). From the project root: `forge install OpenZeppelin/openzeppelin-contracts --no-commit`.
 3. **Webacy API key** — sign up at https://developers.webacy.co/ and create an API key (a demo key is available right after signup). Have it ready; do not print it back.
-4. **`node` + `npm`** — only for the demo driver in Step 8 (`scripts/demo` bundles `viem`).
 
 ## Step 1 — Configuration interview
 
@@ -607,7 +605,7 @@ git commit -m "Initial commit: Compose compliance-oracle"
 gh repo create <user's repo name> --<public|private> --source=. --push
 ```
 
-(The scaffold's `.gitignore` already excludes `.env`; the grep is a backstop — never commit the oracle key.)
+(The `.gitignore` from Step 0 excludes `.env`; the grep is a backstop — never commit the oracle key.)
 
 ## Step 6 — Deploy to Goldsky
 
@@ -619,26 +617,16 @@ First deploy may take 1-2 minutes. Watch for `Deployed compose app: compliance-o
 
 ## Step 7 — Smoke test
 
-The reference repo ships a driver at `scripts/demo/demo.ts` that runs the full flow — approve USDC, `requestTransfer`, then poll the contract until Compose flips the status. It has an approve scenario (clean sender) and a reject scenario (a flagged sender). Configure and run it:
+Drive the full flow from a sender wallet with `cast`: fund it, approve the escrow to spend, then request a transfer. Use a separate sender key (`$SENDER_KEY`), not the oracle key.
 
-```bash
-cd scripts/demo
-npm install
-cp .env.example .env
-# Edit scripts/demo/.env: SENDER_PRIVATE_KEY, RISKY_SENDER_PRIVATE_KEY,
-# CONTRACT_ADDRESS=$CONTRACT_ADDRESS, USDC_ADDRESS=$USDC_ADDRESS, RPC_URL
-npm run demo:approve   # clean sender → APPROVED, funds to business
-npm run demo:reject    # flagged sender → REJECTED, funds returned
-```
-
-On Base Sepolia, first mint test USDC to the sender wallet(s) so they have something to pay with:
+On Base Sepolia, first mint test USDC to the sender so it has something to pay with (the oracle EOA can mint on the open MockUSDC):
 
 ```bash
 cast send $USDC_ADDRESS "mint(address,uint256)" $SENDER_ADDRESS 1000000 \
   --rpc-url $RPC_URL --private-key $ORACLE_PRIVATE_KEY   # 1.00 mUSDC
 ```
 
-**Or drive it by hand** — approve the escrow to spend, then request a transfer:
+Then approve and request (ERC-20 transfers need prior approval of the escrow as spender):
 
 ```bash
 cast send $USDC_ADDRESS "approve(address,uint256)" $CONTRACT_ADDRESS 1000000 \
@@ -674,7 +662,7 @@ cast call $CONTRACT_ADDRESS "transfers(uint256)(address,uint256,uint8)" <id> --r
 - Do not point the app at the mainnet demo contract `0x39efE8A851A4Da22fa40828F6D4b3DC6b54545Aa` (or any contract you didn't deploy). Its `oracle` is a fixed key you don't hold, so every callback reverts `not oracle`. Deploy your own.
 - Do not use a different key for the contract's `oracle` constructor arg than the one in `ORACLE_PRIVATE_KEY`. They must be the same EOA.
 - Do not commit or log `ORACLE_PRIVATE_KEY`. It is a real signing key.
-- Do not import `viem`, `ethers`, or any external package inside the Compose task code — use `evm.decodeEventLog`, `evm.wallet`, and `evm.chains` from the context. (The `scripts/demo` driver is a separate Node project and may use `viem`.)
+- Do not import `viem`, `ethers`, or any external package inside the Compose task code — use `evm.decodeEventLog`, `evm.wallet`, and `evm.chains` from the context.
 - Do not deploy the gated-transfer contract to Base mainnet with real USDC as a first test — start on Base Sepolia with MockUSDC.
 
 ## Related
