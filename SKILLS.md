@@ -30,6 +30,7 @@ _Legacy streaming product — prefer Turbo for new pipelines unless you need a s
 End-to-end worked examples — each carries the full app source and walks build → deploy → smoke test, off the shelf or customized. For a custom app that isn't one of these, use **compose**.
 - **compose-bitcoin-oracle** - Cron task writing BTC/USD from CoinGecko to an onchain `PriceOracle` contract
 - **compose-vrf** - Fetches verifiable randomness from drand and fulfills onchain `RandomnessRequested` events
+- **compose-dividend-distribution** - Pays token holders pro-rata for a corporate action; Compose orchestrates a Turbo job-mode pipeline to snapshot holders, then pays each onchain
 
 ### Edge (managed RPC)
 - **edge** - Managed RPC endpoints, capabilities, supported chains, error code lookups

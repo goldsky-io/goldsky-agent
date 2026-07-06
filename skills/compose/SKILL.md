@@ -7,6 +7,10 @@ description: "Always load this skill whenever the conversation is about Goldsky 
 
 Goldsky Compose is the offchain-to-onchain framework for high-stakes systems. Write TypeScript **tasks** that run in verifiable sandboxes — triggered by cron, HTTP, or onchain events — with smart wallets, gas sponsorship, and durable collections. Typical use cases: custom price oracles, keepers, circuit breakers, prediction-market resolvers, cross-chain automation, identity/attestation flows, and notifications.
 
+## Step 0 — Load the reference first
+
+**Before anything else — before you write any `compose.yaml` or task file, quote a field / flag / API shape, or scaffold or deploy an app — load `Skill(compose-reference)`.** It's the full manifest / CLI / `TaskContext` / wallet / gas-sponsorship reference. This skill gives the rules and the shape of a build; `compose-reference` gives the exact fields and signatures — and per the Golden rules below, the manifest / CLI / API must never be synthesized from memory. Do not emit a manifest or task without it loaded.
+
 ## Skill family — load `compose` first
 
 `compose` is the entry point for anything Goldsky Compose: **load it first, then pull in the others as needed.**
@@ -15,6 +19,18 @@ Goldsky Compose is the offchain-to-onchain framework for high-stakes systems. Wr
 - **A specific example** (bitcoin oracle, VRF, dividend distribution) — also load the matching template (`/compose-bitcoin-oracle`, `/compose-vrf`, `/compose-dividend-distribution`). Each carries that app's source and specifics and relies on the rules here; it does not repeat them.
 - **Any field, flag, manifest shape, or API signature** — load `/compose-reference`. It's the full reference docs. Consult it before writing any `compose.yaml` or task file.
 - **A broken app** — `/compose-doctor`.
+
+## Template catalog
+
+The worked-example templates are starting points for whole classes of app, not just their literal use case. Match a new app against this catalog by **scope and pattern**, not by name:
+
+| Template | Scope / pattern | Start here when the app is… |
+| --- | --- | --- |
+| `/compose-bitcoin-oracle` | cron → fetch offchain data → `writeContract` | a keeper or oracle that periodically pushes a value onchain |
+| `/compose-vrf` | `onchain_event` → fetch → write back with proof | event-driven request/response, verifiable callbacks |
+| `/compose-dividend-distribution` | CLI-driven; spawns a Turbo pipeline; gas-sponsored pro-rata payouts | batch payouts, snapshot-then-distribute, cap-table style |
+
+The survey against this catalog is a required build step — see **Step 3** below.
 
 ## Golden rules (all modes, including the in-app deploy card)
 
@@ -254,9 +270,16 @@ From the user's natural-language prompt, **derive** as many of these as possible
 
 Only ask the user for fields you couldn't derive.
 
-### Step 3 — Scaffold
+### Step 3 — Match against the worked examples, then scaffold
 
-`goldsky compose init <name>`. Inspect the scaffold to see the canonical file layout.
+**If a template skill is already loaded** (the user asked for that specific example), skip the survey and build from it.
+
+**Otherwise the survey is required before scaffolding.** Compare the derived trigger + behavior against the Template catalog above:
+
+- **A template matches in scope** → load it (`/compose-<name>`) and start from its source instead of a blank init.
+- **None match** → say so in one line, then `goldsky compose init <name>` and inspect the scaffold for the canonical file layout.
+
+Never build a custom app without doing this comparison first.
 
 ### Step 4 — Edit the manifest
 
