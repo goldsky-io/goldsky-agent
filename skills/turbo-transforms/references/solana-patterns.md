@@ -25,6 +25,8 @@ Custom (Anchor) programs identify each instruction by an 8-byte discriminator an
 
 > **Solana column names.** Solana rows use `block_slot`, `block_timestamp`, and `signature` — **not** `block_number` or `transaction_hash`. The per-instruction dataset is `solana.instructions` (columns include `id`, `program_id`, `data`, `accounts`, `block_slot`, `signature`).
 
+> **⚠️ Never fabricate program IDs or token mints.** The `program_id` / mint addresses in `filter:` and `WHERE program_id = '…'` are base58 Solana addresses — get them from the user, or look them up (e.g. a token mint via a token API); **never emit one from memory.** A guessed address is silently wrong: the pipeline validates and deploys fine but matches nothing (or the wrong program). If you don't have a verified address, ask the user to paste it rather than inventing one.
+
 ### Decoding custom programs with an IDL
 
 Use `_gs_decode_instruction_data(idl, data)`. Fetch the IDL from a URL with `_gs_fetch_abi` (pass it inline for very small IDLs):
