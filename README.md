@@ -88,6 +88,23 @@ cp -r goldsky-agent/skills/* .cursor/skills/    # Cursor
 
 </details>
 
+## Use with autonomous or BYO agents
+
+Claude Code and Cursor auto-discover these skills and trigger them from each skill's `description`. **Autonomous or bring-your-own-model agents** — Devin, Codex, custom LLM apps — don't implement that convention. Installing isn't enough: `npx skills add` copies the skills into a skills directory (`.claude/skills/` for a single Claude Code target, or the shared `.agents/skills/` when targeting several) but writes **no** entry-point file telling an agent to look there. Bridge that one of two ways:
+
+- **Connect the docs MCP** (recommended) — any MCP-capable agent can search the docs and discover the skills (exposed as MCP resources) at query time. Devin: add it under `mcpServers` in `.devin/config.json` (see [Devin's MCP docs](https://docs.devin.ai/work-with-devin/mcp)). Setup for other clients is under [MCP Server](#mcp-server) below.
+- **Install the skills, then add an `AGENTS.md`** at your project root so agents that read it (Devin, Codex, Amp, …) know the skills exist — point it at your install path:
+
+```markdown
+# AGENTS.md
+
+This project uses Goldsky. AI-agent skills for building, deploying, and
+debugging Goldsky pipelines are installed under `.agents/skills/` (or
+`.claude/skills/`). Before a Goldsky task, read the matching
+`<skills-dir>/<name>/SKILL.md` and the files it references. For reference
+lookups, query the Goldsky docs MCP: https://docs.goldsky.com/mcp
+```
+
 ## Repository Structure
 
 ```
