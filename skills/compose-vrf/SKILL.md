@@ -536,7 +536,7 @@ Ask one question at a time; let each answer inform the next. Use readable labels
 
 **Branch A — Reuse shared contract (recommended).** `$CONTRACT_ADDRESS = 0x6273AB73C95Ba2233281F1eb8aa3b21D9352AD6d` on Base Sepolia. No deploy, no fulfiller authorization. Skip to Step 4.
 
-**Branch B — Deploy your own.** Branch B has a fixed ordering: **create the wallet → deploy the contract → codegen → wire (Step 4) → deploy the app (Step 7).** Follow steps (1)–(4) below in order. The reference contract is in **The app (full source)** above (`contracts/RandomnessConsumer.sol`); `deployContract` writes the compiled ABI to `src/contracts/RandomnessConsumer.json` for you, so there's nothing to confirm by hand.
+**Branch B — Deploy your own.** Branch B has a fixed ordering: **create the wallet → deploy the contract → codegen → wire (Step 4) → deploy the app (Step 7).** Follow steps (1)–(5) below in order. The reference contract is in **The app (full source)** above (`contracts/RandomnessConsumer.sol`); `deployContract` writes the compiled ABI to `src/contracts/RandomnessConsumer.json` for you, so there's nothing to confirm by hand.
 
 **(1) Create the wallet** (works before any deploy) and capture its address as `$COMPOSE_WALLET`. It matches `evm.wallet({ name: "randomness-fulfiller" })` in `src/tasks/fulfill-randomness.ts`:
 
@@ -583,7 +583,13 @@ forge create contracts/RandomnessConsumer.sol:RandomnessConsumer \
 jq .abi out/RandomnessConsumer.sol/RandomnessConsumer.json > src/contracts/RandomnessConsumer.json
 ```
 
-**(3) Wire** the address and chain into code (Step 4). **(4) Deploy the app** so the wired task goes live (Step 7). A single deploy, not a redeploy: the wallet was created and contract deployed first, so this takes the wired task live.
+**(3) Run codegen.** `deployContract` saved the ABI above (or the `jq .abi` extract did, on the forge path); `codegen` generates the typed `evm.contracts.RandomnessConsumer` class the task imports (the CLI's own success output says to):
+
+```bash
+goldsky compose codegen
+```
+
+**(4) Wire** the address and chain into code (Step 4). **(5) Deploy the app** so the wired task goes live (Step 7). A single deploy, not a redeploy: the wallet was created and contract deployed first, so this takes the wired task live.
 
 ## Step 4 — Wire the contract address and chain into code
 
