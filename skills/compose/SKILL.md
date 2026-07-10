@@ -35,9 +35,11 @@ The survey against this catalog is a required build step — see **Step 3** belo
 
 ## Golden rules (all modes, including the in-app deploy card)
 
-- **Never assume anything about the app on the user's behalf.** Derive what you can from what the user actually said; for anything material to how the app is built or behaves that you cannot derive — contract address, chain, ABI, trigger cadence, wallet choice, secret values — **ask the user**. Do not invent it, guess it, or carry a value over from an example.
+- **Never assume anything about the app on the user's behalf.** Derive what you can from what the user actually said; for anything material to how the app is built or behaves that you cannot derive — contract address/ABI (when the target contract *already exists*), chain, trigger cadence, wallet choice, secret values — **ask the user**. Do not invent it, guess it, or carry a value over from an example. When the user has no target contract, don't ask for an address — offer to author one (below).
 - **Never synthesize the manifest, CLI, or API shape from memory.** Load `/compose-reference` and follow it before emitting `compose.yaml` or a task file. This applies equally to the in-app `deployComposeApp` flow.
 - **When unsure about anything that affects how the app works, ask rather than proceed.**
+- **Offer to author a contract when none exists.** If the app must write onchain but the user has no contract, OFFER to write a minimal purpose-built Solidity contract and deploy it via `goldsky compose deployContract <file.sol>`. Interview them first for exactly what the contract must store/do, then show the source and the exact deploy command as the approval ask — this IS the show-command-and-confirm safety rule, so don't double-ask. On Base / Base Sepolia the deploy is gas-sponsored: free, no wallet and no tooling on the user's side. On any other chain the cloud deploy path isn't available today — say so honestly: the deploy needs their funded key via `forge create` (the ABI still lands in `src/contracts/` either way; the constructor args are unchanged).
+- **Version-check before `deployContract` / `writeContract`.** Run `goldsky compose --version` (prints `goldsky compose <version>`, e.g. `goldsky compose 0.8.1`) before any flow that deploys or writes a contract. If the version is below 0.8.1, or the command/flag is unrecognized, tell the user and OFFER to run `goldsky compose update` for them — never just instruct — then re-check before continuing.
 
 ## Boundaries
 
@@ -58,7 +60,7 @@ Before running commands, check if the `Bash` tool is available:
 - Three trigger types: **cron**, **HTTP**, **onchain_event**.
 - **Smart wallets** (managed by Goldsky, gas-sponsored by default) or **BYO EOA** wallets (user-supplied private key).
 - Built-in secrets, collections (durable storage), contract deployment (`deployContract`), and typed contract bindings via codegen.
-- `compose dev` for hot-reload local dev; `compose deploy` to ship; `compose logs -f` to tail.
+- `compose start` for hot-reload local dev; `compose deploy` to ship; `compose logs -f` to tail.
 
 **Deploying a contract** is a built-in capability: `goldsky compose deployContract <file.sol>` compiles in-CLI and CREATE2-deploys through the gas-sponsored Compose wallet, auto-saves the ABI to `src/contracts/`, and prints the address + deploy block. It needs compose CLI ≥ 0.8.1 (`goldsky compose update`). See `/compose-reference` (Contracts) for the flags.
 
@@ -79,9 +81,9 @@ goldsky login
 ### Scaffold + deploy
 
 ```bash
-goldsky compose init <app-name>          # scaffolds a Bitcoin-oracle example
+goldsky compose init                       # prompts for a name, scaffolds a Bitcoin-oracle example
 cd <app-name>
-goldsky compose dev                      # hot-reload local server on :4000
+goldsky compose start                      # hot-reload local server on :4000
 goldsky compose deploy                   # bundle + upload to cloud
 goldsky compose status                   # expect RUNNING
 goldsky compose logs -f                  # stream logs
@@ -93,8 +95,9 @@ goldsky compose logs -f                  # stream logs
 # compose.yaml
 name: my-oracle
 api_version: stable
-secrets:
-  - ORACLE_ADDRESS
+env:
+  cloud:
+    ORACLE_ADDRESS: "0xYourOracleContract"
 tasks:
   - name: hourly_update
     path: src/tasks/hourly-update.ts
@@ -144,12 +147,12 @@ Every task receives `{ env, fetch, callTask, logEvent, evm, collection }`. Secre
 
 Two kinds:
 
-- **Smart wallet (managed)** — `evm.wallet({ name: "updater" })`. Hosted by Goldsky, gas-sponsored by default. Cannot be used in plain local dev — use `compose dev --fork-chains` or switch to a BYO EOA.
+- **Smart wallet (managed)** — `evm.wallet({ name: "updater" })`. Hosted by Goldsky, gas-sponsored by default. Cannot be used in plain local dev — use `compose start --fork-chains` or switch to a BYO EOA.
 - **BYO EOA (private key)** — `evm.wallet({ privateKey: env.MY_KEY, sponsorGas: true })`. **Gas sponsorship is OFF by default** for BYO EOA wallets; opt in explicitly.
 
 ### Secrets & env
 
-List names in the manifest's `secrets:` array, set values with `goldsky compose secret set --name X --value Y` (or `compose secret sync` to upload `.env`). Values flatten into `context.env` at runtime. Names must be SCREAMING_SNAKE_CASE.
+List names in the manifest's `secrets:` array, set values with `goldsky compose secret set <SECRET_NAME> --value <value>` (the secret name is positional; `-n`/`--name` selects the *app*). To upload a whole `.env` to cloud at deploy time, use `goldsky compose deploy --sync-env` (there is no `compose secret sync`). Values flatten into `context.env` at runtime. Names must be SCREAMING_SNAKE_CASE.
 
 ### Gas sponsorship
 
@@ -257,7 +260,7 @@ Only activate when Bash is available.
 
 ### Step 1 — Verify auth
 
-`goldsky project list 2>&1`. If not logged in, use `/auth-setup`.
+`goldsky project list 2>&1` proves auth for the full `goldsky` CLI. With the **standalone Compose CLI**, auth is proven by any authenticated call — e.g. `goldsky compose list -t <api-key>` (`-t`/`--token` passes a project API key). No key yet? Make one in the dashboard at **Settings → API Keys**, then pass it with `-t`. If login itself is the problem, use `/auth-setup`.
 
 ### Step 2 — Derive first, ask only the ambiguous
 
@@ -267,7 +270,8 @@ From the user's natural-language prompt, **derive** as many of these as possible
 - **Chain** — named (`polygonAmoy`, `base`) → use it; "testnet" with no name → ask.
 - **Read vs write** — "track", "index", "notify" → read; "update", "set", "submit" → write.
 - **Wallet** — write + sponsored gas → smart wallet (default); user supplied a PK → BYO EOA with `sponsorGas: true`.
-- **Secrets** — any external API key or contract address → needs a secret entry.
+- **Secrets vs config** — only *sensitive* values (API keys, private keys, auth tokens) go in the `secrets:` array. A **contract address is plain non-secret config** — put it in `env:` (manifest) or in the task file, not in `secrets`.
+- **Target contract** — if the app writes onchain, it needs a contract to write to. If the user names an existing one, get its address (+ ABI; the ABI only matters for pre-existing contracts — `deployContract` saves it automatically). If they have none, take the authorship-offer fork from the Golden rules: interview for what it must store/do, then show source + the `deployContract` command as the approval ask.
 - **`api_version`** — default to `stable` unless user asks otherwise.
 
 Only ask the user for fields you couldn't derive.
@@ -279,7 +283,7 @@ Only ask the user for fields you couldn't derive.
 **Otherwise the survey is required before scaffolding.** Compare the derived trigger + behavior against the Template catalog above:
 
 - **A template matches in scope** → load it (`/compose-<name>`) and start from its source instead of a blank init.
-- **None match** → say so in one line, then `goldsky compose init <name>` and inspect the scaffold for the canonical file layout.
+- **None match** → say so in one line, then `goldsky compose init` (prompts for a name) and inspect the scaffold for the canonical file layout.
 
 Never build a custom app without doing this comparison first.
 
@@ -293,13 +297,14 @@ Replace the scaffold's task file with logic derived from the prompt. Use the cap
 
 ### Step 6 — Wire secrets and wallets
 
-- Every name in `compose.yaml`'s `secrets:` → `goldsky compose secret set --name X --value Y` (or add to `.env` + `compose secret sync`).
-- Smart wallet → `goldsky compose wallet create --name <name>`. Then `wallet list` to get the address and share with the user (they may need to grant it onchain permissions on the target contract).
-- BYO EOA → add the private key to `.env` (SCREAMING_SNAKE_CASE name), reference via `env.X` in the task.
+- **Secrets** — every name in `compose.yaml`'s `secrets:` needs a value before deploy: `goldsky compose secret set <SECRET_NAME> --value <value>` (the secret name is positional; `-n`/`--name` selects the *app*, not the secret), or drop them in `.env` and run `goldsky compose deploy --sync-env` to upload all of `.env` to cloud. There is no `compose secret sync` — `deploy --sync-env` is the mechanism.
+- **Smart wallet (the common case)** — a task that calls `evm.wallet({ name })` + `writeContract` needs no explicit create: the wallet is provisioned on demand on first use, and `deployContract`/`writeContract` provision it even before the app is deployed. You only need the address ahead of time when a contract must authorize that wallet (allowlist, owner, etc.) — see the ordering note below.
+- **BYO EOA** — add the private key to `.env` (SCREAMING_SNAKE_CASE name), reference via `env.X` in the task.
+- **Wallet-address ordering (when a contract must authorize the wallet).** `wallet create` and `wallet list` hit an app-scoped endpoint and fail with "Compose app not found. Deploy the app first, then create wallets." **until the app has been `compose deploy`ed at least once**, and there's no way to learn a wallet's address before that. So the sequence is: `compose deploy` (first deploy) → `goldsky compose wallet create <name>` to read the address → `goldsky compose deployContract <file.sol> --constructor-args <wallet-address>` (or wire the address into the target contract) → edit the task to use the new contract address → `compose deploy` again.
 
 ### Step 7 — Local dev
 
-`goldsky compose dev`. Smart wallets require `--fork-chains` locally; use a BYO EOA if the user wants to test against a live testnet. For HTTP tasks: `goldsky compose callTask <name> '<json>'` in another terminal.
+`goldsky compose start`. Smart wallets require `--fork-chains` locally; use a BYO EOA if the user wants to test against a live testnet. For HTTP tasks: `goldsky compose callTask <name> '<json>'` in another terminal.
 
 ### Step 8 — Deploy
 
@@ -316,9 +321,9 @@ Share the dashboard URL: `https://app.goldsky.com/<project_id>/dashboard/compose
 
 ## Important Rules
 
-- **Smart wallets don't work in plain `compose dev`** — use `--fork-chains` or switch to a BYO EOA for local iteration.
+- **Smart wallets don't work in plain `compose start`** — use `--fork-chains` or switch to a BYO EOA for local iteration.
 - **BYO EOA gas sponsorship defaults to FALSE** — opt in explicitly with `sponsorGas: true`.
-- **Cloud secrets are not synced from `.env` automatically.** Run `compose secret sync` or `compose deploy --sync-env`.
+- **Cloud secrets are not synced from `.env` automatically.** Run `compose deploy --sync-env` to upload `.env` to cloud before deploying.
 - **Secret names must be SCREAMING_SNAKE_CASE.**
 - **`api_version` is required for deploy.** Default to `stable`.
 

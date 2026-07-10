@@ -9,7 +9,7 @@ Stand up the compliance payment gateway under the user's own Goldsky account. A 
 
 This template supplies only what's specific to the compliance app — how it works and its **full source** (below). Unlike the VRF or bitcoin-oracle examples, **there is no shared no-deploy contract**: `approveTransfer`/`rejectTransfer` are `onlyOracle`-gated (that's the security model — only the oracle may release escrow), so each instance is bound at construction to one oracle address. Every user deploys their own contract with their own oracle wallet as `oracle`. The recommended path is **Base Sepolia** with a `MockUSDC` you deploy, so it's free and fully gas-sponsored; graduate to Base mainnet with native USDC for production.
 
-## Step 0 — Load the base skills first
+## Step 0a — Load the base skills first
 
 **Before anything else — before you answer, ask a question, scaffold a file, or run any command — load the two base skills this template depends on:**
 
@@ -41,7 +41,7 @@ When this skill says `$FOO`, capture the literal value from the prior command's 
 
 ## The app (full source)
 
-This is the complete compliance app. Scaffold these files verbatim (Step 0 writes them to disk; the in-app flow scaffolds them in-memory) — there is nothing to clone. Only edit `compose.yaml` and `src/lib/constants.ts` to wire in your deployed contract address and chain (Step 3). The source below is pointed at Base **mainnet** with native USDC — the recommended getting-started path swaps that to Base Sepolia + a MockUSDC in Step 3.
+This is the complete compliance app. Scaffold these files verbatim (Step 0b writes them to disk; the in-app flow scaffolds them in-memory) — there is nothing to clone. ⚠ The addresses shipped in `compose.yaml` and `src/lib/constants.ts` below (`contract:` and `contractAddress:` both default to the mainnet demo escrow `0x39efE8A851A4Da22fa40828F6D4b3DC6b54545Aa`) are **placeholders** — Step 3 wiring is **MANDATORY** before deploy; unwired, every callback reverts `not oracle`. Only edit those two files to wire in your deployed contract address and chain. The source below is pointed at Base **mainnet** with native USDC — the recommended getting-started path swaps that to Base Sepolia + a MockUSDC in Step 3.
 
 ### `compose.yaml`
 
@@ -73,6 +73,8 @@ tasks:
       - type: cron
         expression: "*/5 * * * *"
 ```
+
+> **`api_version: "internal-pk-sponsored-otel"`** pins an internal image channel that skips version-compatibility checks — required today for BYO-private-key (`ORACLE_PRIVATE_KEY`) combined with `sponsorGas`, so it's deliberate, not a typo.
 
 ### `tsconfig.json`
 
@@ -215,7 +217,8 @@ import type { Hex } from "compose";
 export const CONFIG = {
   chain: "base" as const,
 
-  // Deployed ComplianceGatedTransfer contract address — update after deployment
+  // PLACEHOLDER — mainnet demo escrow (reference-only). REPLACE with your
+  // $CONTRACT_ADDRESS in Step 3, or every approveTransfer/rejectTransfer reverts `not oracle`.
   contractAddress: "0x39efE8A851A4Da22fa40828F6D4b3DC6b54545Aa" as Hex,
 
   // Native USDC on Base
@@ -330,7 +333,7 @@ type TransferRequestedEvent = {
 };
 
 function formatUsdc(raw: bigint): string {
-  return `${(Number(raw) / 1e6).toFixed(2)} USDC`;
+  return `${(Number(raw) / 10 ** CONFIG.usdcDecimals).toFixed(2)} USDC`;
 }
 
 export async function main(ctx: TaskContext, payload: OnchainEvent) {
@@ -503,7 +506,7 @@ libs = ["lib"]
 
 > **The steps below are the Bash / local-CLI procedure. If a `deployComposeApp` tool is available (webapp chatbot), do NOT follow them — this example is CLI-driven; see Mode Detection above.**
 
-## Step 0 — Scaffold the project
+## Step 0b — Scaffold the project
 
 Create the directory layout and write each file from **The app (full source)** above — there is nothing to clone.
 
@@ -518,13 +521,18 @@ Write these files verbatim from the source above: `compose.yaml`, `tsconfig.json
 
 The `goldsky` CLI and auth checks are the standard Compose preflight — see `/compose` and `/auth-setup`. Compliance-specific:
 
-1. **`cast`** — `cast --version`. Install with `curl -L https://foundry.paradigm.xyz | bash && foundryup` if missing. Used only for the sender-side mint/approve/requestTransfer walkthrough in Step 7 (`forge` is no longer required — `deployContract` compiles in-CLI).
-2. **OpenZeppelin contracts** — the escrow imports `IERC20` and MockUSDC imports `ERC20`. The in-CLI solc resolves bare `@openzeppelin/contracts/...` imports by walking up from the source file to `node_modules/`, so install them in the app directory (before the Step 2 deploys — the compiler reads no `foundry.toml` and no `lib/` remappings):
+1. **Compose CLI version (check first).** `goldsky compose --version` must print `0.8.1` or newer, and `deployContract`/`writeContract` must be known commands — everything below (deploys, secrets, smoke test) depends on them. Run:
+   ```bash
+   goldsky compose --version          # expect: goldsky compose 0.8.1
+   goldsky compose deployContract --help >/dev/null 2>&1 && echo "deployContract OK" || echo "deployContract UNKNOWN — CLI too old"
+   ```
+   If the version is older than `0.8.1` or either command is unknown, **offer** `goldsky compose update` (or `goldsky compose update 0.8.1` for a specific version), run it on confirmation, then re-check before proceeding.
+2. **`cast`** — `cast --version`. Install with `curl -L https://foundry.paradigm.xyz | bash && foundryup` if missing. Used only for the `cast` alternative in Step 7 (`forge` is no longer required — `deployContract` compiles in-CLI).
+3. **OpenZeppelin contracts** — the escrow imports `IERC20` and MockUSDC imports `ERC20`. The in-CLI solc resolves bare `@openzeppelin/contracts/...` imports by walking up from the source file to `node_modules/`, so install them in the app directory (before the Step 2 deploys — the compiler reads no `foundry.toml` and no `lib/` remappings):
    ```bash
    npm init -y >/dev/null 2>&1 || true   # ensure the app dir is the package root, so npm can't walk up to a parent
    npm install @openzeppelin/contracts
    ```
-3. **Webacy API key** — sign up at https://developers.webacy.co/ and create an API key (a demo key is available right after signup). Have it ready; do not print it back.
 
 ## Step 1 — Configuration interview
 
@@ -536,29 +544,36 @@ Name the app `compliance-oracle` (don't ask). Then, per the golden rules in `/co
 
 ## Step 2 — Oracle wallet and contract deploy
 
-The oracle wallet is a plain EOA private key. Its address becomes the contract's `oracle`, and the same key signs the Compose callbacks at runtime (sponsored). `goldsky compose deployContract` deploys *through the gas-sponsored Compose wallet*, not the oracle key — so the oracle EOA needs no gas for the deploy. Have the user provide `ORACLE_PRIVATE_KEY`, or generate one:
+The oracle wallet is a plain EOA private key. Its address becomes the contract's `oracle`, and the same key signs the Compose callbacks at runtime (sponsored). `goldsky compose deployContract` deploys *through the gas-sponsored Compose wallet*, not the oracle key — so the oracle EOA needs no gas for the deploy. Have the user provide `ORACLE_PRIVATE_KEY`, or generate one. **Never print `ORACLE_PRIVATE_KEY`** — generate it straight into a chmod-600 `.env` and show only the derived address:
 
 ```bash
-cast wallet new
-# → Address and private key. Save the private key as ORACLE_PRIVATE_KEY.
+# Generate the oracle key WITHOUT printing it: the JSON (which contains the key)
+# goes to a temp file, the key is extracted into a chmod-600 .env, and only the
+# derived address is ever echoed.
+cast wallet new --json > /tmp/k.json
+ORACLE_PRIVATE_KEY=$(jq -r '.[0].private_key' /tmp/k.json)
+touch .env && chmod 600 .env
+printf 'ORACLE_PRIVATE_KEY=%s\n' "$ORACLE_PRIVATE_KEY" >> .env
+ORACLE_ADDRESS=$(cast wallet address "$ORACLE_PRIVATE_KEY")
+echo "Oracle address: $ORACLE_ADDRESS"   # the ONLY thing ever printed
+shred -u /tmp/k.json
 ```
 
-Create `.env` in the project root with it (never commit this file):
+Also add the RPC URL and Webacy key to `.env` (never commit this file):
 
 ```env
-ORACLE_PRIVATE_KEY=0x_your_oracle_private_key
-RPC_URL=https://sepolia.base.org   # or https://mainnet.base.org for production; used by the cast walkthrough in Step 7
+RPC_URL=https://sepolia.base.org   # or https://mainnet.base.org for production; used by the cast alternative in Step 7
 WEBACY_API_KEY=your_webacy_api_key
 ```
 
-Derive the oracle address first — this is the `oracle` constructor arg, and the contract's `approveTransfer`/`rejectTransfer` must be signed by this same key at runtime:
+`ORACLE_ADDRESS` is already set if you ran the block above; in a fresh shell, re-derive it from `.env` — it is the `oracle` constructor arg, and the contract's `approveTransfer`/`rejectTransfer` must be signed by this same key at runtime:
 
 ```bash
 source .env
 ORACLE_ADDRESS=$(cast wallet address "$ORACLE_PRIVATE_KEY")
 ```
 
-**Base Sepolia (recommended): deploy a MockUSDC first**, then use its address as the escrow's `_usdc` arg. Both deploys go through the gas-sponsored Compose wallet (Base Sepolia is sponsored, so nothing needs funding) — `deployContract` only changes who deploys; the `oracle` is still the `ORACLE_PRIVATE_KEY` EOA above:
+**Base Sepolia (recommended): deploy a MockUSDC first**, then use its address as the escrow's `_usdc` arg. Both deploys go through the gas-sponsored Compose wallet (Base Sepolia is sponsored, so nothing needs funding) — `deployContract` only changes who deploys; the `oracle` is still the `ORACLE_PRIVATE_KEY` EOA above. (Each `deployContract`/`writeContract` needs a project API key — pass `-t <key>` or have an active `goldsky login` session; generate the key at **Settings > API Keys** in the Goldsky dashboard.)
 
 ```bash
 # 1) MockUSDC — no constructor args
@@ -572,7 +587,13 @@ goldsky compose deployContract contracts/ComplianceGatedTransfer.sol \
 # capture the printed address as $CONTRACT_ADDRESS
 ```
 
-(`deployContract` / `writeContract` need compose CLI ≥ 0.8.1 — run `goldsky compose update` if you're on an older version.) The ABI for each contract is auto-saved to `src/contracts/<Name>.json`.
+The ABI for each contract is auto-saved to `src/contracts/<Name>.json`. Once both deploys print `Address:`, generate the typed contract classes (required before any typecheck — the `tsconfig.json` `paths` entry points at `.compose/types.d.ts`, which codegen produces):
+
+```bash
+goldsky compose codegen
+```
+
+> **TypeScript pin:** the inlined `tsconfig.json` typechecks on **TypeScript 5.x** — TS 6 rejects `baseUrl`. If you run a typecheck, pin `npx -y typescript@5 tsc` rather than a bare `tsc`.
 
 **Base mainnet (production):** skip MockUSDC — pass native USDC `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` straight in as `$USDC_ADDRESS`:
 
@@ -582,7 +603,7 @@ goldsky compose deployContract contracts/ComplianceGatedTransfer.sol \
   --constructor-args 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913 $ORACLE_ADDRESS
 ```
 
-Capture `$CONTRACT_ADDRESS` and `$USDC_ADDRESS` for the next step.
+Capture `$CONTRACT_ADDRESS` and `$USDC_ADDRESS` for the next step, then run `goldsky compose codegen` here too.
 
 ## Step 3 — Wire the contract address and chain into the app
 
@@ -599,9 +620,11 @@ Two files reference the chain/addresses. Use grep anchors — line numbers shift
 
 The event signature `TransferRequested(uint256,address,uint256)` stays as-is — it matches the contract. Show a diff before applying, then apply with Edit.
 
+Note: `src/lib/webacy.ts` hardcodes `?chain=base` in its Webacy request deliberately — testnet screening reuses mainnet reputation data, so leave it `base` even on Base Sepolia (the source comment doesn't say so).
+
 ## Step 4 — Set Compose secrets
 
-The running app needs the oracle key (to sign callbacks) and the Webacy key (to screen):
+The running app needs the oracle key (to sign callbacks) and the Webacy key (to screen). If you haven't already, now's the one thing only you can do — sign up at https://developers.webacy.co/ and create an API key; park it until here. (The whole flow through Step 3 was verified working with a stub key, so a placeholder is fine right up to this point.)
 
 ```bash
 source .env
@@ -614,13 +637,15 @@ goldsky compose secret set WEBACY_API_KEY --value "$WEBACY_API_KEY"
 ```bash
 git init
 git add .
-git ls-files --cached | grep -iE '(\.env$|private[._-]?key|\.pem|id_rsa)' && \
-  { echo "ABORT: secret-shaped file staged"; exit 1; }
-git commit -m "Initial commit: Compose compliance-oracle"
-gh repo create <user's repo name> --<public|private> --source=. --push
+if git ls-files --cached | grep -qiE '(\.env$|private[._-]?key|\.pem|id_rsa)'; then
+  echo "⚠ Secret-shaped file is staged — remove it before committing. Aborting publish."
+else
+  git commit -m "Initial commit: Compose compliance-oracle"
+  gh repo create <user's repo name> --<public|private> --source=. --push
+fi
 ```
 
-(The `.gitignore` from Step 0 excludes `.env`; the grep is a backstop — never commit the oracle key.)
+(The `.gitignore` from Step 0b excludes `.env`; the grep is a backstop — never commit the oracle key.)
 
 ## Step 6 — Deploy to Goldsky
 
@@ -632,28 +657,37 @@ First deploy may take 1-2 minutes. Watch for `Deployed compose app: compliance-o
 
 ## Step 7 — Smoke test
 
-Drive the full flow from a sender wallet with `cast`: fund it, approve the escrow to spend, then request a transfer. Use a separate sender key (`$SENDER_KEY`), not the oracle key.
+This step runs **after** `compose deploy` (Step 6), so the app's wallets now exist. The **primary** path drives the whole flow from the app's gas-sponsored default smart wallet via `writeContract` — no funded EOA needed. (A `cast` alternative with your own EOA follows.)
 
-On Base Sepolia, first mint test USDC to the sender so it has something to pay with (the oracle EOA can mint on the open MockUSDC):
+**Primary — sponsored `writeContract` from the app wallet.** List the app's wallets and grab the default smart wallet as the sender:
 
 ```bash
-cast send $USDC_ADDRESS "mint(address,uint256)" $SENDER_ADDRESS 1000000 \
-  --rpc-url $RPC_URL --private-key $ORACLE_PRIVATE_KEY   # 1.00 mUSDC
+goldsky compose wallet list
+# set $COMPOSE_WALLET to the app's default smart wallet address
 ```
 
-Then approve and request (ERC-20 transfers need prior approval of the escrow as spender):
+Then mint, approve, and request the transfer (each needs `-t <project API key>` or an active `goldsky login` session):
 
 ```bash
-cast send $USDC_ADDRESS "approve(address,uint256)" $CONTRACT_ADDRESS 1000000 \
-  --rpc-url $RPC_URL --private-key $SENDER_KEY
-cast send $CONTRACT_ADDRESS "requestTransfer(uint256)" 1000000 \
-  --rpc-url $RPC_URL --private-key $SENDER_KEY
+# mint 1.00 mUSDC to the app wallet (MockUSDC.mint is open)
+goldsky compose writeContract --chain-id 84532 --to $USDC_ADDRESS \
+  --function "mint(address,uint256)" --args $COMPOSE_WALLET 1000000
+
+# approve the escrow to pull the app wallet's USDC
+goldsky compose writeContract --chain-id 84532 --to $USDC_ADDRESS \
+  --function "approve(address,uint256)" --args $CONTRACT_ADDRESS 1000000
+
+# request a 1.00 USDC transfer — emits TransferRequested, which the task screens
+goldsky compose writeContract --chain-id 84532 --to $CONTRACT_ADDRESS \
+  --function "requestTransfer(uint256)" --args 1000000
 ```
 
-Then tail logs and watch the decision land:
+> **Why this works without the oracle key:** `MockUSDC.mint` is open; both `approve` and `requestTransfer` are sent from the same app wallet, and `requestTransfer` pulls via `transferFrom` from `msg.sender` — so the sender does not need to be the oracle. The oracle key only signs the `approveTransfer`/`rejectTransfer` callback at runtime.
+
+Then **stream** the logs and watch the decision land (bare `goldsky compose logs` is a one-shot dump; add `-f`/`--follow` to watch the next fire):
 
 ```bash
-goldsky compose logs
+goldsky compose logs -f
 ```
 
 **What to look for:** `deposit received`, `screening complete ... risk score N`, then `transfer #<id> APPROVED` (or a reject warning) with an `oracleTxHash`. Verify on-chain — `transfers(<id>)` status should be `1` (Approved) or `2` (Rejected), not `0`:
@@ -662,8 +696,24 @@ goldsky compose logs
 cast call $CONTRACT_ADDRESS "transfers(uint256)(address,uint256,uint8)" <id> --rpc-url $RPC_URL
 ```
 
+**Alternative — `cast` from your own funded EOA.** If you'd rather drive the flow with a separate sender key (`$SENDER_KEY`, not the oracle), it is **not** gas-sponsored, so fund it first: get Base Sepolia ETH from a faucet (e.g. https://www.coinbase.com/faucets/base-sepolia) into `$SENDER_ADDRESS`, then:
+
+```bash
+# mint is open — any funded key mints to the sender
+cast send $USDC_ADDRESS "mint(address,uint256)" $SENDER_ADDRESS 1000000 \
+  --rpc-url $RPC_URL --private-key $SENDER_KEY   # 1.00 mUSDC
+# approve the escrow, then request (ERC-20 needs prior approval)
+cast send $USDC_ADDRESS "approve(address,uint256)" $CONTRACT_ADDRESS 1000000 \
+  --rpc-url $RPC_URL --private-key $SENDER_KEY
+cast send $CONTRACT_ADDRESS "requestTransfer(uint256)" 1000000 \
+  --rpc-url $RPC_URL --private-key $SENDER_KEY
+```
+
+Generate `$SENDER_KEY` the same no-echo way as the oracle key (never print it): `cast wallet new --json > /tmp/s.json; SENDER_KEY=$(jq -r '.[0].private_key' /tmp/s.json); SENDER_ADDRESS=$(cast wallet address "$SENDER_KEY"); echo "$SENDER_ADDRESS"; shred -u /tmp/s.json`.
+
 ## Troubleshooting
 
+- **`error: Unknown command "deployContract". Did you mean command "deploy"?` (or the `writeContract` variant).** Compose CLI is older than 0.8.1. Run `goldsky compose update` (or `goldsky compose update 0.8.1`), confirm `goldsky compose --version` prints `0.8.1`+, then retry.
 - **Edits to `compose.yaml` or source files don't take effect after redeploy.** Stale `.compose/` bundle cache. Run `rm -rf .compose/` and redeploy.
 - **`approveTransfer`/`rejectTransfer` reverts with `not oracle`.** The Compose wallet's address doesn't match the contract's `oracle`. They must derive from the same `ORACLE_PRIVATE_KEY`. Check: `cast call $CONTRACT_ADDRESS "oracle()(address)" --rpc-url $RPC_URL` should equal `cast wallet address $ORACLE_PRIVATE_KEY`.
 - **`requestTransfer` reverts with "transfer amount exceeds allowance".** The sender didn't `approve` the escrow to spend their USDC first. Run the `approve` call before `requestTransfer`.
@@ -671,6 +721,7 @@ cast call $CONTRACT_ADDRESS "transfers(uint256)(address,uint256,uint8)" <id> --r
 - **Webacy returns an empty response / task throws.** Check `WEBACY_API_KEY` is set as a secret and valid, and the address is well-formed hex. Transient failures are absorbed by the `retry_config` (3 attempts, backoff).
 - **Reject scenario approves instead.** On Base Sepolia, a fresh test wallet has no on-chain history, so Webacy scores it low (it passes). Use a known-flagged address, or test the reject path on mainnet where real risk data exists.
 - **`insufficient funds for gas` on deploy.** On Base / Base Sepolia the deploy is sponsored. On other chains, fund the **Compose wallet** (the deployer — not the oracle key) with native gas; the `ORACLE_PRIVATE_KEY` EOA needs nothing.
+- **Re-running `deployContract` with identical contract + args + app is refused ("This contract has already been deployed with this app...").** This is a CREATE2 pre-tx refusal — it prints **no** `Deploy Block:`. The address is deterministic from contract code + constructor args + app name + project, so an identical combination reproduces the same address. Fresh-deploy levers: change a constructor arg, change the source, or use a different app name. For the no-arg `MockUSDC` the **only** lever is the app name; for `ComplianceGatedTransfer` (takes `(usdc, oracle)`) changing a constructor arg also works. ⚠ Renaming the app changes **all** future deploy addresses and conflicts with the `compose deploy` app name, so prefer the constructor-arg lever where possible — for no-arg contracts the app-name lever is the only option.
 
 ## What you should NOT do
 

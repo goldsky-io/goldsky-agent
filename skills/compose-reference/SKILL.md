@@ -9,7 +9,7 @@ Reference for the `compose.yaml` manifest, the full `goldsky compose` CLI surfac
 
 > This is the **reference layer** of the Compose skill family. `/compose` (loaded first) carries the general build rules and concepts; the template skills (`/compose-bitcoin-oracle`, `/compose-vrf`, `/compose-dividend-distribution`, `/compose-compliance-oracle`) carry example app source. Load this skill for any concrete field, flag, manifest shape, or API signature — and always before writing a `compose.yaml` or task file, rather than synthesizing the shape from memory.
 
-> **Always validate the manifest before deploying.** `goldsky compose dev` catches schema errors fast.
+> **Always validate the manifest before deploying.** `goldsky compose start` catches schema errors fast.
 
 > **Sandbox import rule — get this wrong and the task fails to bundle or crashes at runtime.** Two things are NEVER imported: the Compose runtime capabilities and the EVM SDK. `env`, `fetch`, `callTask`, `logEvent`, `evm` (wallets, chains, contracts, `decodeEventLog`), and `collection` all come from the injected `context` argument — there is no `@goldsky/compose-evm` (or similar) package to import; reach chains via `context.evm.chains.<name>`, never by importing `viem` for them. Beyond that, what you may import depends on whether the app has a `package.json`:
 > - **No `package.json` (Deno-style app, e.g. bitcoin-oracle):** import ONLY the `compose` module (for types, `import type { TaskContext } from "compose"`) and sibling project files (`./lib/utils`, `../contracts/Foo`). Any other bare import is rejected by the bundler.
@@ -116,38 +116,39 @@ All commands accept `-t/--token` and `--api-server`; the `-n/--name` flag select
 
 | Command                            | Purpose                                                  | Key flags                                                                  |
 | ---------------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------- |
-| `compose init [name]`              | Scaffold new app                                         | (interactive)                                                              |
-| `compose dev`                      | Run locally (alias: `start`)                             | `--fork-chains`, `--cloud`                                                 |
-| `compose deploy`                   | Bundle + upload to cloud                                 | `-m`, `-t`, `-f`, `--sync-env`                                             |
-| `compose status`                   | Show runtime status                                      | `-n`, `--json`                                                             |
-| `compose list`                     | List all apps                                            | `--json`                                                                   |
-| `compose pause`                    | Pause                                                    | `-n`                                                                       |
-| `compose resume`                   | Resume                                                   | `-n`                                                                       |
-| `compose delete`                   | Delete (type-to-confirm; `--force` for CI)               | `-n`, `--force`, `--delete-database`                                       |
-| `compose logs`                     | View / tail logs                                         | `-f`, `--tail`, `--level`, `--search`, `--since`, `--max-lines`, `--json`  |
-| `compose clean`                    | Wipe local `.compose/stage.db`                           | `-f`                                                                       |
-| `compose update`                   | Re-download the compose binary                           | `--preview`                                                                |
-| `compose callTask <name> <json>`   | POST payload to a local task                             |                                                                            |
+| `compose init`                   | Scaffold new app (prompts for a name)                   | (interactive)                                                              |
+| `compose start`                  | Run locally (there is no `dev` command)                 | `--fork-chains`, `--cloud`, `--impersonate`, `-p/--port`                   |
+| `compose deploy`                 | Bundle + upload to cloud                                | `-m`, `-t`, `-f`, `--sync-env`                                             |
+| `compose status`                 | Show runtime status                                     | `-n`, `--json`                                                             |
+| `compose list`                   | List all apps                                           | `--json`                                                                   |
+| `compose history`                | Show deployment history for an app                      | `-n`, `--limit`, `--include-failures`, `--json`                            |
+| `compose pause`                  | Pause                                                   | `-n`                                                                       |
+| `compose resume`                 | Resume                                                  | `-n`                                                                       |
+| `compose delete`                 | Delete (type-to-confirm; `--force` for CI)              | `-n`, `--force`, `--delete-database`                                       |
+| `compose logs`                   | View / tail logs                                        | `-f`, `--tail`, `--level`, `--search`, `--since`, `--max-lines`, `--json`  |
+| `compose clean`                  | Wipe local `.compose/stage.db`                          | `-f`                                                                       |
+| `compose update [version]`       | Re-download the compose binary                          | `[version]` (stable/preview/semver), `--preview`                           |
+| `compose callTask <name> <json>` | POST payload to a local task                            |                                                                            |
 
 ### Secrets
 
 | Command                                                                              | Purpose                  |
 | ------------------------------------------------------------------------------------ | ------------------------ |
-| `compose secret set --name X --value Y [--env local\|cloud] [--redeploy]`            | Set a secret             |
-| `compose secret delete --name X [--env local\|cloud]`                                | Delete                   |
-| `compose secret list [--env local\|cloud]`                                           | List                     |
-| `compose secret sync`                                                                | Upload all of `.env` to cloud |
+| `compose secret set <SECRET_NAME> --value <value> [-n <app>] [--env local\|cloud] [--redeploy]` | Set a secret (name is positional; `-n` = app)            |
+| `compose secret delete <secret_name> [-n <app>] [--env local\|cloud]`                           | Delete                                                    |
+| `compose secret list [-n <app>]`                                                                | List (no `--env` flag)                                    |
+| `compose deploy --sync-env`                                                                     | Upload all of `.env` to cloud at deploy time (there is no `secret sync`) |
 
 ### Wallets
 
 | Command                                               | Purpose                                                                |
 | ----------------------------------------------------- | ---------------------------------------------------------------------- |
-| `compose wallet create --name X [--env local\|cloud]` | Create managed wallet; prints address                                  |
-| `compose wallet list`                                 | Table: name, address, type (privy / private_key / tevm), created_at    |
+| `compose wallet create <wallet_name> [-n <app>] [--env local\|cloud]` | Create managed wallet; prints address (name is positional; `-n` = app) |
+| `compose wallet list [-n <app>] [--env local\|cloud]`                 | Table: name, address, type (privy / private_key / tevm), created_at    |
 
 ### Codegen
 
-`compose codegen` — parse all `src/contracts/*.json` ABIs, write `.compose/generated/index.ts` and `.compose/types.d.ts`. Runs automatically inside `compose init`, `compose dev`, and during deploy.
+`compose codegen` — parse all `src/contracts/*.json` ABIs, write `.compose/generated/index.ts` and `.compose/types.d.ts`. Runs automatically inside `compose init`, `compose start`, and during deploy.
 
 ### Contracts
 
@@ -164,7 +165,11 @@ Compile and deploy a contract, or submit a write call, straight from the CLI —
 | `--force` | Bypass the `msg.sender`-in-constructor guard (the sender is the CREATE2 proxy, not the wallet). |
 | `-m` / `-t` | Manifest path / project token (see Lifecycle). |
 
-Run from the app directory — it reads `compose.yaml` for the app name; app name + project id derive the deterministic CREATE2 salt. Works before the app itself is deployed (the wallet is provisioned on demand). On gas-sponsored chains (Base `8453`, Base Sepolia `84532`) it needs **no funded key and no RPC URL**. The cloud deploy path is Base / Base Sepolia only today (broader coverage tracked as FOU-991) — on other chains deploy with `forge create` from a funded EOA instead (the constructor args stay the same; supply the ABI to `src/contracts/` yourself). Runtime task-gas sponsorship (see [Gas Sponsorship](#gas-sponsorship)) covers many more chains than this deploy endpoint. Re-running identical contract + args + app fails (CREATE2 address occupied); any changed arg or app name yields a fresh address. Prints the contract address, tx hash, and **Deploy Block**, and **auto-saves the ABI to `src/contracts/<Name>.json`** — then `compose codegen` gives typed bindings.
+Run from the app directory — it reads `compose.yaml` for the app name; app name + project id derive the deterministic CREATE2 salt. On gas-sponsored chains (Base `8453`, Base Sepolia `84532`) it needs **no funded key and no RPC URL**. The cloud deploy path is Base / Base Sepolia only today (broader coverage tracked as FOU-991) — on other chains deploy with `forge create` from a funded EOA instead (the constructor args stay the same; supply the ABI to `src/contracts/` yourself). Runtime task-gas sponsorship (see [Gas Sponsorship](#gas-sponsorship)) covers many more chains than this deploy endpoint.
+
+**Wallet lifecycle.** `deployContract` and `writeContract` provision the named wallet on demand — they work even before the app has ever been deployed. By contrast, `compose wallet create` / `wallet list` hit an app-scoped endpoint and fail with "Compose app not found. Deploy the app first, then create wallets." until the app has been `compose deploy`ed at least once, so **there is no way to learn a wallet's address before the first deploy** (a deploy tx's `from` is a relayer, not the wallet). To authorize a wallet inside a constructor: deploy the app → `wallet create <name>` → `deployContract --constructor-args <address>` → wire the address → redeploy.
+
+**CREATE2 collisions.** Re-running `deployContract` with identical contract source + constructor args + app name is refused by the CLI *before* any transaction is sent ("This contract has already been deployed with this app…"), and no Deploy Block is printed on that refusal. A changed constructor arg, changed source, or a different app name produces a fresh address. Note the **app name participates in the CREATE2 salt** — renaming the app changes every future deploy address. On success it prints the contract address, tx hash, and **Deploy Block**, and **auto-saves the ABI to `src/contracts/<Name>.json`** — then `compose codegen` gives typed bindings.
 
 **`compose writeContract`** — submit a write call to a deployed contract.
 
@@ -379,7 +384,7 @@ Values are never returned.
 const w = await evm.wallet({ name: "my-oracle" }); // sponsorGas defaults TRUE
 ```
 
-Created cloud-side by Privy. Address is persisted. **Gas-sponsored by default.** **Cannot be used in plain local dev** — throws `"You cannot use a smart wallet in local dev unless you use chain forking."` Use `compose dev --fork-chains` or switch to a BYO EOA for local iteration.
+Created cloud-side by Privy. Address is persisted. **Gas-sponsored by default.** **Cannot be used in plain local dev** — throws `"You cannot use a smart wallet in local dev unless you use chain forking."` Use `compose start --fork-chains` or switch to a BYO EOA for local iteration.
 
 ### BYO EOA (private key)
 
@@ -399,7 +404,7 @@ Bundler fallback order: **Alchemy → Pimlico → Gelato**. Override via `BUNDLE
 
 ### Supported chains
 
-See the Goldsky docs chains page for the current list (don't hardcode — this changes). Highlights include Ethereum, Base, Arbitrum, Optimism, Polygon, Unichain, Monad (mainnet + testnet), MegaETH testnet, Lisk, Linea, Scroll, Avalanche, Blast, BNB, Celo, Zora, Sonic, Worldchain, plus major Sepolia testnets and Polygon Amoy. This is the **runtime** task-gas sponsorship list — it is broader than the `deployContract` / `writeContract` cloud *deploy* path, which is Base / Base Sepolia only for now (FOU-991).
+A chain is runtime-sponsorable if **any** of the three bundler providers covers it (tried in fallback order Alchemy → Pimlico → Gelato, each gated on its API keys being set). In the 0.8.1 source that union spans **112 chains**. This is the **runtime** task-gas sponsorship set — far broader than the `deployContract` / `writeContract` cloud *deploy* path, which is Base (`8453`) / Base Sepolia (`84532`) only for now (FOU-991); runtime sponsorship also covers the Arbitrum, Optimism (incl. **Arbitrum Sepolia (`421614`)** / Optimism Sepolia (`11155420`)), Polygon, Ethereum and BNB families, among many others. **Don't hardcode the list** — it changes; confirm current coverage on the Goldsky docs chains page.
 
 ### Error on unsupported chain
 
@@ -434,7 +439,7 @@ src/contracts/
 goldsky compose codegen
 ```
 
-(Also runs automatically during `init`, `dev`, and `deploy`.)
+(Also runs automatically during `init`, `start`, and `deploy`.)
 
 ### Output
 
@@ -446,14 +451,20 @@ goldsky compose codegen
 import type { TaskContext } from "compose";
 
 export async function main({ evm, env }: TaskContext) {
+  const wallet = await evm.wallet({ name: "oracle" });
   const PriceFeed = evm.contracts.PriceFeed;
-  const feed = new PriceFeed(evm.chains.ethereum, env.FEED_ADDRESS);
+
+  // Read — generated view methods call wallet.readContract under the hood
+  const feed = new PriceFeed(env.FEED_ADDRESS, evm.chains.ethereum, wallet);
   const price = await feed.latestAnswer();
-  return { price: price.toString() };
+
+  // Write — generated state-changing methods call wallet.writeContract under the hood
+  const tx = await feed.setPrice(1234n);
+  return { price: price.toString(), hash: tx.hash };
 }
 ```
 
-Classes are exposed under `context.evm.contracts.<Name>`. Codegen names ending in `Class` (e.g. `ERC20Class`) are exposed as `ERC20` at runtime.
+Classes are exposed under `context.evm.contracts.<Name>`. Codegen names ending in `Class` (e.g. `ERC20Class`) are exposed as `ERC20` at runtime. The generated constructor is `new <Name>(address, chain, wallet)` — pass an `IWallet` from `evm.wallet(...)`; view methods read through it, state-changing methods write through it, both subject to the wallet's gas-sponsorship setting.
 
 ## Supported Chains
 
