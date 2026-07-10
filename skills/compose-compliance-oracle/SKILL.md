@@ -536,11 +536,12 @@ The `goldsky` CLI and auth checks are the standard Compose preflight — see `/c
 
 ## Step 1 — Configuration interview
 
-Name the app `compliance-oracle` (don't ask). Then, per the golden rules in `/compose`, ask only what you can't derive, one question at a time:
+Per the golden rules in `/compose`, ask only what you can't derive, one question at a time — and ask the app name first:
 
-1. **"Which chain?"** — **Base Sepolia (recommended)** — free, gas-sponsored, and you mint your own test USDC. Base mainnet is production (real USDC, real screening, real funds). Use the camelCase form in TS (`baseSepolia`) and snake_case in `compose.yaml` (`base_sepolia`).
-2. **"What risk threshold?"** — Webacy `overallRisk` is 0-100; senders scoring at or above the threshold are rejected. Default `50`. Set `RISK_THRESHOLD` in `src/lib/constants.ts`.
-3. **Recipient** — approved funds go to the **oracle (business) wallet** itself (the contract sends escrow to `oracle` on approval). That's the `oracle` set at construction — the `ORACLE_PRIVATE_KEY` EOA, not the Compose wallet that performs the deploy. No separate recipient to configure.
+1. **"What should the app be called? (suggest `compliance-oracle`)"** — ask FIRST, before any wallet or contract step. The name is hard to change later: it scopes named wallets and participates in the CREATE2 salt for every `deployContract` (Step 2), so it must be settled now. Accept the default `compliance-oracle` on a shrug, and set it as the top-level `name:` in `compose.yaml`.
+2. **"Which chain?"** — **Base Sepolia (recommended)** — free, gas-sponsored, and you mint your own test USDC. Base mainnet is production (real USDC, real screening, real funds). Use the camelCase form in TS (`baseSepolia`) and snake_case in `compose.yaml` (`base_sepolia`).
+3. **"What risk threshold?"** — Webacy `overallRisk` is 0-100; senders scoring at or above the threshold are rejected. Default `50`. Set `RISK_THRESHOLD` in `src/lib/constants.ts`.
+4. **Recipient** — approved funds go to the **oracle (business) wallet** itself (the contract sends escrow to `oracle` on approval). That's the `oracle` set at construction — the `ORACLE_PRIVATE_KEY` EOA, not the Compose wallet that performs the deploy. No separate recipient to configure.
 
 ## Step 2 — Oracle wallet and contract deploy
 
@@ -653,7 +654,7 @@ fi
 goldsky compose deploy
 ```
 
-First deploy may take 1-2 minutes. Watch for `Deployed compose app: compliance-oracle`. The `on_transfer_requested` event listener and the `reconcile` cron both go live.
+First deploy may take 1-2 minutes. Watch for `Deployed compose app: <the chosen app name>` (e.g. `compliance-oracle`). The `on_transfer_requested` event listener and the `reconcile` cron both go live.
 
 ## Step 7 — Smoke test
 

@@ -22,9 +22,10 @@ This template deliberately omits those rules and that reference — they are **r
 
 Pick the mode from the tools available to you:
 
-- **A `deployComposeApp` tool is available (Goldsky webapp chatbot) — this is the preferred in-app flow.** Do NOT emit `goldsky` terminal commands or `cliCommand` cards, and do NOT use Step 0b / `degit` / `forge` / `goldsky compose deploy`. **Do NOT ask the user what to name the app** — name it `bitcoin-oracle` automatically; they can rename it after deploy. Give a 2-3 sentence plain explanation, then ask with `askUser` (tag the recommended option with `recommendedIndex`):
-  1. **Contract** — ask this explicitly, do not assume: *"Do you have your own `PriceOracle` contract, or should we use a shared demo oracle on Base Sepolia to get running quickly?"* Options: **"Use the shared demo oracle on Base Sepolia (recommended — nothing to deploy)"** and **"I'll use my own contract."** On the shared path, `ORACLE_CONTRACT` is the **HARDCODED** address `0x53deB3fF6E6e82A3b5E96f14E185e3Fe66BF5113` on `baseSepolia` — copy it character-for-character; mention in prose it's demos-only, not production. On the own path, ask the user to paste their contract address and chain and use exactly what they paste (their `PriceOracle` must let the Compose wallet write).
-  2. **Update frequency** (recommend every minute, `* * * * *`).
+- **A `deployComposeApp` tool is available (Goldsky webapp chatbot) — this is the preferred in-app flow.** Do NOT emit `goldsky` terminal commands or `cliCommand` cards, and do NOT use Step 0b / `degit` / `forge` / `goldsky compose deploy`. Give a 2-3 sentence plain explanation, then ask with `askUser` (tag the recommended option with `recommendedIndex`):
+  1. **App name** — ask first, before anything else: *"What should the app be called? (suggest `bitcoin-oracle`)"*. The name is hard to change later — it scopes named wallets and participates in the CREATE2 salt for every `deployContract` — so it must be settled before any wallet or contract step. Accept the default `bitcoin-oracle` on a shrug, and set the chosen name as the top-level `name:` in the scaffolded `compose.yaml`.
+  2. **Contract** — ask this explicitly, do not assume: *"Do you have your own `PriceOracle` contract, or should we use a shared demo oracle on Base Sepolia to get running quickly?"* Options: **"Use the shared demo oracle on Base Sepolia (recommended — nothing to deploy)"** and **"I'll use my own contract."** On the shared path, `ORACLE_CONTRACT` is the **HARDCODED** address `0x53deB3fF6E6e82A3b5E96f14E185e3Fe66BF5113` on `baseSepolia` — copy it character-for-character; mention in prose it's demos-only, not production. On the own path, ask the user to paste their contract address and chain and use exactly what they paste (their `PriceOracle` must let the Compose wallet write).
+  3. **Update frequency** (recommend every minute, `* * * * *`).
 
   The Compose smart wallet is auto-created at runtime and gas-sponsored — never tell the user to create or fund a wallet. After the questions, scaffold the files in-memory (do NOT degit): `compose.yaml` (a single cron task on the chosen schedule), `src/contracts/PriceOracle.json` (the verbatim ABI in Step 3), and `src/tasks/bitcoin-oracle.ts` (fetch BTC/USD from CoinGecko, then `evm.contracts.PriceOracle.write(toBytes32(timestamp), toBytes32(Math.round(price*100)))` via the gas-sponsored smart wallet, appending each price to a `bitcoin_prices` collection). `ORACLE_CONTRACT` is a **hardcoded `const` at the top of the task file, not an env var** (for this example we keep it inline; `/compose` permits manifest `env:` instead — either is fine, just don't put a plain address in `secrets:`). Follow `/compose-reference` for the manifest shape and the sandbox import rule before emitting the files (per the golden rules in `/compose` — don't synthesize the manifest from memory). Then **call `deployComposeApp` in the SAME turn**; don't ask the user to confirm first or emit any `goldsky` command. **In this mode, ignore Steps 0–8 below** — they are the CLI/local procedure.
 - **`Bash` is available (local CLI / coding agent):** execute the steps below directly, parsing output into later commands.
@@ -66,13 +67,14 @@ The `goldsky` CLI, auth, and `deno` checks are the standard Compose preflight �
 
 ## Step 1 — Configuration
 
-Name the app `bitcoin-oracle` (don't ask). Then, per the golden rules in `/compose`, ask only what you can't derive:
+Per the golden rules in `/compose`, ask only what you can't derive — and ask the app name first:
 
-1. **"Which chain?"** — **Base Sepolia (recommended)** because it has the ready, fully-unpermissioned shared oracle (nothing to deploy). Other options (Base, Arbitrum, Polygon Amoy, etc.) require deploying your own oracle. Use the camelCase form in TS (`baseSepolia`).
-2. **"PriceOracle contract?"** (ask immediately after the chain) — two options:
+1. **"What should the app be called? (suggest `bitcoin-oracle`)"** — ask FIRST, before any wallet (Step 2) or contract (Step 3) step. The name is hard to change later: it scopes named wallets and participates in the CREATE2 salt for every `deployContract`, so it must be settled now. Accept the default `bitcoin-oracle` on a shrug, and set it as the top-level `name:` in `compose.yaml`.
+2. **"Which chain?"** — **Base Sepolia (recommended)** because it has the ready, fully-unpermissioned shared oracle (nothing to deploy). Other options (Base, Arbitrum, Polygon Amoy, etc.) require deploying your own oracle. Use the camelCase form in TS (`baseSepolia`).
+3. **"PriceOracle contract?"** (ask immediately after the chain) — two options:
    - **Reuse the shared oracle on Base Sepolia (recommended)** — nothing to deploy. Wire `0x53deB3fF6E6e82A3b5E96f14E185e3Fe66BF5113` (mention the address in prose, not in any option label). Demos/getting-started only, not production.
    - **Deploy my own** — see Step 3, Branch B. (Required on any chain other than Base Sepolia.)
-3. **"How often should the cron run?"** — Every minute (recommended, `* * * * *`), every 5 minutes (`*/5 * * * *`), or every hour. Set the `expression:` under the `cron` trigger in `compose.yaml`.
+4. **"How often should the cron run?"** — Every minute (recommended, `* * * * *`), every 5 minutes (`*/5 * * * *`), or every hour. Set the `expression:` under the `cron` trigger in `compose.yaml`.
 
 ## Step 2 — Wallet
 
@@ -178,6 +180,7 @@ Edit `src/tasks/bitcoin-oracle.ts` — use grep anchors:
 - If you wired a different chain, also update the stale scaffold comment block that still says "Polygon Amoy" so the file's comments match.
 
 If the user changed the cron cadence, edit the `expression:` under the `cron` trigger in `compose.yaml`.
+- Set the top-level `name:` in `compose.yaml` to the chosen app name from Step 1 (the degit scaffold may ship a different default — overwrite it so `compose deploy` and the CREATE2 salt match).
 
 ## Step 5 — Gas (deploy-your-own, non-sponsored chains only)
 

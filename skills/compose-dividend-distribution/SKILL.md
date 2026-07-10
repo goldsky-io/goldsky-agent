@@ -104,6 +104,8 @@ cd documentation-examples && git sparse-checkout set compose/corporate-actions &
 
 If the user already cloned the example, skip this and `cd` into it.
 
+**Before any wallet or contract step, ask the app name — the FIRST interview question:** *"What should the app be called? (suggest `corporate-actions`)"*. The name is hard to change later: it scopes named wallets (e.g. `corp-actions-operator`) and participates in the CREATE2 salt for every `deployContract` (Step 1 Branch B reads the app name straight from `compose.yaml`), so it must be settled now. Accept the default `corporate-actions` on a shrug. The degit scaffold ships `name: "corporate-actions"` in `compose.yaml` — overwrite that `name:` with the user's chosen name before moving on.
+
 ## Preflight
 
 The `goldsky` CLI and auth checks are the standard Compose preflight — see `/compose` and `/auth-setup`. Dividend-specific:
@@ -155,7 +157,7 @@ goldsky compose secret set GOLDSKY_PROJECT_KEY --value <your project API key>
 goldsky compose deploy -t <your project API key>
 ```
 
-Compose-cloud auto-provisions a hosted Neon Postgres DB and creates a project secret named `CORPORATE_ACTIONS` pointing at it; the job-mode pipelines write snapshots into that DB. First deploy may take 1-2 minutes. Watch for `Deployed compose app: corporate-actions` and the HTTP task URL.
+Compose-cloud auto-provisions a hosted Neon Postgres DB and creates a project secret named `CORPORATE_ACTIONS` pointing at it; the job-mode pipelines write snapshots into that DB. First deploy may take 1-2 minutes. Watch for `Deployed compose app: <the chosen app name>` (e.g. `corporate-actions`) and the HTTP task URL.
 
 ## Step 4 — Mint MockUSDC to the operator wallet
 
@@ -189,7 +191,7 @@ Pick a record block past finality, then POST. `$GOLDSKY_TOKEN` is the bearer for
 RECORD_BLOCK=$(cast block-number --rpc-url https://sepolia.base.org)
 RECORD_BLOCK=$((RECORD_BLOCK - 32))
 
-curl -sX POST "https://api.goldsky.com/api/admin/compose/v1/corporate-actions/tasks/declare_campaign" \
+curl -sX POST "https://api.goldsky.com/api/admin/compose/v1/<app name>/tasks/declare_campaign" \
   -H "content-type: application/json" \
   -H "Authorization: Bearer $GOLDSKY_TOKEN" \
   -d "{
@@ -220,7 +222,7 @@ Returned fields, in order: `operator, payToken, shareToken, totalAmount, escrowR
 - **App errors spawning the pipeline / `401` or `403` from the pipelines API.** The `GOLDSKY_PROJECT_KEY` secret is missing or wrong. Re-create it (Step 2) with a valid project API key and redeploy.
 - **Snapshot never completes / campaign stuck in `snapshotting`.** Confirm `recordBlock <= currentBlock` and `>= shareTokenDeployBlock`, and that `CONFIG.shareToken` / `shareTokenDeployBlock` match the token you're distributing over. The pipeline filters `block_number BETWEEN <deployBlock> AND <recordBlock>`.
 - **`declare()` reverts.** Ensure the `corp-actions-operator` Compose wallet holds enough MockUSDC for `totalAmount` (the task does the `approve` itself at declare time; mint more to the wallet in Step 4). `payToken` is **not** a contract-level setting — it's a per-`declare()` argument sourced from `CONFIG.payToken` in `src/lib/constants.ts`. If the token is wrong, edit `CONFIG.payToken` there to match the token you minted/hold, then redeploy.
-- **`deployContract` refuses: "This contract has already been deployed with this app..."** An identical contract + constructor args + app name yields the same CREATE2 address, so the CLI refuses *before* the transaction and prints **no** `Deploy Block`. Levers: change a constructor arg, change the source, or use a different app name. For the two no-arg contracts here (MockUSDC, DistributionCampaign) the constructor-arg/source levers don't apply — a **different app name is the only lever**. ShareToken takes `(address[],uint256[])`, so for it the constructor-arg lever applies. ⚠ Renaming the app changes every future deploy address and conflicts with the `compose deploy` app name (`corporate-actions`), so prefer the constructor-arg lever wherever it applies.
+- **`deployContract` refuses: "This contract has already been deployed with this app..."** An identical contract + constructor args + app name yields the same CREATE2 address, so the CLI refuses *before* the transaction and prints **no** `Deploy Block`. Levers: change a constructor arg, change the source, or use a different app name. For the two no-arg contracts here (MockUSDC, DistributionCampaign) the constructor-arg/source levers don't apply — a **different app name is the only lever**. ShareToken takes `(address[],uint256[])`, so for it the constructor-arg lever applies. ⚠ Renaming the app changes every future deploy address and conflicts with the `compose deploy` app name (the chosen app name, e.g. `corporate-actions`), so prefer the constructor-arg lever wherever it applies.
 - **Campaign returns `paying` (not `complete`).** Some `pay()` calls didn't land this drive. Re-POST the same `campaignId` — already-paid holders are skipped via on-chain `isPaid()`, and the run resumes.
 - **No hosted DB / snapshot rows.** Confirm the deploy created the `CORPORATE_ACTIONS` secret (compose-cloud does this automatically); if not, redeploy with `-t <key>`.
 
