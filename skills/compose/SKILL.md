@@ -57,13 +57,14 @@ Before running commands, check if the `Bash` tool is available:
 - Serverless TypeScript runtime for EVM-aware tasks.
 - Three trigger types: **cron**, **HTTP**, **onchain_event**.
 - **Smart wallets** (managed by Goldsky, gas-sponsored by default) or **BYO EOA** wallets (user-supplied private key).
-- Built-in secrets, collections (durable storage), typed contract bindings via codegen.
+- Built-in secrets, collections (durable storage), contract deployment (`deployContract`), and typed contract bindings via codegen.
 - `compose dev` for hot-reload local dev; `compose deploy` to ship; `compose logs -f` to tail.
+
+**Deploying a contract** is a built-in capability: `goldsky compose deployContract <file.sol>` compiles in-CLI and CREATE2-deploys through the gas-sponsored Compose wallet, auto-saves the ABI to `src/contracts/`, and prints the address + deploy block. It needs compose CLI ≥ 0.8.0, and the forge-style multi-arg/array constructor syntax needs the release *after* 0.8.0 (goldsky-io/compose#426) — `goldsky compose update` to it once released. See `/compose-reference` (Contracts) for the flags.
 
 ## Out of Scope (for this skill)
 
-- **Deploying the target onchain contract.** Compose writes to contracts that already exist. If the user needs one deployed, direct them to Foundry / Hardhat first and resume here once they have the address + ABI.
-- **Sourcing a contract ABI.** The user provides the ABI JSON file; this skill does not fetch from Etherscan / Sourcify.
+- **Sourcing a contract ABI.** When the contract is deployed via `deployContract`, the ABI lands in `src/contracts/` automatically — a user-supplied ABI is only needed for pre-existing contracts (this skill does not fetch from Etherscan / Sourcify).
 - **Funding a BYO EOA.** If sponsorship is off, the user must fund the address out-of-band.
 
 ## Quickstart

@@ -33,8 +33,8 @@ Pick the mode from the tools available to you:
 - **Ships pointed at shared, permissionless demo contracts on Base Sepolia — nothing to deploy.** MockUSDC has an open `mint` and DistributionCampaign has an open `declare()`, so anyone can run a campaign on them. Addresses live in `src/lib/constants.ts` (see below). Tell the user, in prose, these are demos/getting-started only, not production, and only exist on Base Sepolia.
 - **This app needs a project API key in two places:** the `-t <key>` flag on `goldsky compose deploy` (to deploy), **and** a `GOLDSKY_PROJECT_KEY` secret (so the running app can spawn / poll / delete Turbo pipelines). It won't run without the secret. They can be the same key.
 - **`recordBlock` must be `<= currentBlock`** and should be past finality (e.g. `currentBlock - 32`). The snapshot is backwards-looking — it's the cutoff for who gets paid. Future-dated record blocks are out of scope.
-- **Never run `forge create` (deploy-your-own), `goldsky compose deploy`, `goldsky secret create`, `git push`, or `gh repo create` without showing the exact command first and getting explicit confirmation.**
-- **The deployer `PRIVATE_KEY` (deploy-your-own path only) is a real EOA key.** Do not print it, commit it, or log it; pass it only as an env var to `scripts/deploy.sh`.
+- **Never run `goldsky compose deployContract` (deploy-your-own), `goldsky compose deploy`, `goldsky secret create`, `git push`, or `gh repo create` without showing the exact command first and getting explicit confirmation.**
+- **Any `PRIVATE_KEY` used in the walkthrough (the Step 4 `cast` mint) is a real EOA key.** Do not print it, commit it, or log it. It is not needed to deploy — `deployContract` uses the gas-sponsored Compose wallet.
 - **Resumable by design — never worry about double-pay.** Re-POSTing the same `campaignId` drives the existing campaign forward. A per-holder on-chain `isPaid()` check plus the contract's `require(!paid[id][holder])` guard mean Compose can crash/restart at any point with zero risk of double-paying.
 - **This example does not run in a local/dev Compose cluster without Turbo pipeline infra.** It deploys against real Goldsky (app.goldsky.com), which is where a user runs it anyway.
 
@@ -85,7 +85,7 @@ export const CONFIG = {
 };
 ```
 
-Deploy-your-own (Step 1, Branch B) replaces these four values with the addresses `scripts/deploy.sh` prints. The rest of the app (`src/lib/{types,normalize,math,db,turbo,driver}.ts`, `src/tasks/declare-campaign.ts`, `contracts/*.sol`) is scaffolded verbatim by `degit`; read those files in the cloned repo if the user wants to customize the payout math, the concurrency, or the pipeline shape.
+Deploy-your-own (Step 1, Branch B) replaces these four values with the addresses and deploy block `goldsky compose deployContract` prints. The rest of the app (`src/lib/{types,normalize,math,db,turbo,driver}.ts`, `src/tasks/declare-campaign.ts`, `contracts/*.sol`) is scaffolded verbatim by `degit`; read those files in the cloned repo if the user wants to customize the payout math, the concurrency, or the pipeline shape.
 
 ## Step 0 — Scaffold the example
 
@@ -111,19 +111,33 @@ The `goldsky` CLI and auth checks are the standard Compose preflight — see `/c
 
 1. **Project API key** — the user needs a Compose/project API key from the Goldsky dashboard (https://app.goldsky.com). It's used both as the `-t` deploy token and as the `GOLDSKY_PROJECT_KEY` secret. Ask them to have it ready; do not print it back.
 2. **`node` + `npm`** — `npm --version`, then `npm install` (the app bundles `viem`).
-3. **`foundry`** — `cast --version` / `forge --version`. Needed only on the deploy-your-own path (Step 1, Branch B) and for minting/verifying via `cast`.
+3. **`foundry`** — `cast --version` / `forge --version`. Needed only for minting/verifying via `cast` in the walkthrough (Step 4); **not required to deploy** (`deployContract` compiles in-CLI).
 
 ## Step 1 — Contracts
 
 **Branch A — Reuse the shared demo contracts (recommended).** Nothing to deploy. Leave `CONFIG` in `src/lib/constants.ts` at the shared Base Sepolia addresses shown above. Skip to Step 2.
 
-**Branch B — Deploy your own.** Output this for the user to run with their own funded Base Sepolia EOA (~0.0005 ETH). It deploys MockUSDC + ShareToken (pre-minting to the 25 addresses in `scripts/seed-holders.json`) + DistributionCampaign:
+**Branch B — Deploy your own.** Run these from the app directory (they read `compose.yaml` for the app name). All three deploys go through the gas-sponsored Compose wallet on Base Sepolia — no funded EOA needed. MockUSDC and DistributionCampaign take no constructor args; ShareToken takes `(address[] holders, uint256[] amounts)`, built from `scripts/seed-holders.json`:
 
 ```bash
-PRIVATE_KEY=0x... ./scripts/deploy.sh
+goldsky compose deployContract contracts/MockUSDC.sol --chain-id 84532
+# → capture the printed address as $PAY_TOKEN
+
+# Build the two array tokens from scripts/seed-holders.json.
+# Lowercase the holder addresses: the shipped seed-holders.json uses mixed-case
+# (EIP-55) addresses that viem rejects on checksum, so ascii_downcase bypasses
+# checksum validation (same resolved value forge accepts). Amounts are left as-is.
+HOLDERS="$(jq -r '"[" + ([.holders[].address | ascii_downcase] | join(",")) + "]"' scripts/seed-holders.json)"
+AMOUNTS="$(jq -r '"[" + ([.holders[].amount] | join(",")) + "]"' scripts/seed-holders.json)"
+goldsky compose deployContract contracts/ShareToken.sol \
+  --chain-id 84532 --constructor-args "$HOLDERS" "$AMOUNTS"
+# → capture the printed address as $SHARE_TOKEN, and the printed Deploy Block as shareTokenDeployBlock
+
+goldsky compose deployContract contracts/DistributionCampaign.sol --chain-id 84532
+# → capture the printed address as $CAMPAIGN_CONTRACT
 ```
 
-It prints the three addresses and the ShareToken deploy block. Copy them into `CONFIG` in `src/lib/constants.ts` (`payToken`, `shareToken`, `campaignContract`, `shareTokenDeployBlock`). To run on Base mainnet instead, see the comment in `constants.ts` and set `chain`/`turboChain` to `base`.
+(`deployContract` / `writeContract` need compose CLI ≥ 0.8.0; the forge-style array/multi-arg constructor syntax these flows use ships in the release *after* 0.8.0 (goldsky-io/compose#426), so `goldsky compose update` to it once released — it is not obtainable at 0.8.0 today.) Copy the three addresses plus `shareTokenDeployBlock` into `CONFIG` in `src/lib/constants.ts` (`payToken`, `shareToken`, `campaignContract`, `shareTokenDeployBlock`) — the Deploy Block replaces the value `scripts/deploy.sh` used to print. To run on Base mainnet instead, pass `--chain-id 8453` and set `chain`/`turboChain` to `base`. (`scripts/deploy.sh` still exists as the forge/EOA alternative if you prefer to deploy that way.)
 
 ## Step 2 — Set the project-key secret
 
@@ -143,7 +157,7 @@ Compose-cloud auto-provisions a hosted Neon Postgres DB and creates a project se
 
 ## Step 4 — Mint MockUSDC to the operator
 
-The operator wallet address is printed in the app's logs on the first request (`goldsky compose logs`). On the shared demo, MockUSDC's `mint` is open, so anyone can fund it. Mint generously for many campaigns (1,000,000 mUSDC = `1000000000000`, 6 decimals):
+The operator wallet address is printed in the app's logs on the first request (`goldsky compose logs`). On the shared demo, MockUSDC's `mint` is open, so anyone can fund it. `$PRIVATE_KEY` here is any EOA you hold that carries a little Base Sepolia ETH for gas (faucet: https://www.alchemy.com/faucets/base-sepolia) — it signs the mint only; it is **not** the Compose wallet and is not needed to deploy. Mint generously for many campaigns (1,000,000 mUSDC = `1000000000000`, 6 decimals):
 
 ```bash
 cast send 0x8ec24F07F08745fc3D979336AA81d4Dc73f3D9DE "mint(address,uint256)" <OPERATOR> 1000000000000 \

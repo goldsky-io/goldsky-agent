@@ -33,7 +33,7 @@ Pick the mode from the tools available to you:
 ## Non-negotiables
 
 - **The shared oracle at `0x53deB3fF6E6e82A3b5E96f14E185e3Fe66BF5113` on Base Sepolia is fully unpermissioned — anyone can write to it.** It exists for getting started and demos only. Tell the user, in prose, that it must NOT be used in production. It only exists on Base Sepolia.
-- **Never run `forge create`, `goldsky compose deploy`, `git push`, or `gh repo create` without showing the exact command first and getting explicit confirmation.**
+- **Never run `goldsky compose deployContract`, `goldsky compose deploy`, `git push`, or `gh repo create` without showing the exact command first and getting explicit confirmation.**
 - **Deploy-your-own path only:** the contract's authorized writer must be the Compose wallet, or every `write()` reverts. On the shared-oracle path there is no writer restriction, so this does not apply.
 - **The example ships only `src/contracts/PriceOracle.json` (the ABI), not Solidity source.** If deploying fresh, use the reference contract in this skill. Write the ABI verbatim — see Step 3.
 - **Do not touch `src/lib/utils.ts`.** `toBytes32` is coupled to how the contract stores the value.
@@ -60,7 +60,7 @@ If the user already cloned the example, skip this step and `cd` into it.
 
 ## Preflight
 
-The `goldsky` CLI, auth, and `deno` checks are the standard Compose preflight — see `/compose` and `/auth-setup`. Bitcoin-oracle-specific: **`foundry`** (`forge --version`) is needed only on the deploy-your-own path (Step 3, Branch B).
+The `goldsky` CLI, auth, and `deno` checks are the standard Compose preflight — see `/compose` and `/auth-setup`. Bitcoin-oracle-specific: the deploy-your-own path (Step 3, Branch B) uses **`goldsky compose deployContract`**, which bundles its own compiler — **Foundry is not required.**
 
 ## Step 1 — Configuration
 
@@ -84,7 +84,7 @@ Name the app `bitcoin-oracle` (don't ask). Then, per the golden rules in `/compo
 
 **Branch A — Reuse shared oracle (recommended).** `$CONTRACT_ADDRESS = 0x53deB3fF6E6e82A3b5E96f14E185e3Fe66BF5113` on Base Sepolia. No deploy, no writer authorization. Skip to Step 4.
 
-**Branch B — Deploy your own.** First confirm `src/contracts/PriceOracle.json` contains exactly this ABI (write it verbatim if scaffolding inline; never invent ABI):
+**Branch B — Deploy your own.** `deployContract` writes the full compiled ABI to `src/contracts/PriceOracle.json` for you, so there's nothing to confirm by hand. The JSON below is the subset the task actually touches — `write`, the two view getters, and the `PriceUpdated` event (the compiled output also exposes the constructor, `writer`, `setWriter`, and `OnlyWriter`). On the in-app / scaffold-inline path this subset is enough for codegen; never invent ABI fields:
 
 ```json
 [{"inputs":[{"internalType":"bytes32","name":"timestamp","type":"bytes32"},{"internalType":"bytes32","name":"price","type":"bytes32"}],"name":"write","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"latestTimestamp","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"latestPrice","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"timestamp","type":"bytes32"},{"indexed":false,"internalType":"bytes32","name":"price","type":"bytes32"}],"name":"PriceUpdated","type":"event"}]
@@ -121,17 +121,27 @@ contract PriceOracle {
 }
 ```
 
-Then output this for the user to run with their own funded EOA (constructor arg authorizes the Compose wallet from Step 2):
+Then deploy through the Compose wallet — `deployContract` compiles in-CLI and deploys via a CREATE2 proxy signed by the gas-sponsored Compose wallet, so on Base / Base Sepolia it needs no funded EOA and no RPC URL. The constructor arg authorizes the Compose wallet from Step 2 as the writer:
+
+```bash
+goldsky compose deployContract contracts/PriceOracle.sol \
+  --chain-id <CHAIN_ID> \
+  --constructor-args $COMPOSE_WALLET \
+  --wallet bitcoin-oracle-wallet
+```
+
+Chain IDs: `baseSepolia` → `84532`, `base` → `8453`, `polygonAmoy` → `80002`, `polygon` → `137`, `arbitrum` → `42161`, `optimism` → `10`. (`deployContract` / `writeContract` need compose CLI ≥ 0.8.0; the forge-style multi-arg constructor syntax these flows use ships in the release *after* 0.8.0 (goldsky-io/compose#426), so `goldsky compose update` to it once released — it is not obtainable at 0.8.0 today.) It auto-saves the ABI to `src/contracts/PriceOracle.json`. Capture the printed contract address as `$CONTRACT_ADDRESS`.
+
+**Non-Base chains (forge fallback).** The `deployContract` cloud path is gas-sponsored on Base and Base Sepolia only today (broader coverage tracked as FOU-991). On any other chain, deploy with a funded EOA via `forge create` instead — the writer is still `$COMPOSE_WALLET`, so the task code is unchanged; drop the resulting ABI at `src/contracts/PriceOracle.json` yourself (`forge build` writes it to `out/`):
 
 ```bash
 forge create contracts/PriceOracle.sol:PriceOracle \
-  --rpc-url <RPC_URL_FOR_CHOSEN_CHAIN> \
-  --private-key $PRIVATE_KEY \
-  --broadcast \
-  --constructor-args $COMPOSE_WALLET
+  --constructor-args $COMPOSE_WALLET \
+  --rpc-url <RPC_URL> \
+  --private-key <FUNDED_EOA_PRIVATE_KEY>
 ```
 
-RPC URLs: `baseSepolia` → `https://sepolia.base.org`, `base` → `https://mainnet.base.org`, `polygonAmoy` → `https://rpc-amoy.polygon.technology`, `polygon` → `https://polygon-rpc.com`, `arbitrum` → `https://arb1.arbitrum.io/rpc`, `optimism` → `https://mainnet.optimism.io`. Capture `Deployed to: 0x...` as `$CONTRACT_ADDRESS`. (Already have a `PriceOracle`-shaped contract? Grant the Compose wallet write permission via `setWriter($COMPOSE_WALLET)` from the owner EOA and use its address instead.)
+Either way (`deployContract` or the `forge create` fallback), `$COMPOSE_WALLET` — the constructor arg — is what authorizes the writer, so there's nothing else to do. (Already have a pre-existing `PriceOracle`-shaped contract? Grant the Compose wallet write permission via `setWriter($COMPOSE_WALLET)` from the owner EOA and use its address instead.)
 
 ## Step 4 — Wire the contract address and chain into the task
 
@@ -143,7 +153,7 @@ If the user changed the cron cadence, edit the `expression:` under the `cron` tr
 
 ## Step 5 — Gas (deploy-your-own, non-sponsored chains only)
 
-Compose-managed wallets default to `sponsorGas: true` on sponsored chains (Base, Base Sepolia, Polygon, Polygon Amoy, and others). On those chains the wallet needs no funding — skip this step. On a non-sponsored chain, send native gas token to `$COMPOSE_WALLET` (testnet faucet, or budget for the cron cadence on mainnet: every-minute writes ≈ 1,440 tx/day).
+Compose-managed wallets default to `sponsorGas: true` on sponsored chains (Base, Base Sepolia, Polygon, Polygon Amoy, and others). On those chains the wallet needs no funding — skip this step. On a non-sponsored chain, send native gas token to `$COMPOSE_WALLET` (testnet faucet, or budget for the cron cadence on mainnet: every-minute writes ≈ 1,440 tx/day). Note that this **runtime** task-gas sponsorship covers far more chains than the `deployContract` / `writeContract` cloud *deploy* path, which is Base / Base Sepolia only for now — on other chains, deploy via the Step 3 forge fallback, then let runtime sponsorship (or a funded wallet) cover the cron writes.
 
 ## Step 6 — Optional: publish to a new GitHub repo
 
@@ -177,7 +187,7 @@ Verify on-chain (Base Sepolia explorer: `https://sepolia.basescan.org/address/$C
 ## Troubleshooting
 
 - **Edits to `compose.yaml` or source files don't take effect after redeploy.** The local `.compose/` bundle cache is stale. Run `rm -rf .compose/` and redeploy.
-- **Every cron run reverts (deploy-your-own only).** The Compose wallet isn't the authorized writer. Re-run `setWriter($COMPOSE_WALLET)` (Branch A of your own contract) or re-check the `forge create` constructor arg. (Shared oracle has no writer restriction, so this can't be the cause there.)
+- **Every cron run reverts (deploy-your-own only).** The Compose wallet isn't the authorized writer. Re-run `setWriter($COMPOSE_WALLET)` (Branch A of your own contract) or re-check the `deployContract` constructor arg. (Shared oracle has no writer restriction, so this can't be the cause there.)
 - **`insufficient funds for gas`.** Only possible on a non-sponsored chain with deploy-your-own. Fund `$COMPOSE_WALLET`.
 - **CoinGecko 429 / rate-limited.** The default retry config (3 attempts, backoff) handles transient rate-limits. If persistent, reduce cron cadence or switch to a paid API.
 - **Task runs but no events on-chain.** Confirm the `evm.chains.*` reference matches the chain where the contract lives. A wallet on the wrong chain signs a tx that never appears on the intended chain.
@@ -186,7 +196,7 @@ Verify on-chain (Base Sepolia explorer: `https://sepolia.basescan.org/address/$C
 
 - Do not change the `toBytes32` helper in `src/lib/utils.ts`. The contract reads `price` as `bytes32` and the example scales by 100 (cents); changing either side silently breaks the stored value.
 - Do not use the shared Base Sepolia oracle as a production target — it's open for anyone to write.
-- Do not invent the `PriceOracle` ABI. Use the verbatim ABI in Step 3.
+- Do not invent the `PriceOracle` ABI. Use the ABI from Step 3 (the JSON there is the subset the task touches; `deployContract` writes the full version).
 
 ## Related
 

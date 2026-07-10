@@ -22,7 +22,7 @@ This template deliberately omits those rules and that reference — they are **r
 
 Pick the mode from the tools available to you:
 
-- **A `deployComposeApp` tool is available (Goldsky webapp chatbot).** This example **cannot be fully stood up through the in-app deploy card**, and that is expected — say so plainly. Two hard reasons: (1) it requires an `ORACLE_PRIVATE_KEY` secret (and a `WEBACY_API_KEY`) that only the `goldsky` CLI / dashboard can set, and (2) the Compose app is useless until an oracle-bound `ComplianceGatedTransfer` contract is deployed on-chain — and that contract must be constructed with the oracle wallet's address, which means deploying it first with `forge`. The in-app card does neither. So do NOT scaffold files or call `deployComposeApp`. Instead: give a 3-4 sentence explanation of what the app does and why it's CLI-driven, then walk the user through the CLI steps below (or tell them to run this skill locally with `npx skills add goldsky-io/goldsky-agent` where a `Bash` tool is available). Everything from **The app (full source)** down is that CLI procedure.
+- **A `deployComposeApp` tool is available (Goldsky webapp chatbot).** This example **cannot be fully stood up through the in-app deploy card**, and that is expected — say so plainly. Two hard reasons: (1) it requires an `ORACLE_PRIVATE_KEY` secret (and a `WEBACY_API_KEY`) that only the `goldsky` CLI / dashboard can set, and (2) the Compose app is useless until an oracle-bound `ComplianceGatedTransfer` contract is deployed on-chain — and that contract must be constructed with the oracle wallet's address, which means deploying it first via `goldsky compose deployContract`. The in-app card does neither. So do NOT scaffold files or call `deployComposeApp`. Instead: give a 3-4 sentence explanation of what the app does and why it's CLI-driven, then walk the user through the CLI steps below (or tell them to run this skill locally with `npx skills add goldsky-io/goldsky-agent` where a `Bash` tool is available). Everything from **The app (full source)** down is that CLI procedure.
 - **`Bash` is available (local CLI / coding agent):** execute the steps below directly, parse output, and substitute captured values into later commands.
 - **Neither (pure reference Q&A):** explain what the app does and the escrow → screen → approve/reject lifecycle; only if asked for step-by-step help, output one command at a time and have the user paste output back. Point them at `npx skills add goldsky-io/goldsky-agent` to run it locally with Bash.
 
@@ -34,10 +34,10 @@ When this skill says `$FOO`, capture the literal value from the prior command's 
 
 - **There is no shared, reusable contract.** `approveTransfer`, `rejectTransfer`, and `setOracle` are all `onlyOracle` (`require(msg.sender == oracle)`), and `oracle` is fixed at construction. A user cannot point their app at someone else's deployed instance — only that instance's oracle key can sign valid callbacks. Every user deploys their own via Step 2. (An older demo instance exists on Base **mainnet** at `0x39efE8A851A4Da22fa40828F6D4b3DC6b54545Aa`, but its oracle is a fixed key nobody else holds, so it is reference-only, not reusable.)
 - **The oracle wallet address must equal the contract's `oracle`.** The contract is deployed with `--constructor-args <USDC> <ORACLE_ADDRESS>`, where `ORACLE_ADDRESS = cast wallet address $ORACLE_PRIVATE_KEY`. The Compose task loads that same key via `evm.wallet({ privateKey: env.ORACLE_PRIVATE_KEY })`. If they don't match, every `approveTransfer`/`rejectTransfer` reverts with `not oracle`.
-- **Gas sponsorship:** the oracle wallet uses `sponsorGas: true` — it never needs native token for gas on sponsored chains (Base, Base Sepolia). The `ORACLE_PRIVATE_KEY` EOA only needs gas to *deploy the contract* with `forge`, never at task runtime.
-- **`ORACLE_PRIVATE_KEY` is a real EOA private key.** Never print it, commit it, or log it. It is set once as a Compose secret and passed to `deploy.sh` as an env var — nowhere else.
+- **Gas sponsorship:** the oracle wallet uses `sponsorGas: true` — it never needs native token for gas on sponsored chains (Base, Base Sepolia). The `ORACLE_PRIVATE_KEY` EOA needs **no gas for the deploy or at runtime** — not even deployment costs the oracle key anything, since `goldsky compose deployContract` deploys through the gas-sponsored Compose wallet, not the oracle key.
+- **`ORACLE_PRIVATE_KEY` is a real EOA private key.** Never print it, commit it, or log it. It is set once as a Compose secret and used locally only to derive its address (`cast wallet address $ORACLE_PRIVATE_KEY`) for the constructor arg — nowhere else.
 - **Do not import external packages in task code.** `evm`, `fetch`, `collection`, `env`, and `logger` all come from the injected `context` argument. The only import allowed in tasks is `compose` (for types) and sibling project files.
-- **Never run `forge create`, `goldsky compose deploy`, `goldsky compose secret set`, `git push`, or `gh repo create` without showing the exact command first and getting explicit confirmation.**
+- **Never run `goldsky compose deployContract`, `goldsky compose deploy`, `goldsky compose secret set`, `git push`, or `gh repo create` without showing the exact command first and getting explicit confirmation.**
 
 ## The app (full source)
 
@@ -518,8 +518,11 @@ Write these files verbatim from the source above: `compose.yaml`, `tsconfig.json
 
 The `goldsky` CLI and auth checks are the standard Compose preflight — see `/compose` and `/auth-setup`. Compliance-specific:
 
-1. **`forge` + `cast`** — `forge --version`. Install with `curl -L https://foundry.paradigm.xyz | bash && foundryup` if missing. Required to deploy the contract.
-2. **OpenZeppelin contracts** — the escrow contract imports `IERC20` (and MockUSDC imports `ERC20`). From the project root: `forge install OpenZeppelin/openzeppelin-contracts --no-commit`.
+1. **`cast`** — `cast --version`. Install with `curl -L https://foundry.paradigm.xyz | bash && foundryup` if missing. Used only for the sender-side mint/approve/requestTransfer walkthrough in Step 7 (`forge` is no longer required — `deployContract` compiles in-CLI).
+2. **OpenZeppelin contracts** — the escrow imports `IERC20` and MockUSDC imports `ERC20`. The in-CLI solc resolves bare `@openzeppelin/contracts/...` imports by walking up from the source file to `node_modules/`, so install them in the app directory (before the Step 2 deploys — the compiler reads no `foundry.toml` and no `lib/` remappings):
+   ```bash
+   npm install @openzeppelin/contracts
+   ```
 3. **Webacy API key** — sign up at https://developers.webacy.co/ and create an API key (a demo key is available right after signup). Have it ready; do not print it back.
 
 ## Step 1 — Configuration interview
@@ -528,11 +531,11 @@ Name the app `compliance-oracle` (don't ask). Then, per the golden rules in `/co
 
 1. **"Which chain?"** — **Base Sepolia (recommended)** — free, gas-sponsored, and you mint your own test USDC. Base mainnet is production (real USDC, real screening, real funds). Use the camelCase form in TS (`baseSepolia`) and snake_case in `compose.yaml` (`base_sepolia`).
 2. **"What risk threshold?"** — Webacy `overallRisk` is 0-100; senders scoring at or above the threshold are rejected. Default `50`. Set `RISK_THRESHOLD` in `src/lib/constants.ts`.
-3. **Recipient** — approved funds go to the **oracle (business) wallet** itself (the contract sends escrow to `oracle` on approval). That's the deployer of the contract. No separate recipient to configure.
+3. **Recipient** — approved funds go to the **oracle (business) wallet** itself (the contract sends escrow to `oracle` on approval). That's the `oracle` set at construction — the `ORACLE_PRIVATE_KEY` EOA, not the Compose wallet that performs the deploy. No separate recipient to configure.
 
 ## Step 2 — Oracle wallet and contract deploy
 
-The oracle wallet is a plain EOA private key. Its address becomes the contract's `oracle`, and the same key signs the Compose callbacks. Have the user provide `ORACLE_PRIVATE_KEY` (an EOA with a little gas on the target chain to pay for the *deploy* — runtime callbacks are sponsored), or generate one:
+The oracle wallet is a plain EOA private key. Its address becomes the contract's `oracle`, and the same key signs the Compose callbacks at runtime (sponsored). `goldsky compose deployContract` deploys *through the gas-sponsored Compose wallet*, not the oracle key — so the oracle EOA needs no gas for the deploy. Have the user provide `ORACLE_PRIVATE_KEY`, or generate one:
 
 ```bash
 cast wallet new
@@ -543,29 +546,40 @@ Create `.env` in the project root with it (never commit this file):
 
 ```env
 ORACLE_PRIVATE_KEY=0x_your_oracle_private_key
-RPC_URL=https://sepolia.base.org   # or https://mainnet.base.org for production
+RPC_URL=https://sepolia.base.org   # or https://mainnet.base.org for production; used by the cast walkthrough in Step 7
 WEBACY_API_KEY=your_webacy_api_key
 ```
 
-**Base Sepolia (recommended): deploy a MockUSDC first**, then use its address as the escrow's `_usdc` arg. Fund the oracle EOA from a faucet (e.g. https://www.alchemy.com/faucets/base-sepolia) if `cast balance $ORACLE_ADDRESS --rpc-url $RPC_URL` shows zero.
+Derive the oracle address first — this is the `oracle` constructor arg, and the contract's `approveTransfer`/`rejectTransfer` must be signed by this same key at runtime:
 
 ```bash
 source .env
 ORACLE_ADDRESS=$(cast wallet address "$ORACLE_PRIVATE_KEY")
-
-# 1) MockUSDC
-forge create contracts/MockUSDC.sol:MockUSDC \
-  --rpc-url "$RPC_URL" --private-key "$ORACLE_PRIVATE_KEY" --broadcast
-# capture "Deployed to:" as $USDC_ADDRESS
-
-# 2) ComplianceGatedTransfer(usdc, oracle)
-forge create contracts/ComplianceGatedTransfer.sol:ComplianceGatedTransfer \
-  --rpc-url "$RPC_URL" --private-key "$ORACLE_PRIVATE_KEY" --broadcast \
-  --constructor-args "$USDC_ADDRESS" "$ORACLE_ADDRESS"
-# capture "Deployed to:" as $CONTRACT_ADDRESS
 ```
 
-**Base mainnet (production):** skip MockUSDC — use native USDC `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` as `$USDC_ADDRESS`. The repo's `scripts/deploy-contract/deploy.sh` automates exactly this against `RPC_URL` (defaults to mainnet); it reads `ORACLE_PRIVATE_KEY` from `.env`, derives the oracle address, and deploys the escrow with native USDC.
+**Base Sepolia (recommended): deploy a MockUSDC first**, then use its address as the escrow's `_usdc` arg. Both deploys go through the gas-sponsored Compose wallet (Base Sepolia is sponsored, so nothing needs funding) — `deployContract` only changes who deploys; the `oracle` is still the `ORACLE_PRIVATE_KEY` EOA above:
+
+```bash
+# 1) MockUSDC — no constructor args
+goldsky compose deployContract contracts/MockUSDC.sol --chain-id 84532
+# capture the printed address as $USDC_ADDRESS
+
+# 2) ComplianceGatedTransfer(usdc, oracle) — oracle is the ORACLE_PRIVATE_KEY EOA
+goldsky compose deployContract contracts/ComplianceGatedTransfer.sol \
+  --chain-id 84532 \
+  --constructor-args $USDC_ADDRESS $ORACLE_ADDRESS
+# capture the printed address as $CONTRACT_ADDRESS
+```
+
+(`deployContract` / `writeContract` need compose CLI ≥ 0.8.0; the forge-style multi-arg constructor syntax these flows use ships in the release *after* 0.8.0 (goldsky-io/compose#426), so `goldsky compose update` to it once released — it is not obtainable at 0.8.0 today.) The ABI for each contract is auto-saved to `src/contracts/<Name>.json`.
+
+**Base mainnet (production):** skip MockUSDC — pass native USDC `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` straight in as `$USDC_ADDRESS`:
+
+```bash
+goldsky compose deployContract contracts/ComplianceGatedTransfer.sol \
+  --chain-id 8453 \
+  --constructor-args 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913 $ORACLE_ADDRESS
+```
 
 Capture `$CONTRACT_ADDRESS` and `$USDC_ADDRESS` for the next step.
 
@@ -655,7 +669,7 @@ cast call $CONTRACT_ADDRESS "transfers(uint256)(address,uint256,uint8)" <id> --r
 - **Task never fires when a transfer is requested.** Confirm `compose.yaml`'s `contract:` and `network:` match where you deployed, the deploy succeeded, and the trigger is active (`goldsky compose status`). Wiring only one of `chain` (constants.ts) / `network` (compose.yaml) is the usual cause.
 - **Webacy returns an empty response / task throws.** Check `WEBACY_API_KEY` is set as a secret and valid, and the address is well-formed hex. Transient failures are absorbed by the `retry_config` (3 attempts, backoff).
 - **Reject scenario approves instead.** On Base Sepolia, a fresh test wallet has no on-chain history, so Webacy scores it low (it passes). Use a known-flagged address, or test the reject path on mainnet where real risk data exists.
-- **`insufficient funds for gas` on deploy.** Only the *contract deploy* needs gas on the oracle EOA. Fund it from a faucet (Sepolia) or with a little ETH (mainnet). Runtime callbacks are sponsored and need nothing.
+- **`insufficient funds for gas` on deploy.** On Base / Base Sepolia the deploy is sponsored. On other chains, fund the **Compose wallet** (the deployer — not the oracle key) with native gas; the `ORACLE_PRIVATE_KEY` EOA needs nothing.
 
 ## What you should NOT do
 

@@ -149,6 +149,35 @@ All commands accept `-t/--token` and `--api-server`; the `-n/--name` flag select
 
 `compose codegen` — parse all `src/contracts/*.json` ABIs, write `.compose/generated/index.ts` and `.compose/types.d.ts`. Runs automatically inside `compose init`, `compose dev`, and during deploy.
 
+### Contracts
+
+Compile and deploy a contract, or submit a write call, straight from the CLI — no Foundry needed (`deployContract` bundles solc). Added in 0.8.0; the forge-style multi-arg/array constructor syntax ships in the release *after* 0.8.0 (goldsky-io/compose#426) — `goldsky compose update` to it once released.
+
+**`compose deployContract <file.sol>`** — compiles in-CLI and deploys via a CREATE2 proxy through the app's Compose wallet. The forge-style multi-arg/array constructor syntax needs the release after 0.8.0 (goldsky-io/compose#426).
+
+| Flag | Purpose |
+| --- | --- |
+| `--chain-id <id>` | Target chain (**required**). e.g. Base Sepolia `84532`, Base `8453`, Polygon `137`, Polygon Amoy `80002`, Arbitrum `42161`, Optimism `10`. |
+| `--constructor-args <tokens...>` | Forge-style: space-separated, one token per param; arrays `"[a,b]"`, tuples `"(a,b)"`, nesting allowed, negatives `" -5"` (quoted leading space). Coerced against the compiled ABI. |
+| `--wallet <name>` | App wallet that deploys (default `default`). Match the `evm.wallet({ name })` the task code uses when the contract must authorize that wallet. |
+| `--verify` | Verify the contract on the block explorer. |
+| `--force` | Bypass the `msg.sender`-in-constructor guard (the sender is the CREATE2 proxy, not the wallet). |
+| `-m` / `-t` | Manifest path / project token (see Lifecycle). |
+
+Run from the app directory — it reads `compose.yaml` for the app name; app name + project id derive the deterministic CREATE2 salt. Works before the app itself is deployed (the wallet is provisioned on demand). On gas-sponsored chains (Base `8453`, Base Sepolia `84532`) it needs **no funded key and no RPC URL**. The cloud deploy path is Base / Base Sepolia only today (broader coverage tracked as FOU-991) — on other chains deploy with `forge create` from a funded EOA instead (the constructor args stay the same; supply the ABI to `src/contracts/` yourself). Runtime task-gas sponsorship (see [Gas Sponsorship](#gas-sponsorship)) covers many more chains than this deploy endpoint. Re-running identical contract + args + app fails (CREATE2 address occupied); any changed arg or app name yields a fresh address. Prints the contract address, tx hash, and **Deploy Block**, and **auto-saves the ABI to `src/contracts/<Name>.json`** — then `compose codegen` gives typed bindings.
+
+**`compose writeContract`** — submit a write call to a deployed contract.
+
+| Flag | Purpose |
+| --- | --- |
+| `--chain-id <id>` | Target chain (**required**). |
+| `--to <address>` | Target contract address. |
+| `--function "sig(types)"` | Function signature, e.g. `"setValue(uint256)"`. |
+| `--args <tokens...>` | Same forge-style grammar as `--constructor-args`. |
+| `--data <hex>` | Raw calldata alternative to `--function` / `--args`. |
+| `--value <amount>` | Native value to send; suffix a unit (`wei`, `gwei`, `ether`), e.g. `--value 1ether`. |
+| `--wallet <name>` | App wallet that signs (default `default`). |
+
 ## TaskContext API
 
 `main(context: TaskContext, params?: Record<string, unknown>): Promise<unknown>` receives:
@@ -370,7 +399,7 @@ Bundler fallback order: **Alchemy → Pimlico → Gelato**. Override via `BUNDLE
 
 ### Supported chains
 
-See the Goldsky docs chains page for the current list (don't hardcode — this changes). Highlights include Ethereum, Base, Arbitrum, Optimism, Polygon, Unichain, Monad (mainnet + testnet), MegaETH testnet, Lisk, Linea, Scroll, Avalanche, Blast, BNB, Celo, Zora, Sonic, Worldchain, plus major Sepolia testnets and Polygon Amoy.
+See the Goldsky docs chains page for the current list (don't hardcode — this changes). Highlights include Ethereum, Base, Arbitrum, Optimism, Polygon, Unichain, Monad (mainnet + testnet), MegaETH testnet, Lisk, Linea, Scroll, Avalanche, Blast, BNB, Celo, Zora, Sonic, Worldchain, plus major Sepolia testnets and Polygon Amoy. This is the **runtime** task-gas sponsorship list — it is broader than the `deployContract` / `writeContract` cloud *deploy* path, which is Base / Base Sepolia only for now (FOU-991).
 
 ### Error on unsupported chain
 
