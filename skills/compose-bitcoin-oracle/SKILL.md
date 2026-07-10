@@ -79,33 +79,27 @@ Per the golden rules in `/compose`, ask only what you can't derive — and ask t
 ## Step 2 — Wallet
 
 - **Shared-oracle path (recommended):** nothing to do. The Compose smart wallet is auto-created at runtime and fully gas-sponsored on Base Sepolia. Do NOT tell the user to create or fund a wallet.
-- **Deploy-your-own path (Branch B):** the cloud Compose wallet can only be created *after* the app has been deployed once — there's no pre-deploy way to learn the wallet address — so wallet creation is deferred to the Branch B ordering in Step 3 (it runs as step 2 of that sequence, right after the first deploy). The named wallet `bitcoin-oracle-wallet` matches `evm.wallet({ name: "bitcoin-oracle-wallet" })` in `src/tasks/bitcoin-oracle.ts`.
+- **Deploy-your-own path (Branch B):** the wallet is created first, before any deploy, as step (1) of the Branch B ordering in Step 3; capture its address as `$COMPOSE_WALLET`. The named wallet `bitcoin-oracle-wallet` matches `evm.wallet({ name: "bitcoin-oracle-wallet" })` in `src/tasks/bitcoin-oracle.ts`.
 
 ## Step 3 — Contract
 
 **Branch A — Reuse shared oracle (recommended).** `$CONTRACT_ADDRESS = 0x53deB3fF6E6e82A3b5E96f14E185e3Fe66BF5113` on Base Sepolia. No deploy, no writer authorization — but "nothing to deploy" is **not** "nothing to wire." The scaffold ships stale defaults (Polygon Amoy + a different oracle address), so the Step 4 wiring is **mandatory even on Branch A**. Skip to Step 4.
 
-**Branch B — Deploy your own.** The cloud Compose wallet can only be created *after* the app has been `compose deploy`ed once — there is no pre-deploy way to learn the wallet address — so Branch B has a fixed ordering: **deploy the app → create the wallet → deploy the contract → codegen → wire (Step 4) → redeploy (Step 7).** Follow steps (1)–(6) below in order. (`wallet create --env local` looks like a shortcut but is a trap — see the warning at step 2.) `deployContract` writes the full compiled ABI to `src/contracts/PriceOracle.json` for you, so there's nothing to confirm by hand. The JSON below is the subset the task actually touches — `write`, the two view getters, and the `PriceUpdated` event (the compiled output also exposes the constructor, `writer`, `setWriter`, and `OnlyWriter`). On the in-app / scaffold-inline path this subset is enough for codegen; never invent ABI fields:
+**Branch B — Deploy your own.** Branch B has a fixed ordering: **create the wallet → deploy the contract → codegen → wire (Step 4) → deploy the app (Step 7).** Follow steps (1)–(5) below in order. `deployContract` writes the full compiled ABI to `src/contracts/PriceOracle.json` for you, so there's nothing to confirm by hand. The JSON below is the subset the task actually touches — `write`, the two view getters, and the `PriceUpdated` event (the compiled output also exposes the constructor, `writer`, `setWriter`, and `OnlyWriter`). On the in-app / scaffold-inline path this subset is enough for codegen; never invent ABI fields:
 
 ```json
 [{"inputs":[{"internalType":"bytes32","name":"timestamp","type":"bytes32"},{"internalType":"bytes32","name":"price","type":"bytes32"}],"name":"write","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"latestTimestamp","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"latestPrice","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"timestamp","type":"bytes32"},{"indexed":false,"internalType":"bytes32","name":"price","type":"bytes32"}],"name":"PriceUpdated","type":"event"}]
 ```
 
-**(1) Deploy the app first** with the scaffold defaults. It will revert harmlessly on each cron fire until the contract and wallet are wired (Step 4) — that is expected and harmless, so ignore those early reverts:
-
-```bash
-goldsky compose deploy
-```
-
-**(2) Create the wallet** (only now that the app exists) and capture its address as `$COMPOSE_WALLET`. It matches `evm.wallet({ name: "bitcoin-oracle-wallet" })` in `src/tasks/bitcoin-oracle.ts`:
+**(1) Create the wallet** (works before any deploy) and capture its address as `$COMPOSE_WALLET`. It matches `evm.wallet({ name: "bitcoin-oracle-wallet" })` in `src/tasks/bitcoin-oracle.ts`:
 
 ```bash
 goldsky compose wallet create bitcoin-oracle-wallet
 ```
 
-> ⚠ **Do NOT use `wallet create --env local`** to dodge this ordering. `--env local` prints a LOCAL tevm wallet address the cloud runtime never signs with, producing a bricked oracle the Troubleshooting section below will not diagnose. Use the default (cloud) wallet.
+> ⚠ **Do NOT use `wallet create --env local`**: that's a LOCAL tevm wallet the cloud runtime never signs with, producing a bricked oracle the Troubleshooting section below will not diagnose. Use the default (cloud) wallet.
 
-**(3) Write the source, then deploy the contract.** Run `mkdir -p contracts` and write this reference Solidity to `contracts/PriceOracle.sol`:
+**(2) Write the source, then deploy the contract.** Run `mkdir -p contracts` and write this reference Solidity to `contracts/PriceOracle.sol`:
 
 ```solidity
 // SPDX-License-Identifier: MIT
@@ -136,7 +130,7 @@ contract PriceOracle {
 }
 ```
 
-Then deploy through the Compose wallet — `deployContract` compiles in-CLI and deploys via a CREATE2 proxy signed by the gas-sponsored Compose wallet, so on Base / Base Sepolia it needs no funded EOA and no RPC URL. Every `deployContract` / `writeContract` needs `-t <project API key>` (or a `goldsky login` session) — make a key at Settings > API Keys in the dashboard. The constructor arg authorizes the wallet from step 2 as the writer:
+Then deploy through the Compose wallet — `deployContract` compiles in-CLI and deploys via a CREATE2 proxy signed by the gas-sponsored Compose wallet, so on Base / Base Sepolia it needs no funded EOA and no RPC URL. Every `deployContract` / `writeContract` needs `-t <project API key>` (or a `goldsky login` session) — make a key at Settings > API Keys in the dashboard. The constructor arg authorizes the wallet from step 1 as the writer:
 
 ```bash
 goldsky compose deployContract contracts/PriceOracle.sol \
@@ -162,13 +156,13 @@ forge create contracts/PriceOracle.sol:PriceOracle \
 jq .abi out/PriceOracle.sol/PriceOracle.json > src/contracts/PriceOracle.json
 ```
 
-**(4) Run codegen.** `deployContract` saved the ABI above (or the `jq .abi` extract did, on the forge path); `codegen` generates the typed `evm.contracts.PriceOracle` class the task imports (the CLI's own success output says to):
+**(3) Run codegen.** `deployContract` saved the ABI above (or the `jq .abi` extract did, on the forge path); `codegen` generates the typed `evm.contracts.PriceOracle` class the task imports (the CLI's own success output says to):
 
 ```bash
 goldsky compose codegen
 ```
 
-**(5) Wire** the address and chain into the task — Step 4. **(6) Redeploy** so the wired task goes live — Step 7 (Branch B needs this final redeploy after wiring).
+**(4) Wire** the address and chain into the task (Step 4). **(5) Deploy the app** so the wired task goes live (Step 7). A single deploy, not a redeploy: the wallet was created and contract deployed first, so this takes the wired task live.
 
 Either way (`deployContract` or the `forge create` fallback), `$COMPOSE_WALLET` — the constructor arg — is what authorizes the writer, so there's nothing else to do. (Already have a pre-existing `PriceOracle`-shaped contract? Grant the Compose wallet write permission via `setWriter($COMPOSE_WALLET)` from the owner EOA and use its address instead.)
 
@@ -205,7 +199,7 @@ fi
 goldsky compose deploy
 ```
 
-For Branch A (shared oracle) this is your first and only deploy. For Branch B this is the **final redeploy** after wiring (Step 4) — the Branch B ordering in Step 3 already had you deploy once up front, so this second deploy takes the wired task live.
+For Branch A (shared oracle) this is your first and only deploy. For Branch B this is also your only deploy: the wallet was created and the contract deployed first (Step 3), so this single deploy takes the wired task live.
 
 ## Step 8 — Smoke test
 

@@ -204,8 +204,7 @@ import { TaskContext } from "compose";
  * Generate the Compose wallet and output its address.
  *
  * Only needed on the deploy-your-own path: the fulfiller address comes from
- * Step 3 Branch B's `goldsky compose wallet create randomness-fulfiller` (run
- * AFTER the first `compose deploy`, which prints the wallet address) — NOT from
+ * Step 3 Branch B's `goldsky compose wallet create randomness-fulfiller` — NOT from
  * this task. `callTask` only reaches a LOCALLY RUNNING app (start it with
  * `goldsky compose start` first), never the deployed app, so it cannot give
  * you the cloud wallet address either.
@@ -531,29 +530,23 @@ Ask one question at a time; let each answer inform the next. Use readable labels
 ## Step 2 — Wallet
 
 - **Shared-contract path (recommended):** nothing to do. The Compose smart wallet is auto-created at runtime and fully gas-sponsored on Base Sepolia, and the shared contract is permissionless so there's no fulfiller to authorize. Do NOT tell the user to create or fund a wallet.
-- **Deploy-your-own path (Branch B):** the reference contract's `fulfiller` is just an informational deploy-time label (fulfillment is permissionless), but the constructor still needs the Compose wallet address as that label. The cloud Compose wallet can only be created *after* the app has been deployed once — there's no pre-deploy way to learn the wallet address — so wallet creation is deferred to the Branch B ordering in Step 3 (it runs as step 2 of that sequence, right after the first deploy). The named wallet `randomness-fulfiller` matches `evm.wallet({ name: "randomness-fulfiller" })` in `src/tasks/fulfill-randomness.ts`.
+- **Deploy-your-own path (Branch B):** the reference contract's `fulfiller` is just an informational deploy-time label (fulfillment is permissionless), but the constructor still needs the Compose wallet address as that label. The wallet is created first, before any deploy, as step (1) of the Branch B ordering in Step 3; capture its address as `$COMPOSE_WALLET`. The named wallet `randomness-fulfiller` matches `evm.wallet({ name: "randomness-fulfiller" })` in `src/tasks/fulfill-randomness.ts`.
 
 ## Step 3 — Contract
 
 **Branch A — Reuse shared contract (recommended).** `$CONTRACT_ADDRESS = 0x6273AB73C95Ba2233281F1eb8aa3b21D9352AD6d` on Base Sepolia. No deploy, no fulfiller authorization. Skip to Step 4.
 
-**Branch B — Deploy your own.** The cloud Compose wallet can only be created *after* the app has been `compose deploy`ed once — there is no pre-deploy way to learn the wallet address — so Branch B has a fixed ordering: **deploy the app → create the wallet → deploy the contract → wire (Step 4) → redeploy (Step 7).** Follow steps (1)–(3) below in order. (`wallet create --env local` looks like a shortcut but is a trap — see the warning at step 2.) The reference contract is in **The app (full source)** above (`contracts/RandomnessConsumer.sol`); `deployContract` writes the compiled ABI to `src/contracts/RandomnessConsumer.json` for you, so there's nothing to confirm by hand.
+**Branch B — Deploy your own.** Branch B has a fixed ordering: **create the wallet → deploy the contract → codegen → wire (Step 4) → deploy the app (Step 7).** Follow steps (1)–(4) below in order. The reference contract is in **The app (full source)** above (`contracts/RandomnessConsumer.sol`); `deployContract` writes the compiled ABI to `src/contracts/RandomnessConsumer.json` for you, so there's nothing to confirm by hand.
 
-**(1) Deploy the app first** with the scaffold defaults. It will revert harmlessly on each request until the contract and wallet are wired (Step 4) — that is expected and harmless, so ignore those early reverts:
-
-```bash
-goldsky compose deploy
-```
-
-**(2) Create the wallet** (only now that the app exists) and capture its address as `$COMPOSE_WALLET`. It matches `evm.wallet({ name: "randomness-fulfiller" })` in `src/tasks/fulfill-randomness.ts`:
+**(1) Create the wallet** (works before any deploy) and capture its address as `$COMPOSE_WALLET`. It matches `evm.wallet({ name: "randomness-fulfiller" })` in `src/tasks/fulfill-randomness.ts`:
 
 ```bash
 goldsky compose wallet create randomness-fulfiller
 ```
 
-> ⚠ **Do NOT use `wallet create --env local`** to dodge this ordering. `--env local` prints a LOCAL tevm wallet address the cloud runtime never signs with, producing a bricked app the Troubleshooting section below will not diagnose. Use the default (cloud) wallet. Named wallets are **app-scoped** via the top-level `name:` in `compose.yaml`, so the app name (the chosen name from Step 1, e.g. `vrf-app`) is already final by this point — renaming it later would derive a *different* wallet than the one baked into your contract.
+> ⚠ **Do NOT use `wallet create --env local`**: that's a LOCAL tevm wallet the cloud runtime never signs with, producing a bricked app the Troubleshooting section below will not diagnose. Use the default (cloud) wallet. Named wallets are **app-scoped** via the top-level `name:` in `compose.yaml`, so the app name (the chosen name from Step 1, e.g. `vrf-app`) is already final by this point; renaming it later would derive a *different* wallet than the one baked into your contract.
 
-**(3) Deploy the contract.** `deployContract` compiles in-CLI and deploys via a CREATE2 proxy signed by the gas-sponsored Compose wallet, so on Base / Base Sepolia it needs no funded EOA and no RPC URL. The constructor arg records the Compose wallet as the (informational) fulfiller label:
+**(2) Deploy the contract.** `deployContract` compiles in-CLI and deploys via a CREATE2 proxy signed by the gas-sponsored Compose wallet, so on Base / Base Sepolia it needs no funded EOA and no RPC URL. The constructor arg records the Compose wallet as the (informational) fulfiller label:
 
 ```bash
 goldsky compose deployContract contracts/RandomnessConsumer.sol \
@@ -590,7 +583,7 @@ forge create contracts/RandomnessConsumer.sol:RandomnessConsumer \
 jq .abi out/RandomnessConsumer.sol/RandomnessConsumer.json > src/contracts/RandomnessConsumer.json
 ```
 
-**(4) Wire** the address and chain into code — Step 4. **(5) Redeploy** so the wired task goes live — Step 7 (Branch B needs this final redeploy after wiring; the step (1) deploy above was the first one).
+**(3) Wire** the address and chain into code (Step 4). **(4) Deploy the app** so the wired task goes live (Step 7). A single deploy, not a redeploy: the wallet was created and contract deployed first, so this takes the wired task live.
 
 ## Step 4 — Wire the contract address and chain into code
 
@@ -636,7 +629,7 @@ fi
 goldsky compose deploy
 ```
 
-First deploy may take 1–2 minutes. Watch for `Deployed compose app: <app_name>` and the HTTP task URLs in the output. (Branch A deploys for the first time here; Branch B already deployed once in Step 3 step (1) — this is the redeploy that takes the wired task live.)
+First deploy may take 1–2 minutes. Watch for `Deployed compose app: <app_name>` and the HTTP task URLs in the output. (Branch A deploys for the first time here; Branch B also deploys for the first time here: the wallet was created and the contract deployed first in Step 3, so this single deploy takes the wired task live.)
 
 ## Step 8 — Smoke test
 
