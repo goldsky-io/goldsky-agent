@@ -130,7 +130,7 @@ goldsky compose deployContract contracts/PriceOracle.sol \
   --wallet bitcoin-oracle-wallet
 ```
 
-Chain IDs: `baseSepolia` → `84532`, `base` → `8453`, `polygonAmoy` → `80002`, `polygon` → `137`, `arbitrum` → `42161`, `optimism` → `10`. (`deployContract` / `writeContract` need compose CLI ≥ 0.8.0; the forge-style multi-arg constructor syntax these flows use ships in the release *after* 0.8.0 (goldsky-io/compose#426), so `goldsky compose update` to it once released — it is not obtainable at 0.8.0 today.) It auto-saves the ABI to `src/contracts/PriceOracle.json`. Capture the printed contract address as `$CONTRACT_ADDRESS`.
+Chain IDs: `baseSepolia` → `84532`, `base` → `8453`, `polygonAmoy` → `80002`, `polygon` → `137`, `arbitrum` → `42161`, `optimism` → `10`. (`deployContract` / `writeContract` need compose CLI ≥ 0.8.1 — run `goldsky compose update` if you're on an older version.) It auto-saves the ABI to `src/contracts/PriceOracle.json`. Capture the printed contract address as `$CONTRACT_ADDRESS`.
 
 **Non-Base chains (forge fallback).** The `deployContract` cloud path is gas-sponsored on Base and Base Sepolia only today (broader coverage tracked as FOU-991). On any other chain, deploy with a funded EOA via `forge create` instead — the writer is still `$COMPOSE_WALLET`, so the task code is unchanged; drop the resulting ABI at `src/contracts/PriceOracle.json` yourself (`forge build` writes it to `out/`):
 

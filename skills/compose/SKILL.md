@@ -60,7 +60,7 @@ Before running commands, check if the `Bash` tool is available:
 - Built-in secrets, collections (durable storage), contract deployment (`deployContract`), and typed contract bindings via codegen.
 - `compose dev` for hot-reload local dev; `compose deploy` to ship; `compose logs -f` to tail.
 
-**Deploying a contract** is a built-in capability: `goldsky compose deployContract <file.sol>` compiles in-CLI and CREATE2-deploys through the gas-sponsored Compose wallet, auto-saves the ABI to `src/contracts/`, and prints the address + deploy block. It needs compose CLI ≥ 0.8.0, and the forge-style multi-arg/array constructor syntax needs the release *after* 0.8.0 (goldsky-io/compose#426) — `goldsky compose update` to it once released. See `/compose-reference` (Contracts) for the flags.
+**Deploying a contract** is a built-in capability: `goldsky compose deployContract <file.sol>` compiles in-CLI and CREATE2-deploys through the gas-sponsored Compose wallet, auto-saves the ABI to `src/contracts/`, and prints the address + deploy block. It needs compose CLI ≥ 0.8.1 (`goldsky compose update`). See `/compose-reference` (Contracts) for the flags.
 
 ## Out of Scope (for this skill)
 

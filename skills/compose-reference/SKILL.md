@@ -151,9 +151,9 @@ All commands accept `-t/--token` and `--api-server`; the `-n/--name` flag select
 
 ### Contracts
 
-Compile and deploy a contract, or submit a write call, straight from the CLI — no Foundry needed (`deployContract` bundles solc). Added in 0.8.0; the forge-style multi-arg/array constructor syntax ships in the release *after* 0.8.0 (goldsky-io/compose#426) — `goldsky compose update` to it once released.
+Compile and deploy a contract, or submit a write call, straight from the CLI — no Foundry needed (`deployContract` bundles solc). Added in 0.8.0; the forge-style multi-arg/array constructor syntax needs ≥ 0.8.1 — run `goldsky compose update` if you're older.
 
-**`compose deployContract <file.sol>`** — compiles in-CLI and deploys via a CREATE2 proxy through the app's Compose wallet. The forge-style multi-arg/array constructor syntax needs the release after 0.8.0 (goldsky-io/compose#426).
+**`compose deployContract <file.sol>`** — compiles in-CLI and deploys via a CREATE2 proxy through the app's Compose wallet. The forge-style multi-arg/array constructor syntax needs ≥ 0.8.1.
 
 | Flag | Purpose |
 | --- | --- |

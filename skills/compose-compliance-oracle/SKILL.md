@@ -512,7 +512,7 @@ mkdir -p compliance-oracle/src/tasks compliance-oracle/src/lib compliance-oracle
 cd compliance-oracle
 ```
 
-Write these files verbatim from the source above: `compose.yaml`, `tsconfig.json`, `foundry.toml`, `contracts/ComplianceGatedTransfer.sol`, `contracts/MockUSDC.sol`, `src/lib/constants.ts`, `src/lib/webacy.ts`, `src/tasks/on-transfer-requested.ts`, and `src/tasks/reconcile.ts`. Then wire the deployed address and chain in Step 3. Add a `.gitignore` containing `.env`, `lib/`, and `.compose/`.
+Write these files verbatim from the source above: `compose.yaml`, `tsconfig.json`, `foundry.toml`, `contracts/ComplianceGatedTransfer.sol`, `contracts/MockUSDC.sol`, `src/lib/constants.ts`, `src/lib/webacy.ts`, `src/tasks/on-transfer-requested.ts`, and `src/tasks/reconcile.ts`. Then wire the deployed address and chain in Step 3. Add a `.gitignore` containing `.env`, `node_modules/`, and `.compose/`.
 
 ## Preflight
 
@@ -521,6 +521,7 @@ The `goldsky` CLI and auth checks are the standard Compose preflight — see `/c
 1. **`cast`** — `cast --version`. Install with `curl -L https://foundry.paradigm.xyz | bash && foundryup` if missing. Used only for the sender-side mint/approve/requestTransfer walkthrough in Step 7 (`forge` is no longer required — `deployContract` compiles in-CLI).
 2. **OpenZeppelin contracts** — the escrow imports `IERC20` and MockUSDC imports `ERC20`. The in-CLI solc resolves bare `@openzeppelin/contracts/...` imports by walking up from the source file to `node_modules/`, so install them in the app directory (before the Step 2 deploys — the compiler reads no `foundry.toml` and no `lib/` remappings):
    ```bash
+   npm init -y >/dev/null 2>&1 || true   # ensure the app dir is the package root, so npm can't walk up to a parent
    npm install @openzeppelin/contracts
    ```
 3. **Webacy API key** — sign up at https://developers.webacy.co/ and create an API key (a demo key is available right after signup). Have it ready; do not print it back.
@@ -571,7 +572,7 @@ goldsky compose deployContract contracts/ComplianceGatedTransfer.sol \
 # capture the printed address as $CONTRACT_ADDRESS
 ```
 
-(`deployContract` / `writeContract` need compose CLI ≥ 0.8.0; the forge-style multi-arg constructor syntax these flows use ships in the release *after* 0.8.0 (goldsky-io/compose#426), so `goldsky compose update` to it once released — it is not obtainable at 0.8.0 today.) The ABI for each contract is auto-saved to `src/contracts/<Name>.json`.
+(`deployContract` / `writeContract` need compose CLI ≥ 0.8.1 — run `goldsky compose update` if you're on an older version.) The ABI for each contract is auto-saved to `src/contracts/<Name>.json`.
 
 **Base mainnet (production):** skip MockUSDC — pass native USDC `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` straight in as `$USDC_ADDRESS`:
 

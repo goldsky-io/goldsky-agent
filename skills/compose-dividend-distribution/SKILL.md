@@ -137,7 +137,7 @@ goldsky compose deployContract contracts/DistributionCampaign.sol --chain-id 845
 # → capture the printed address as $CAMPAIGN_CONTRACT
 ```
 
-(`deployContract` / `writeContract` need compose CLI ≥ 0.8.0; the forge-style array/multi-arg constructor syntax these flows use ships in the release *after* 0.8.0 (goldsky-io/compose#426), so `goldsky compose update` to it once released — it is not obtainable at 0.8.0 today.) Copy the three addresses plus `shareTokenDeployBlock` into `CONFIG` in `src/lib/constants.ts` (`payToken`, `shareToken`, `campaignContract`, `shareTokenDeployBlock`) — the Deploy Block replaces the value `scripts/deploy.sh` used to print. To run on Base mainnet instead, pass `--chain-id 8453` and set `chain`/`turboChain` to `base`. (`scripts/deploy.sh` still exists as the forge/EOA alternative if you prefer to deploy that way.)
+(`deployContract` / `writeContract` need compose CLI ≥ 0.8.1 — run `goldsky compose update` if you're on an older version.) Copy the three addresses plus `shareTokenDeployBlock` into `CONFIG` in `src/lib/constants.ts` (`payToken`, `shareToken`, `campaignContract`, `shareTokenDeployBlock`) — the Deploy Block replaces the value `scripts/deploy.sh` used to print. To run on Base mainnet instead, pass `--chain-id 8453` and set `chain`/`turboChain` to `base`. (`scripts/deploy.sh` still exists as the forge/EOA alternative if you prefer to deploy that way.)
 
 ## Step 2 — Set the project-key secret
 

@@ -538,7 +538,7 @@ goldsky compose deployContract contracts/RandomnessConsumer.sol \
   --wallet randomness-fulfiller
 ```
 
-Chain IDs: `baseSepolia` → `84532`, `base` → `8453`, `arbitrumSepolia` → `421614`, `arbitrum` → `42161`, `optimismSepolia` → `11155420`, `optimism` → `10`. (`deployContract` / `writeContract` need compose CLI ≥ 0.8.0; the forge-style multi-arg constructor syntax these flows use ships in the release *after* 0.8.0 (goldsky-io/compose#426), so `goldsky compose update` to it once released — it is not obtainable at 0.8.0 today.) It auto-saves the ABI to `src/contracts/RandomnessConsumer.json`. Capture the printed contract address as `$CONTRACT_ADDRESS`.
+Chain IDs: `baseSepolia` → `84532`, `base` → `8453`, `arbitrumSepolia` → `421614`, `arbitrum` → `42161`, `optimismSepolia` → `11155420`, `optimism` → `10`. (`deployContract` / `writeContract` need compose CLI ≥ 0.8.1 — run `goldsky compose update` if you're on an older version.) It auto-saves the ABI to `src/contracts/RandomnessConsumer.json`. Capture the printed contract address as `$CONTRACT_ADDRESS`.
 
 **Non-Base chains (forge fallback).** The `deployContract` cloud path is gas-sponsored on Base and Base Sepolia only today (broader coverage tracked as FOU-991). On any other chain, deploy with a funded EOA via `forge create` instead — the fulfiller label is still `$COMPOSE_WALLET`, so the task code is unchanged; drop the resulting ABI at `src/contracts/RandomnessConsumer.json` yourself (`forge build` writes it to `out/`):
 
