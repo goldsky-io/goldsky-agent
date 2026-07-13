@@ -202,7 +202,7 @@ End-to-end worked examples — each carries the full app source and walks build 
 | `compose-bitcoin-oracle` | "Build a BTC/USD price oracle that writes onchain" | Cron task → CoinGecko → `PriceOracle` contract via a Compose wallet; collection for history |
 | `compose-vrf` | "Build a verifiable random function / onchain randomness" | Event-triggered task → drand beacon → `fulfillRandomness` on a `RandomnessConsumer` contract, verifiable by anyone |
 | `compose-dividend-distribution` | "Distribute dividends / a corporate action to token holders pro-rata" | HTTP task orchestrates a Turbo job-mode pipeline to snapshot holders at a record block, then pays each pro-rata onchain (CLI-driven) |
-| `compose-compliance-oracle` | "Build a compliance-gated payment system with wallet screening" | Onchain-event task → escrow contract → Webacy AML screening → oracle approve/reject callback, plus a reconcile cron; deploy-your-own (oracle-permissioned), recommended on Base Sepolia + MockUSDC |
+| `compose-compliance-oracle` | "Build a compliance-gated payment system with wallet screening" | Onchain-event task → escrow contract → compliance screening (Webacy/mock/BYO) → oracle approve/reject callback; single-payee or P2P; any EVM chain; plus a reconcile cron |
 
 ### Edge (managed RPC)
 
