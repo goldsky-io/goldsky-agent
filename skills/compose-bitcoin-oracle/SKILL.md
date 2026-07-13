@@ -9,7 +9,7 @@ Stand up the bitcoin-oracle example under the user's own Goldsky account. A cron
 
 This template supplies only what's specific to the bitcoin-oracle app — how it works and its source. The recommended path uses a **shared, fully-unpermissioned `PriceOracle` on Base Sepolia**, so the user deploys nothing and the Compose smart wallet is auto-created and gas-sponsored.
 
-## Step 0 — Load the base skills first
+## Step 0a — Load the base skills first
 
 **Before anything else — before you answer, ask a question, scaffold a file, or call `deployComposeApp` — load the two base skills this template depends on:**
 
@@ -22,30 +22,31 @@ This template deliberately omits those rules and that reference — they are **r
 
 Pick the mode from the tools available to you:
 
-- **A `deployComposeApp` tool is available (Goldsky webapp chatbot) — this is the preferred in-app flow.** Do NOT emit `goldsky` terminal commands or `cliCommand` cards, and do NOT use Step 0 / `degit` / `forge` / `goldsky compose deploy`. **Do NOT ask the user what to name the app** — name it `bitcoin-oracle` automatically; they can rename it after deploy. Give a 2-3 sentence plain explanation, then ask with `askUser` (tag the recommended option with `recommendedIndex`):
-  1. **Contract** — ask this explicitly, do not assume: *"Do you have your own `PriceOracle` contract, or should we use a shared demo oracle on Base Sepolia to get running quickly?"* Options: **"Use the shared demo oracle on Base Sepolia (recommended — nothing to deploy)"** and **"I'll use my own contract."** On the shared path, `ORACLE_CONTRACT` is the **HARDCODED** address `0x53deB3fF6E6e82A3b5E96f14E185e3Fe66BF5113` on `baseSepolia` — copy it character-for-character; mention in prose it's demos-only, not production. On the own path, ask the user to paste their contract address and chain and use exactly what they paste (their `PriceOracle` must let the Compose wallet write).
-  2. **Update frequency** (recommend every minute, `* * * * *`).
+- **A `deployComposeApp` tool is available (Goldsky webapp chatbot) — this is the preferred in-app flow.** Do NOT emit `goldsky` terminal commands or `cliCommand` cards, and do NOT use Step 0b / `degit` / `forge` / `goldsky compose deploy`. Give a 2-3 sentence plain explanation, then ask with `askUser` (tag the recommended option with `recommendedIndex`):
+  1. **App name** — ask first, before anything else: *"What should the app be called? (suggest `bitcoin-oracle`)"*. The name is hard to change later — it scopes named wallets and participates in the CREATE2 salt for every `deployContract` — so it must be settled before any wallet or contract step. Accept the default `bitcoin-oracle` on a shrug, and set the chosen name as the top-level `name:` in the scaffolded `compose.yaml`.
+  2. **Contract** — ask this explicitly, do not assume: *"Do you have your own `PriceOracle` contract, or should we use a shared demo oracle on Base Sepolia to get running quickly?"* Options: **"Use the shared demo oracle on Base Sepolia (recommended — nothing to deploy)"** and **"I'll use my own contract."** On the shared path, `ORACLE_CONTRACT` is the **HARDCODED** address `0x53deB3fF6E6e82A3b5E96f14E185e3Fe66BF5113` on `baseSepolia` — copy it character-for-character; mention in prose it's demos-only, not production. On the own path, ask the user to paste their contract address and chain and use exactly what they paste (their `PriceOracle` must let the Compose wallet write).
+  3. **Update frequency** (recommend every minute, `* * * * *`).
 
-  The Compose smart wallet is auto-created at runtime and gas-sponsored — never tell the user to create or fund a wallet. After the questions, scaffold the files in-memory (do NOT degit): `compose.yaml` (a single cron task on the chosen schedule), `src/contracts/PriceOracle.json` (the verbatim ABI in Step 3), and `src/tasks/bitcoin-oracle.ts` (fetch BTC/USD from CoinGecko, then `evm.contracts.PriceOracle.write(toBytes32(timestamp), toBytes32(Math.round(price*100)))` via the gas-sponsored smart wallet, appending each price to a `bitcoin_prices` collection). `ORACLE_CONTRACT` is a **hardcoded `const` at the top of the task file, not an env var** — do not put it under the manifest `env:` key. Follow `/compose-reference` for the manifest shape and the sandbox import rule before emitting the files (per the golden rules in `/compose` — don't synthesize the manifest from memory). Then **call `deployComposeApp` in the SAME turn**; don't ask the user to confirm first or emit any `goldsky` command. **In this mode, ignore Steps 0–8 below** — they are the CLI/local procedure.
+  The Compose smart wallet is auto-created at runtime and gas-sponsored — never tell the user to create or fund a wallet. After the questions, scaffold the files in-memory (do NOT degit): `compose.yaml` (a single cron task on the chosen schedule), `src/contracts/PriceOracle.json` (the verbatim ABI in Step 3), and `src/tasks/bitcoin-oracle.ts` (fetch BTC/USD from CoinGecko, then `evm.contracts.PriceOracle.write(toBytes32(timestamp), toBytes32(Math.round(price*100)))` via the gas-sponsored smart wallet, appending each price to a `bitcoin_prices` collection). `ORACLE_CONTRACT` is a **hardcoded `const` at the top of the task file, not an env var** (for this example we keep it inline; `/compose` permits manifest `env:` instead — either is fine, just don't put a plain address in `secrets:`). Follow `/compose-reference` for the manifest shape and the sandbox import rule before emitting the files (per the golden rules in `/compose` — don't synthesize the manifest from memory). Then **call `deployComposeApp` in the SAME turn**; don't ask the user to confirm first or emit any `goldsky` command. **In this mode, ignore Steps 0–8 below** — they are the CLI/local procedure.
 - **`Bash` is available (local CLI / coding agent):** execute the steps below directly, parsing output into later commands.
 - **Neither (pure reference Q&A):** explain what the app does; for step-by-step help point them at `npx skills add goldsky-io/goldsky-agent` to run it locally with Bash.
 
 ## Non-negotiables
 
 - **The shared oracle at `0x53deB3fF6E6e82A3b5E96f14E185e3Fe66BF5113` on Base Sepolia is fully unpermissioned — anyone can write to it.** It exists for getting started and demos only. Tell the user, in prose, that it must NOT be used in production. It only exists on Base Sepolia.
-- **Never run `forge create`, `goldsky compose deploy`, `git push`, or `gh repo create` without showing the exact command first and getting explicit confirmation.**
+- **Never run `goldsky compose deployContract`, `goldsky compose deploy`, `git push`, or `gh repo create` without showing the exact command first and getting explicit confirmation.**
 - **Deploy-your-own path only:** the contract's authorized writer must be the Compose wallet, or every `write()` reverts. On the shared-oracle path there is no writer restriction, so this does not apply.
 - **The example ships only `src/contracts/PriceOracle.json` (the ABI), not Solidity source.** If deploying fresh, use the reference contract in this skill. Write the ABI verbatim — see Step 3.
 - **Do not touch `src/lib/utils.ts`.** `toBytes32` is coupled to how the contract stores the value.
 
 > **Steps 0–8 below are the Bash / local-CLI procedure. If a `deployComposeApp` tool is available (webapp chatbot), do NOT follow them — use the deploy-tool flow in Mode Detection above.**
 
-## Step 0 — Scaffold the example
+## Step 0b — Scaffold the example
 
 Pull just the bitcoin-oracle example into a fresh directory (no git history):
 
 ```bash
-npx degit goldsky-io/documentation-examples/compose/bitcoin-oracle bitcoin-oracle
+npx -y degit goldsky-io/documentation-examples/compose/bitcoin-oracle bitcoin-oracle
 cd bitcoin-oracle
 ```
 
@@ -60,37 +61,45 @@ If the user already cloned the example, skip this step and `cd` into it.
 
 ## Preflight
 
-The `goldsky` CLI, auth, and `deno` checks are the standard Compose preflight — see `/compose` and `/auth-setup`. Bitcoin-oracle-specific: **`foundry`** (`forge --version`) is needed only on the deploy-your-own path (Step 3, Branch B).
+**Version (compose 0.8.1).** Run `goldsky compose --version` — it prints `goldsky compose 0.8.1`. If the version is older than `0.8.1`, or `deployContract` / `writeContract` are unknown commands, the deploy-your-own path (Branch B in Step 3) won't work — OFFER to run `goldsky compose update` for the user and re-check `--version`. (Branch A — the shared oracle — only needs `compose deploy`, so an older CLI is fine there.)
+
+The `goldsky` CLI, auth, and `deno` checks are the standard Compose preflight — see `/compose` and `/auth-setup`. Bitcoin-oracle-specific: the deploy-your-own path (Step 3, Branch B) uses **`goldsky compose deployContract`**, which bundles its own compiler — **Foundry is not required.**
 
 ## Step 1 — Configuration
 
-Name the app `bitcoin-oracle` (don't ask). Then, per the golden rules in `/compose`, ask only what you can't derive:
+Per the golden rules in `/compose`, ask only what you can't derive — and ask the app name first:
 
-1. **"Which chain?"** — **Base Sepolia (recommended)** because it has the ready, fully-unpermissioned shared oracle (nothing to deploy). Other options (Base, Arbitrum, Polygon Amoy, etc.) require deploying your own oracle. Use the camelCase form in TS (`baseSepolia`).
-2. **"PriceOracle contract?"** (ask immediately after the chain) — two options:
+1. **"What should the app be called? (suggest `bitcoin-oracle`)"** — ask FIRST, before any wallet (Step 2) or contract (Step 3) step. The name is hard to change later: it scopes named wallets and participates in the CREATE2 salt for every `deployContract`, so it must be settled now. Accept the default `bitcoin-oracle` on a shrug, and set it as the top-level `name:` in `compose.yaml`.
+2. **"Which chain?"** — **Base Sepolia (recommended)** because it has the ready, fully-unpermissioned shared oracle (nothing to deploy). Other options (Base, Arbitrum, Polygon Amoy, etc.) require deploying your own oracle. Use the camelCase form in TS (`baseSepolia`).
+3. **"PriceOracle contract?"** (ask immediately after the chain) — two options:
    - **Reuse the shared oracle on Base Sepolia (recommended)** — nothing to deploy. Wire `0x53deB3fF6E6e82A3b5E96f14E185e3Fe66BF5113` (mention the address in prose, not in any option label). Demos/getting-started only, not production.
    - **Deploy my own** — see Step 3, Branch B. (Required on any chain other than Base Sepolia.)
-3. **"How often should the cron run?"** — Every minute (recommended, `* * * * *`), every 5 minutes (`*/5 * * * *`), or every hour. Set the `expression:` under the `cron` trigger in `compose.yaml`.
+4. **"How often should the cron run?"** — Every minute (recommended, `* * * * *`), every 5 minutes (`*/5 * * * *`), or every hour. Set the `expression:` under the `cron` trigger in `compose.yaml`.
 
 ## Step 2 — Wallet
 
 - **Shared-oracle path (recommended):** nothing to do. The Compose smart wallet is auto-created at runtime and fully gas-sponsored on Base Sepolia. Do NOT tell the user to create or fund a wallet.
-- **Deploy-your-own path:** you need the wallet address *before* deploying the contract so you can set it as the authorized writer. Provision the named wallet (matches `evm.wallet({ name: "bitcoin-oracle-wallet" })` in `src/tasks/bitcoin-oracle.ts`) and capture its address as `$COMPOSE_WALLET`:
-  ```bash
-  goldsky compose wallet create bitcoin-oracle-wallet
-  ```
+- **Deploy-your-own path (Branch B):** the wallet is created first, before any deploy, as step (1) of the Branch B ordering in Step 3; capture its address as `$COMPOSE_WALLET`. The named wallet `bitcoin-oracle-wallet` matches `evm.wallet({ name: "bitcoin-oracle-wallet" })` in `src/tasks/bitcoin-oracle.ts`.
 
 ## Step 3 — Contract
 
-**Branch A — Reuse shared oracle (recommended).** `$CONTRACT_ADDRESS = 0x53deB3fF6E6e82A3b5E96f14E185e3Fe66BF5113` on Base Sepolia. No deploy, no writer authorization. Skip to Step 4.
+**Branch A — Reuse shared oracle (recommended).** `$CONTRACT_ADDRESS = 0x53deB3fF6E6e82A3b5E96f14E185e3Fe66BF5113` on Base Sepolia. No deploy, no writer authorization — but "nothing to deploy" is **not** "nothing to wire." The scaffold ships stale defaults (Polygon Amoy + a different oracle address), so the Step 4 wiring is **mandatory even on Branch A**. Skip to Step 4.
 
-**Branch B — Deploy your own.** First confirm `src/contracts/PriceOracle.json` contains exactly this ABI (write it verbatim if scaffolding inline; never invent ABI):
+**Branch B — Deploy your own.** Branch B has a fixed ordering: **create the wallet → deploy the contract → codegen → wire (Step 4) → deploy the app (Step 7).** Follow steps (1)–(5) below in order. `deployContract` writes the full compiled ABI to `src/contracts/PriceOracle.json` for you, so there's nothing to confirm by hand. The JSON below is the subset the task actually touches — `write`, the two view getters, and the `PriceUpdated` event (the compiled output also exposes the constructor, `writer`, `setWriter`, and `OnlyWriter`). On the in-app / scaffold-inline path this subset is enough for codegen; never invent ABI fields:
 
 ```json
 [{"inputs":[{"internalType":"bytes32","name":"timestamp","type":"bytes32"},{"internalType":"bytes32","name":"price","type":"bytes32"}],"name":"write","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"latestTimestamp","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"latestPrice","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"timestamp","type":"bytes32"},{"indexed":false,"internalType":"bytes32","name":"price","type":"bytes32"}],"name":"PriceUpdated","type":"event"}]
 ```
 
-Run `mkdir -p contracts`, write this reference Solidity to `contracts/PriceOracle.sol`:
+**(1) Create the wallet** (works before any deploy) and capture its address as `$COMPOSE_WALLET`. It matches `evm.wallet({ name: "bitcoin-oracle-wallet" })` in `src/tasks/bitcoin-oracle.ts`:
+
+```bash
+goldsky compose wallet create bitcoin-oracle-wallet
+```
+
+> ⚠ **Do NOT use `wallet create --env local`**: that's a LOCAL tevm wallet the cloud runtime never signs with, producing a bricked oracle the Troubleshooting section below will not diagnose. Use the default (cloud) wallet.
+
+**(2) Write the source, then deploy the contract.** Run `mkdir -p contracts` and write this reference Solidity to `contracts/PriceOracle.sol`:
 
 ```solidity
 // SPDX-License-Identifier: MIT
@@ -121,39 +130,67 @@ contract PriceOracle {
 }
 ```
 
-Then output this for the user to run with their own funded EOA (constructor arg authorizes the Compose wallet from Step 2):
+Then deploy through the Compose wallet — `deployContract` compiles in-CLI and deploys via a CREATE2 proxy signed by the gas-sponsored Compose wallet, so on Base / Base Sepolia it needs no funded EOA and no RPC URL. Every `deployContract` / `writeContract` needs `-t <project API key>` (or a `goldsky login` session) — make a key at Settings > API Keys in the dashboard. The constructor arg authorizes the wallet from step 1 as the writer:
+
+```bash
+goldsky compose deployContract contracts/PriceOracle.sol \
+  --chain-id <CHAIN_ID> \
+  --constructor-args $COMPOSE_WALLET \
+  --wallet bitcoin-oracle-wallet
+```
+
+Chain IDs: `baseSepolia` → `84532`, `base` → `8453`, `polygonAmoy` → `80002`, `polygon` → `137`, `arbitrum` → `42161`, `optimism` → `10`. It auto-saves the ABI to `src/contracts/PriceOracle.json`. Capture the printed contract address as `$CONTRACT_ADDRESS`.
+
+**Non-Base chains (forge fallback).** The `deployContract` cloud path is gas-sponsored on Base and Base Sepolia only today (broader coverage tracked as FOU-991). On any other chain, deploy with a funded EOA via `forge create` instead — the writer is still `$COMPOSE_WALLET`, so the task code is unchanged; extract the bare ABI afterward (see the note under the command). Don't ask the user for a private key — OFFER to generate a throwaway funded EOA: run `cast wallet new` and capture the private key **without printing it** (write it to a `chmod 600` file or an env var the user never sees), then show only `cast wallet address` / the address line. Point the user at the right-chain faucet for the chosen chain, then OFFER to check funding with `cast balance <address> --rpc-url <RPC>` before deploying. If they decline, tell them plainly the alternative is deploying with their own funded wallet:
 
 ```bash
 forge create contracts/PriceOracle.sol:PriceOracle \
-  --rpc-url <RPC_URL_FOR_CHOSEN_CHAIN> \
-  --private-key $PRIVATE_KEY \
+  --rpc-url <RPC_URL> \
+  --private-key <FUNDED_EOA_PRIVATE_KEY> \
   --broadcast \
   --constructor-args $COMPOSE_WALLET
 ```
+`--broadcast` is required (forge ≥1.0 dry-runs by default and deploys nothing while looking successful), and `--constructor-args` MUST be the last flag — it is greedy variadic, so placing it before `--rpc-url` / `--private-key` makes forge swallow them and dial localhost. The deployed address is on the `Deployed to:` line — capture it as `$CONTRACT_ADDRESS`. Then extract the **bare ABI** (feeding the full `{abi, bytecode, ...}` artifact breaks codegen silently):
 
-RPC URLs: `baseSepolia` → `https://sepolia.base.org`, `base` → `https://mainnet.base.org`, `polygonAmoy` → `https://rpc-amoy.polygon.technology`, `polygon` → `https://polygon-rpc.com`, `arbitrum` → `https://arb1.arbitrum.io/rpc`, `optimism` → `https://mainnet.optimism.io`. Capture `Deployed to: 0x...` as `$CONTRACT_ADDRESS`. (Already have a `PriceOracle`-shaped contract? Grant the Compose wallet write permission via `setWriter($COMPOSE_WALLET)` from the owner EOA and use its address instead.)
+```bash
+jq .abi out/PriceOracle.sol/PriceOracle.json > src/contracts/PriceOracle.json
+```
+
+**(3) Run codegen.** `deployContract` saved the ABI above (or the `jq .abi` extract did, on the forge path); `codegen` generates the typed `evm.contracts.PriceOracle` class the task imports (the CLI's own success output says to):
+
+```bash
+goldsky compose codegen
+```
+
+**(4) Wire** the address and chain into the task (Step 4). **(5) Deploy the app** so the wired task goes live (Step 7). A single deploy, not a redeploy: the wallet was created and contract deployed first, so this takes the wired task live.
+
+Either way (`deployContract` or the `forge create` fallback), `$COMPOSE_WALLET` — the constructor arg — is what authorizes the writer, so there's nothing else to do. (Already have a pre-existing `PriceOracle`-shaped contract? Grant the Compose wallet write permission via `setWriter($COMPOSE_WALLET)` from the owner EOA and use its address instead.)
 
 ## Step 4 — Wire the contract address and chain into the task
 
 Edit `src/tasks/bitcoin-oracle.ts` — use grep anchors:
 - Find `const ORACLE_CONTRACT = "0x..."` near the top and replace the address with `$CONTRACT_ADDRESS`.
 - Find the `evm.chains.*` reference inside the `new evm.contracts.PriceOracle(...)` call and set it to `evm.chains.<chosen chain in camelCase>` (e.g. `baseSepolia`).
+- If you wired a different chain, also update the stale scaffold comment block that still says "Polygon Amoy" so the file's comments match.
 
 If the user changed the cron cadence, edit the `expression:` under the `cron` trigger in `compose.yaml`.
+- Set the top-level `name:` in `compose.yaml` to the chosen app name from Step 1 (the degit scaffold may ship a different default — overwrite it so `compose deploy` and the CREATE2 salt match).
 
 ## Step 5 — Gas (deploy-your-own, non-sponsored chains only)
 
-Compose-managed wallets default to `sponsorGas: true` on sponsored chains (Base, Base Sepolia, Polygon, Polygon Amoy, and others). On those chains the wallet needs no funding — skip this step. On a non-sponsored chain, send native gas token to `$COMPOSE_WALLET` (testnet faucet, or budget for the cron cadence on mainnet: every-minute writes ≈ 1,440 tx/day).
+Compose-managed wallets default to `sponsorGas: true` on sponsored chains (Base, Base Sepolia, Polygon, Polygon Amoy, and others). On those chains the wallet needs no funding — skip this step. On a non-sponsored chain, send native gas token to `$COMPOSE_WALLET` (testnet faucet, or budget for the cron cadence on mainnet: every-minute writes ≈ 1,440 tx/day). Note that this **runtime** task-gas sponsorship covers far more chains than the `deployContract` / `writeContract` cloud *deploy* path, which is Base / Base Sepolia only for now — on other chains, deploy via the Step 3 forge fallback, then let runtime sponsorship (or a funded wallet) cover the cron writes.
 
 ## Step 6 — Optional: publish to a new GitHub repo
 
 ```bash
 git init
 git add .
-git ls-files --cached | grep -iE '(keypair\.json|\.env|private[._-]?key|\.pem|id_rsa)' && \
-  { echo "ABORT: secret-shaped file staged"; exit 1; }
-git commit -m "Initial commit: Compose bitcoin-oracle"
-gh repo create <user's repo name> --<public|private> --source=. --push
+if git ls-files --cached | grep -qiE '(keypair\.json|\.env|private[._-]?key|\.pem|id_rsa)'; then
+  echo "⚠ Secret-shaped file is staged — remove it before committing. Aborting publish."
+else
+  git commit -m "Initial commit: Compose bitcoin-oracle"
+  gh repo create <user's repo name> --<public|private> --source=. --push
+fi
 ```
 
 ## Step 7 — Deploy to Goldsky
@@ -162,13 +199,17 @@ gh repo create <user's repo name> --<public|private> --source=. --push
 goldsky compose deploy
 ```
 
+For Branch A (shared oracle) this is your first and only deploy. For Branch B this is also your only deploy: the wallet was created and the contract deployed first (Step 3), so this single deploy takes the wired task live.
+
 ## Step 8 — Smoke test
 
-Tail logs and wait for the next cron fire (up to 1 minute):
+Stream logs and wait for the next cron fire (up to 1 minute):
 
 ```bash
-goldsky compose logs
+goldsky compose logs -f
 ```
+
+`-f` / `--follow` streams live so you catch the next cron fire; plain `goldsky compose logs` is a one-shot dump of the last 100 lines (`--tail`, default 100) and returns.
 
 Good output is a return payload with `success: true` and an `oracleHash` 0x-prefixed tx hash, repeating on cadence with no retries.
 
@@ -177,16 +218,18 @@ Verify on-chain (Base Sepolia explorer: `https://sepolia.basescan.org/address/$C
 ## Troubleshooting
 
 - **Edits to `compose.yaml` or source files don't take effect after redeploy.** The local `.compose/` bundle cache is stale. Run `rm -rf .compose/` and redeploy.
-- **Every cron run reverts (deploy-your-own only).** The Compose wallet isn't the authorized writer. Re-run `setWriter($COMPOSE_WALLET)` (Branch A of your own contract) or re-check the `forge create` constructor arg. (Shared oracle has no writer restriction, so this can't be the cause there.)
+- **Every cron run reverts (deploy-your-own only).** The Compose wallet isn't the authorized writer. Re-run `setWriter($COMPOSE_WALLET)` (Branch A of your own contract) or re-check the `deployContract` constructor arg. (Shared oracle has no writer restriction, so this can't be the cause there.)
 - **`insufficient funds for gas`.** Only possible on a non-sponsored chain with deploy-your-own. Fund `$COMPOSE_WALLET`.
 - **CoinGecko 429 / rate-limited.** The default retry config (3 attempts, backoff) handles transient rate-limits. If persistent, reduce cron cadence or switch to a paid API.
 - **Task runs but no events on-chain.** Confirm the `evm.chains.*` reference matches the chain where the contract lives. A wallet on the wrong chain signs a tx that never appears on the intended chain.
+- **`error: Unknown command "deployContract". Did you mean command "deploy"?` (or the `writeContract` variant).** Cause: the CLI is too old (older than 0.8.1). Fix: offer `goldsky compose update`, then re-check `goldsky compose --version`.
+- **`This contract has already been deployed with this app` (re-running `deployContract`).** CREATE2 dedupes on contract + constructor args + app name, so an identical re-run is refused *before* the tx and prints NO `Deploy Block` — a rerun can't recover the block. Levers: change a constructor arg, change the source, or use a different app name. PriceOracle takes a constructor arg, so prefer the **constructor-arg lever**. ⚠ Renaming the app changes *every* future deploy address and conflicts with the app name you `compose deploy` under, so avoid it unless intended.
 
 ## What you should NOT do
 
 - Do not change the `toBytes32` helper in `src/lib/utils.ts`. The contract reads `price` as `bytes32` and the example scales by 100 (cents); changing either side silently breaks the stored value.
 - Do not use the shared Base Sepolia oracle as a production target — it's open for anyone to write.
-- Do not invent the `PriceOracle` ABI. Use the verbatim ABI in Step 3.
+- Do not invent the `PriceOracle` ABI. Use the ABI from Step 3 (the JSON there is the subset the task touches; `deployContract` writes the full version).
 
 ## Related
 

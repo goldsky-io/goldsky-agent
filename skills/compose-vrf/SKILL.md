@@ -9,7 +9,7 @@ Stand up the VRF example under the user's own Goldsky account. The app listens f
 
 This template supplies only what's specific to the VRF app — how it works and its **full source** (below). The recommended path uses a **shared, fully-unpermissioned `RandomnessConsumer` on Base Sepolia** at `0x6273AB73C95Ba2233281F1eb8aa3b21D9352AD6d`, so the user deploys nothing and the Compose smart wallet is auto-created and gas-sponsored.
 
-## Step 0 — Load the base skills first
+## Step 0a — Load the base skills first
 
 **Before anything else — before you answer, ask a question, scaffold a file, or call `deployComposeApp` — load the two base skills this template depends on:**
 
@@ -22,24 +22,26 @@ This template deliberately omits those rules and that reference — they are **r
 
 Pick the mode from the tools available to you:
 
-- **A `deployComposeApp` tool is available (Goldsky webapp chatbot) — this is the preferred in-app flow.** Do NOT emit `goldsky` terminal commands or `cliCommand` cards, and do NOT use Step 0 / `degit` / `forge` / `goldsky compose deploy`. Instead: give a 2-3 sentence plain explanation, then ask the **single** config question below with `askUser` (tag the recommended option with `recommendedIndex`). **Do NOT ask the user what to name the app** — name it `vrf-app` automatically; they can rename it after it's deployed. Ask only:
+- **A `deployComposeApp` tool is available (Goldsky webapp chatbot) — this is the preferred in-app flow.** Do NOT emit `goldsky` terminal commands or `cliCommand` cards, and do NOT use Step 0b / `degit` / `forge` / `goldsky compose deploy`. Instead: give a 2-3 sentence plain explanation, then ask the questions below with `askUser` (tag the recommended option with `recommendedIndex`):
+  - **App name** — ask first, before anything else: *"What should the app be called? (suggest `vrf-app`)"*. The name is hard to change later — it scopes named wallets and participates in the CREATE2 salt for every `deployContract` — so it must be settled before any wallet or contract step. Accept the default `vrf-app` on a shrug, and set the chosen name as the top-level `name:` in the scaffolded `compose.yaml`.
   - **Contract** — ask this explicitly, do not assume: *"Do you have your own `RandomnessConsumer`-style contract, or should we use a shared demo contract on Base Sepolia to get running quickly?"* Options: **"Use the shared demo contract on Base Sepolia (recommended — nothing to deploy)"** and **"I'll use my own contract."** On the shared path, `CONTRACT_ADDRESS` is the **HARDCODED** address `0x6273AB73C95Ba2233281F1eb8aa3b21D9352AD6d` on `baseSepolia` — copy it character-for-character, do NOT alter or retype it from memory; mention in prose that it's demos-only, not production. On the own path, ask the user to paste their contract address and chain (their contract must emit `RandomnessRequested(uint256,address)` and accept `fulfillRandomness`), and use exactly what they paste.
 
-  The Compose smart wallet is auto-created at runtime and gas-sponsored on Base Sepolia — never tell the user to create or fund a wallet. On the shared path there is **no fulfiller to set** (the contract is permissionless), so the wallet just works. After the single question, scaffold these files in-memory from **The app (full source)** below and pass them to `deployComposeApp` (do NOT degit): `compose.yaml`, `src/contracts/RandomnessConsumer.json` (verbatim ABI, required for codegen), `src/lib/drand.ts`, and the three task files. Set the top-level `name:` to `vrf-app`; set `CONTRACT_ADDRESS` in both task files and the `contract:` field in `compose.yaml` to the shared address (or the user's, on the own path), and the `evm.chains.*` reference + trigger `network:` to the chosen chain. Follow `/compose-reference` for the manifest shape and the sandbox import rule before emitting the files (per the golden rules in `/compose` — don't synthesize the manifest from memory). Then **call `deployComposeApp` in the SAME turn**; don't ask the user to confirm first or emit any `goldsky` command. **In this mode, ignore Steps 0–8 below** — they are the CLI/local procedure.
+  The Compose smart wallet is auto-created at runtime and gas-sponsored on Base Sepolia — never tell the user to create or fund a wallet. On the shared path there is **no fulfiller to set** (the contract is permissionless), so the wallet just works. After the questions, scaffold these files in-memory from **The app (full source)** below and pass them to `deployComposeApp` (do NOT degit): `compose.yaml`, `src/contracts/RandomnessConsumer.json` (verbatim ABI, required for codegen), `src/lib/drand.ts`, and the three task files. Set the top-level `name:` to the chosen app name (default `vrf-app`); set `CONTRACT_ADDRESS` in both task files and the `contract:` field in `compose.yaml` to the shared address (or the user's, on the own path), and the `evm.chains.*` reference + trigger `network:` to the chosen chain. Follow `/compose-reference` for the manifest shape and the sandbox import rule before emitting the files (per the golden rules in `/compose` — don't synthesize the manifest from memory). Then **call `deployComposeApp` in the SAME turn**; don't ask the user to confirm first or emit any `goldsky` command. **In this mode, ignore Steps 0–8 below** — they are the CLI/local procedure.
 - **`Bash` is available (local CLI / coding agent):** execute the steps below directly, parsing output into later commands.
 - **Neither (pure reference Q&A):** explain what the app does; for step-by-step help point them at `npx skills add goldsky-io/goldsky-agent` to run it locally with Bash.
 
 ## Non-negotiables
 
 - **The shared contract at `0x6273AB73C95Ba2233281F1eb8aa3b21D9352AD6d` on Base Sepolia is fully unpermissioned — anyone can call `fulfillRandomness`.** That is safe here: the randomness is only trusted because of the drand `round` + BLS `signature` stored on-chain, which anyone can verify off-chain against the drand quicknet public key. It exists for getting started and demos only. Tell the user, in prose, that it must NOT be used in production, and it only exists on Base Sepolia.
+- **The deployed shared contract `0x6273AB…` does NOT expose working `fulfiller()` / `setFulfiller`.** Those calls revert on-chain even though the reference source above includes them — the deployed bytecode differs. This is harmless to the app (`fulfillRandomness` is what matters, and it's permissionless), so do NOT "verify" the shared contract by calling `fulfiller()` / `setFulfiller`, and do not treat a revert there as a fault.
 - **Do NOT point the app at `0x53...` or `0xE05Ceb3E269029E3bab46E35515e8987060D1027`.** That older demo contract is **permissioned** (its `fulfiller` is a fixed address, not the user's Compose wallet), so every off-the-shelf `fulfillRandomness` reverts with `OnlyFulfiller`. The shared no-deploy contract is `0x6273AB...` and nothing else.
 - **Three places share the contract address:** the `contract:` field in `compose.yaml`, and `CONTRACT_ADDRESS` in both `src/tasks/fulfill-randomness.ts` and `src/tasks/request-randomness.ts`. If the user changes it, change all three.
 - **Deploy-your-own path only:** the drand fulfillment is permissionless in the reference contract, but if the user's own contract restricts fulfillment, the authorized fulfiller must be the Compose wallet or every `fulfillRandomness` reverts. On the shared contract there is no such restriction.
-- **Never run `forge create`, `goldsky compose deploy`, `git push`, or `gh repo create` without showing the exact command first and getting explicit confirmation.**
+- **Never run `goldsky compose deployContract`, `goldsky compose deploy`, `git push`, or `gh repo create` without showing the exact command first and getting explicit confirmation.**
 
 ## The app (full source)
 
-This is the complete VRF app. In the in-app flow, scaffold these files in-memory verbatim and set the address/chain per the interview. In the CLI flow, Step 0 pulls the same files from `goldsky-io/documentation-examples`; only edit them if you're customizing. The shared no-deploy contract is baked in as the `CONTRACT_ADDRESS` default below.
+This is the complete VRF app. In the in-app flow, scaffold these files in-memory verbatim and set the address/chain per the interview. In the CLI flow, Step 0b pulls the same files from `goldsky-io/documentation-examples` — but **the scaffold's baked-in defaults are STALE and MUST be rewired before you deploy** (Step 4 is mandatory, not optional). Specifically the scaffolded `compose.yaml` and both task files ship `name: "compose-vrf"` (stale — overwrite with the chosen app name from Step 1, default `vrf-app`) and `CONTRACT_ADDRESS = 0xE05Ceb3E269029E3bab46E35515e8987060D1027` — the *permissioned* contract this skill forbids — so do not trust the scaffolded values; rewire all of them in Step 4. The shared **no-deploy** contract `0x6273AB73C95Ba2233281F1eb8aa3b21D9352AD6d` (shown throughout the source above) is the address Step 4 wires in on the recommended path.
 
 ### `compose.yaml`
 
@@ -201,9 +203,15 @@ import { TaskContext } from "compose";
 /**
  * Generate the Compose wallet and output its address.
  *
- * Only needed on the deploy-your-own path: run this before deploying your
- * contract to get the fulfiller address to authorize.
+ * Only needed on the deploy-your-own path: the fulfiller address comes from
+ * Step 3 Branch B's `goldsky compose wallet create randomness-fulfiller` — NOT from
+ * this task. `callTask` only reaches a LOCALLY RUNNING app (start it with
+ * `goldsky compose start` first), never the deployed app, so it cannot give
+ * you the cloud wallet address either.
  *   goldsky compose callTask generate_wallet '{}'
+ *
+ * (The upstream goldsky-io/documentation-examples repo ships the same stale
+ * "run this before deploying" comment — do NOT fix the upstream repo here.)
  */
 export async function main(context: TaskContext) {
   const { evm } = context;
@@ -485,16 +493,16 @@ contract RandomnessConsumer {
 
 > **Steps 0–8 below are the Bash / local-CLI procedure. If a `deployComposeApp` tool is available (webapp chatbot), do NOT follow them — use the deploy-tool flow in Mode Detection above.**
 
-## Step 0 — Scaffold the example
+## Step 0b — Scaffold the example
 
 Pull just the VRF example into a fresh directory (no git history):
 
 ```bash
-npx degit goldsky-io/documentation-examples/compose/VRF compose-vrf
+npx -y degit goldsky-io/documentation-examples/compose/VRF compose-vrf
 cd compose-vrf
 ```
 
-If `npx degit` is unavailable, fall back to a sparse clone:
+If `npx -y degit` is unavailable, fall back to a sparse clone:
 
 ```bash
 git clone --depth 1 --filter=blob:none --sparse https://github.com/goldsky-io/documentation-examples.git
@@ -505,13 +513,15 @@ If the user already cloned the example, skip this step and `cd` into it. Either 
 
 ## Preflight
 
-The `goldsky` CLI, auth, and `deno` checks are the standard Compose preflight — see `/compose` and `/auth-setup`. VRF-specific: **`foundry`** (`forge --version`) is needed only on the deploy-your-own path (Step 3, Branch B).
+The `goldsky` CLI, auth, and `deno` checks are the standard Compose preflight — see `/compose` and `/auth-setup`. **Version gate (do this first):** run `goldsky compose --version` — it prints `goldsky compose 0.8.1` (or newer). If the version is older than `0.8.1`, OR `goldsky compose deployContract` / `goldsky compose writeContract` are reported as unknown commands, the CLI is too old for this skill: OFFER to run `goldsky compose update` (or `goldsky compose update 0.8.1` for a specific version), re-check `--version` after it finishes, and do not proceed until `0.8.1`+ is confirmed.
+
+VRF-specific, Foundry: **Foundry (`forge` / `cast`) is NOT required on the Base / Base Sepolia recommended path** — Branch B's `goldsky compose deployContract` bundles its own compiler, and the Step 8 smoke test uses the gas-sponsored `goldsky compose writeContract`. Foundry IS required only if you take the **forge fallback** on a non-Base chain (Step 3, Branch B → "Non-Base chains") or the **cast-based** smoke-test alternative in Step 8 — so on the recommended path, treat Foundry as optional.
 
 ## Step 1 — Configuration interview
 
 Ask one question at a time; let each answer inform the next. Use readable labels and translate to machine values yourself.
 
-1. **App name** — do NOT ask; name it `vrf-app` in the top-level `name:` of `compose.yaml`. The user can rename it after deploy.
+1. **App name** — ask FIRST, before any wallet or contract step: *"What should the app be called? (suggest `vrf-app`)"*. The name is hard to change later: it scopes named wallets and participates in the CREATE2 salt for every `deployContract`. Accept the default `vrf-app` on a shrug, and set it as the top-level `name:` in `compose.yaml` (the degit scaffold ships a stale `name: "compose-vrf"` — overwrite it).
 2. **"Which chain?"** — **Base Sepolia (recommended)** because it has the ready, fully-unpermissioned shared contract (nothing to deploy). Other chains require deploying your own. Use the camelCase form in TS (`baseSepolia`) and snake_case in `compose.yaml` (`base_sepolia`).
 3. **"RandomnessConsumer contract?"** (ask right after the chain) — two options:
    - **Reuse the shared contract on Base Sepolia (recommended)** — nothing to deploy. Wire `0x6273AB73C95Ba2233281F1eb8aa3b21D9352AD6d` (mention the address in prose, not in any option label). Demos/getting-started only, not production.
@@ -520,26 +530,66 @@ Ask one question at a time; let each answer inform the next. Use readable labels
 ## Step 2 — Wallet
 
 - **Shared-contract path (recommended):** nothing to do. The Compose smart wallet is auto-created at runtime and fully gas-sponsored on Base Sepolia, and the shared contract is permissionless so there's no fulfiller to authorize. Do NOT tell the user to create or fund a wallet.
-- **Deploy-your-own path:** if your contract restricts fulfillment, you need the wallet address *before* deploying so you can pass it as the authorized fulfiller. Provision the named wallet (matches `evm.wallet({ name: "randomness-fulfiller" })` in `src/tasks/fulfill-randomness.ts`) and capture its address as `$COMPOSE_WALLET`:
-  ```bash
-  goldsky compose wallet create randomness-fulfiller
-  ```
+- **Deploy-your-own path (Branch B):** the reference contract's `fulfiller` is just an informational deploy-time label (fulfillment is permissionless), but the constructor still needs the Compose wallet address as that label. The wallet is created first, before any deploy, as step (1) of the Branch B ordering in Step 3; capture its address as `$COMPOSE_WALLET`. The named wallet `randomness-fulfiller` matches `evm.wallet({ name: "randomness-fulfiller" })` in `src/tasks/fulfill-randomness.ts`.
 
 ## Step 3 — Contract
 
 **Branch A — Reuse shared contract (recommended).** `$CONTRACT_ADDRESS = 0x6273AB73C95Ba2233281F1eb8aa3b21D9352AD6d` on Base Sepolia. No deploy, no fulfiller authorization. Skip to Step 4.
 
-**Branch B — Deploy your own.** Write the reference contract from **The app (full source)** above to `contracts/RandomnessConsumer.sol`, then output this for the user to run with their own funded EOA (the constructor arg is recorded as the fulfiller label):
+**Branch B — Deploy your own.** Branch B has a fixed ordering: **create the wallet → deploy the contract → codegen → wire (Step 4) → deploy the app (Step 7).** Follow steps (1)–(5) below in order. The reference contract is in **The app (full source)** above (`contracts/RandomnessConsumer.sol`); `deployContract` writes the compiled ABI to `src/contracts/RandomnessConsumer.json` for you, so there's nothing to confirm by hand.
+
+**(1) Create the wallet** (works before any deploy) and capture its address as `$COMPOSE_WALLET`. It matches `evm.wallet({ name: "randomness-fulfiller" })` in `src/tasks/fulfill-randomness.ts`:
+
+```bash
+goldsky compose wallet create randomness-fulfiller
+```
+
+> ⚠ **Do NOT use `wallet create --env local`**: that's a LOCAL tevm wallet the cloud runtime never signs with, producing a bricked app the Troubleshooting section below will not diagnose. Use the default (cloud) wallet. Named wallets are **app-scoped** via the top-level `name:` in `compose.yaml`, so the app name (the chosen name from Step 1, e.g. `vrf-app`) is already final by this point; renaming it later would derive a *different* wallet than the one baked into your contract.
+
+**(2) Deploy the contract.** `deployContract` compiles in-CLI and deploys via a CREATE2 proxy signed by the gas-sponsored Compose wallet, so on Base / Base Sepolia it needs no funded EOA and no RPC URL. The constructor arg records the Compose wallet as the (informational) fulfiller label:
+
+```bash
+goldsky compose deployContract contracts/RandomnessConsumer.sol \
+  --chain-id <CHAIN_ID> \
+  --constructor-args $COMPOSE_WALLET \
+  --wallet randomness-fulfiller
+```
+**Auth:** `deployContract` needs a project API key — pass `-t <PROJECT_API_KEY>`, or run it inside a `goldsky login` session. On a `401` it prints "Generate an API key from Settings > API Keys in the Goldsky dashboard" — generate one there if you don't have it; OFFER to run the deploy with `-t` for the user.
+
+Chain IDs and routing — **`deployContract` is gas-sponsored (no funded EOA, no RPC URL) on Base / Base Sepolia only**; every other supported chain below must use the forge fallback that follows:
+
+- **Deploy-sponsored → use `deployContract`:** `baseSepolia` → `84532`, `base` → `8453`.
+- **Forge-fallback-only (sponsored coverage tracked as FOU-991):** `arbitrumSepolia` → `421614`, `arbitrum` → `42161`, `optimismSepolia` → `11155420`, `optimism` → `10`.
+
+`deployContract` auto-saves the ABI to `src/contracts/RandomnessConsumer.json`. Capture the printed contract address as `$CONTRACT_ADDRESS`.
+
+**Non-Base chains (forge fallback).** `deployContract` is gas-sponsored on Base / Base Sepolia only today (broader coverage tracked as FOU-991). On any other chain, deploy with a funded EOA via `forge create` — the fulfiller label is still `$COMPOSE_WALLET`, so the task code is unchanged.
+
+**Funded EOA (zero-friction generate offer).** Don't ask the user for a private key — OFFER to generate a throwaway funded EOA: run `cast wallet new` and capture the private key **without printing it** (write it to a `chmod 600` file or an env var the user never sees), then show only `cast wallet address` / the address line. Point the user at the right-chain faucet for the chosen chain, then OFFER to check funding with `cast balance <address> --rpc-url <RPC>` before deploying. If they decline, tell them plainly the alternative is deploying with their own funded wallet.
 
 ```bash
 forge create contracts/RandomnessConsumer.sol:RandomnessConsumer \
-  --rpc-url <RPC_URL_FOR_CHOSEN_CHAIN> \
-  --private-key $PRIVATE_KEY \
-  --constructor-args $COMPOSE_WALLET \
-  --broadcast
+  --rpc-url <RPC_URL> \
+  --private-key <FUNDED_EOA_PRIVATE_KEY> \
+  --broadcast \
+  --constructor-args $COMPOSE_WALLET
 ```
 
-RPC URLs: `baseSepolia` → `https://sepolia.base.org`, `base` → `https://mainnet.base.org`, `arbitrumSepolia` → `https://sepolia-rollup.arbitrum.io/rpc`, `optimismSepolia` → `https://sepolia.optimism.io`. Tell the user `$PRIVATE_KEY` must be an EOA with gas on the target chain. Capture `Deployed to: 0x...` as `$CONTRACT_ADDRESS`.
+`--broadcast` is required (forge ≥1.0 dry-runs by default and deploys nothing while looking successful), and `--constructor-args` MUST be the last flag — it is greedy variadic, so putting it before `--rpc-url` / `--private-key` makes forge swallow them and dial localhost. The deployed address is on the `Deployed to:` line — capture it as `$CONTRACT_ADDRESS`.
+
+**Extract the bare ABI (required).** `forge build` writes a full artifact `{abi, bytecode, ...}` to `out/RandomnessConsumer.sol/RandomnessConsumer.json`; `compose codegen` needs a **bare ABI array**, and feeding it the whole artifact fails with a warning while codegen still prints "✓ complete" (silent break — at runtime you hit "not a constructor"). Extract it:
+
+```bash
+jq .abi out/RandomnessConsumer.sol/RandomnessConsumer.json > src/contracts/RandomnessConsumer.json
+```
+
+**(3) Run codegen.** `deployContract` saved the ABI above (or the `jq .abi` extract did, on the forge path); `codegen` generates the typed `evm.contracts.RandomnessConsumer` class the task imports (the CLI's own success output says to):
+
+```bash
+goldsky compose codegen
+```
+
+**(4) Wire** the address and chain into code (Step 4). **(5) Deploy the app** so the wired task goes live (Step 7). A single deploy, not a redeploy: the wallet was created and contract deployed first, so this takes the wired task live.
 
 ## Step 4 — Wire the contract address and chain into code
 
@@ -555,19 +605,28 @@ Three places must stay in sync. Use grep anchors — line numbers shift over tim
 
 Show a diff before applying, then apply with Edit.
 
-## Step 5 — Gas (deploy-your-own, non-sponsored chains only)
+## Step 5 — Gas (deploy-your-own)
 
-Compose-managed wallets default to `sponsorGas: true` on sponsored chains (including Base Sepolia). On those chains the wallet needs no funding — skip this step. On a non-sponsored chain, send a small amount of native gas token to `$COMPOSE_WALLET` (testnet faucet, e.g. https://www.alchemy.com/faucets/base-sepolia).
+Compose-managed wallets default to `sponsorGas: true`, and the runtime bundler-union sponsorship covers **all** the chains this skill lists — Base / Base Sepolia **and** the forge-fallback chains (`arbitrumSepolia`, `arbitrum`, `optimismSepolia`, `optimism`). So `$COMPOSE_WALLET` needs **no funding on any of them** at runtime — skip wallet funding entirely. The only funded EOA this flow ever needs is the one that runs the `forge create` deploy on a non-Base chain (Step 3, Branch B → "Non-Base chains"), which is already covered there.
+
+Public RPC endpoints for the fallback chains (use these in `forge create` / `cast` in place of `<RPC_URL>`):
+
+- `arbitrumSepolia` → `https://sepolia-rollup.arbitrum.io/rpc`
+- `arbitrum` → `https://arb1.arbitrum.io/rpc`
+- `optimismSepolia` → `https://sepolia.optimism.io`
+- `optimism` → `https://mainnet.optimism.io`
 
 ## Step 6 — Optional: publish to a new GitHub repo
 
 ```bash
 git init
 git add .
-git ls-files --cached | grep -iE '(keypair\.json|\.env|private[._-]?key|\.pem|id_rsa)' && \
-  { echo "ABORT: secret-shaped file staged"; exit 1; }
-git commit -m "Initial commit: Compose VRF"
-gh repo create <user's repo name> --<public|private> --source=. --push
+if git ls-files --cached | grep -qiE '(keypair\.json|\.env|private[._-]?key|\.pem|id_rsa)'; then
+  echo "⚠ Secret-shaped file is staged — remove it before committing. Aborting publish."
+else
+  git commit -m "Initial commit: Compose VRF"
+  gh repo create <user's repo name> --<public|private> --source=. --push
+fi
 ```
 
 ## Step 7 — Deploy to Goldsky
@@ -576,30 +635,41 @@ gh repo create <user's repo name> --<public|private> --source=. --push
 goldsky compose deploy
 ```
 
-First deploy may take 1–2 minutes. Watch for `Deployed compose app: <app_name>` and the HTTP task URLs in the output.
+First deploy may take 1–2 minutes. Watch for `Deployed compose app: <app_name>` and the HTTP task URLs in the output. (Branch A deploys for the first time here; Branch B also deploys for the first time here: the wallet was created and the contract deployed first in Step 3, so this single deploy takes the wired task live.)
 
 ## Step 8 — Smoke test
 
-Trigger a request against the deployed app. The simplest way is the `request_randomness` HTTP task, which exercises the full request → event → fulfill path:
+Trigger a request against the deployed app. The **primary** trigger is the gas-sponsored `goldsky compose writeContract` — it calls `requestRandomness()` from the app's own Compose smart wallet (no token scavenger hunt, no funded EOA):
 
 ```bash
-curl -X POST \
-  -H "Authorization: Bearer $COMPOSE_TOKEN" \
-  "https://api.goldsky.com/api/admin/compose/v1/<app name>/tasks/request_randomness"
+goldsky compose writeContract \
+  --chain-id 84532 \
+  --to $CONTRACT_ADDRESS \
+  --function "requestRandomness()"
 ```
 
-(`$COMPOSE_TOKEN` is a Compose API token from the Goldsky dashboard. `goldsky compose callTask` only invokes locally running tasks, not the deployed app.) Or call the contract directly:
+(This `writeContract` is gas-sponsored on Base / Base Sepolia only — use `--chain-id 84532` (Base Sepolia) or `8453` (Base); on any other chain, skip it and use the `cast send` alternative below. It sends from the named/default gas-sponsored wallet and needs `-t <PROJECT_API_KEY>` or a `goldsky login` session; on `401` it points you to Settings > API Keys. To get the request id, read `nextRequestId` on-chain and subtract 1.)
+
+**Alternatives** (keep them labeled — the sponsored `writeContract` above is preferred on the recommended path):
+
+- **HTTP task (curl)** — the `request_randomness` task exercises the full request → event → fulfill path:
+  ```bash
+  curl -X POST \
+    -H "Authorization: Bearer $COMPOSE_TOKEN" \
+    "https://api.goldsky.com/api/admin/compose/v1/<app name>/tasks/request_randomness"
+  ```
+  (`$COMPOSE_TOKEN` is a Compose API token from **Settings > API Keys** in the Goldsky dashboard. `goldsky compose callTask` only invokes locally running tasks, not the deployed app.)
+- **Cast (your own funded EOA)** — call the contract directly:
+  ```bash
+  cast send $CONTRACT_ADDRESS "requestRandomness()" \
+    --rpc-url <RPC_URL> \
+    --private-key $PRIVATE_KEY
+  ```
+
+Wait 10–30 seconds for Compose to pick up the event, then **stream** logs (`-f` follows; without it `logs` is a one-shot dump and you'll likely miss the fire):
 
 ```bash
-cast send $CONTRACT_ADDRESS "requestRandomness()" \
-  --rpc-url <RPC_URL> \
-  --private-key $PRIVATE_KEY
-```
-
-Wait 10–30 seconds for Compose to pick up the event, then tail logs:
-
-```bash
-goldsky compose logs
+goldsky compose logs -f
 ```
 
 You should see `fetched drand round <N>` and `fulfilled request <requestId> in tx <hash>`. Verify on-chain:
@@ -616,6 +686,8 @@ cast call $CONTRACT_ADDRESS "isFulfilled(uint256)(bool)" <requestId> --rpc-url <
 - **Task doesn't fire when the event is emitted.** Confirm `compose.yaml` has the exact `contract:` address and the correct `network:`, the deploy succeeded, and the trigger is active (`goldsky compose status`).
 - **`insufficient funds for gas`.** Only possible on a non-sponsored chain. Fund `$COMPOSE_WALLET`.
 - **drand fetch fails.** The default drand endpoint is public. The retry config in `compose.yaml` (max 3, backoff) handles transient failures. If it persistently fails, check https://api.drand.sh/chains.
+- **`error: Unknown command "deployContract". Did you mean command "deploy"?` (or the `writeContract` variant).** The Compose CLI is too old. OFFER `goldsky compose update` (or `goldsky compose update 0.8.1`), re-check `goldsky compose --version` shows `0.8.1`+, then retry.
+- **`deployContract` refuses with "This contract has already been deployed with this app…".** Re-running `deployContract` with identical contract + constructor args + app + project re-derives the same CREATE2 address and is refused *before* the tx (it prints **no** `Deploy Block:`). To get a fresh deployment, change a lever: a different constructor arg (`RandomnessConsumer` takes `_fulfiller`), a changed contract source, or a different app name. **Prefer the constructor-arg / source lever** — renaming the app changes *all* future deploy addresses and conflicts with the `compose deploy` app name, so it's the most disruptive option.
 
 ## What you should NOT do
 
@@ -623,7 +695,7 @@ cast call $CONTRACT_ADDRESS "isFulfilled(uint256)(bool)" <requestId> --rpc-url <
 - Do not modify the drand constants in `src/lib/drand.ts` unless the user explicitly asks to swap drand networks. They are chain-specific BLS parameters; getting them wrong breaks signature verification silently.
 - Do not change the event signature `RandomnessRequested(uint256,address)` in `compose.yaml` — it must match the contract.
 - Do not use the shared Base Sepolia contract as a production target — it's open for anyone to fulfill.
-- Do not add a `PRIVATE_KEY` secret to this app. The Compose wallet is the signer; the user's EOA is only needed to deploy their own contract, never at runtime.
+- Do not add a `PRIVATE_KEY` secret to this app. The Compose wallet signs at runtime; on Base / Base Sepolia the Branch B deploy needs no EOA either (`deployContract` is gas-sponsored). The forge fallback above uses a funded EOA for the deploy only on non-Base chains — never at runtime.
 
 ## Related
 

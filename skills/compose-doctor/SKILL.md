@@ -71,7 +71,7 @@ goldsky compose wallet list -n <app>
 Check whether the error is:
 
 - **"No bundler provider available for chain &lt;id&gt;"** → unsupported chain for gas sponsorship; either use a different chain or set `sponsorGas: false` and fund the EOA manually.
-- **"You cannot use a smart wallet in local dev…"** → switch to `compose dev --fork-chains` or use a BYO EOA wallet locally.
+- **"You cannot use a smart wallet in local dev…"** → switch to `compose start --fork-chains` or use a BYO EOA wallet locally.
 - **"Transaction Receipt failed with status reverted"** → onchain revert. Open the `dashboard_url` from the log line — the run trace in the dashboard includes the decoded revert reason.
 
 ### Step 7 — Check Manifest
@@ -112,13 +112,15 @@ Present findings in this format:
 | `Deploy blocked: required secrets are missing from cloud`                                                           | cloud secret missing                                               | `goldsky compose secret set` or `deploy --sync-env`                 |
 | `Task bundling failed: <msg>`                                                                                       | esbuild compile error                                              | fix the TS error in the task                                        |
 | `esbuild native binary crashed… architecture mismatch…`                                                             | arm/amd64 mismatch                                                 | rebuild image; `rm -rf ~/.cache/esbuild`                            |
-| `You cannot use a smart wallet in local dev unless you use chain forking.`                                          | Smart wallet in plain `compose dev`                                | `compose dev --fork-chains` or switch to a BYO EOA                  |
+| `You cannot use a smart wallet in local dev unless you use chain forking.` | Smart wallet in plain `compose start` | `compose start --fork-chains` or switch to a BYO EOA |
 | `No bundler provider available for chain <id>.`                                                                     | chain not supported by any bundler                                 | change chains, or set `sponsorGas: false`                           |
 | `Chain <id> is not supported by Alchemy's bundler.`                                                                 | forced Alchemy on wrong chain                                      | unset `BUNDLER_PROVIDER` env override                               |
 | `Transaction Receipt failed with status reverted`                                                                   | onchain revert                                                     | open `dashboard_url` for decoded revert reason                      |
 | `Cannot deserialize params: chain <id> not found`                                                                   | reorg replay for a chain missing in viem/chains                    | update the CLI / switch chains                                      |
 | `[Warning] onReorg is not supported for gas-sponsored transactions.`                                                | non-fatal warning                                                  | if reorg matters, switch to non-sponsored                           |
 | `[Warning] The 'nonce' parameter is being ignored for gas-sponsored transactions.`                                  | passing `nonce` to sponsored send                                  | remove the nonce override                                           |
+| `error: Unknown command "deployContract". Did you mean command "deploy"?` (exit 2; prints generic help) | CLI older than 0.8.0 — `deployContract` was added in 0.8.0 | OFFER to run `goldsky compose update`, then retry |
+| `--constructor-args` parse/encoding error with multiple or array args | CLI is 0.8.0 — the forge-style multi-arg/array grammar needs ≥ 0.8.1 | OFFER `goldsky compose update` to ≥ 0.8.1, then retry |
 
 ## Dashboard
 
