@@ -1,13 +1,22 @@
 ---
 name: compose-compliance-oracle
-description: "Build and deploy the Goldsky Compose compliance-oracle example under the user's own account — a compliance-gated payment gateway where a smart contract holds a USDC payment in escrow, Compose screens the sender wallet via the Webacy AML API on the emitted TransferRequested event, then calls back to approve (funds to the business wallet) or reject (funds returned to sender). Ships a second cron task that reconciles stuck transfers. Triggers on: 'build a compliance oracle', 'compliance-gated payments', 'AML screening onchain', 'KYC payment gateway', 'escrow with compliance check', 'wallet screening oracle', 'gated transfers', 'Webacy oracle'. The escrow contract's approve/reject are oracle-permissioned, so there is no shared no-deploy contract — each user deploys their own instance bound to their oracle wallet (recommended path: Base Sepolia + a MockUSDC). The oracle is a named Compose smart wallet (`compliance-oracle-wallet`, gas-sponsored) with no private key to manage on the default path. For a custom/novel Compose app, use /compose. For debugging a deployed app, use /compose-doctor. For manifest/CLI/API field lookups, use /compose-reference."
+description: "Build and deploy the Goldsky Compose compliance-oracle example under the user's own account — a compliance-gated payment system where a smart contract holds funds in escrow, Compose screens the sender wallet via a compliance API (Webacy recommended, or bring-your-own / mock), then calls back to approve or reject. Supports two payment models: single-payee (payment gateway — funds go to a configurable recipient) and multi-payee (P2P — sender specifies recipient per transfer). Ships a second cron task that reconciles stuck transfers. Triggers on: 'build a compliance oracle', 'compliance-gated payments', 'AML screening onchain', 'KYC payment gateway', 'escrow with compliance check', 'wallet screening oracle', 'gated transfers', 'Webacy oracle', 'P2P compliance', 'payment gateway with screening'. The escrow contract's approve/reject are oracle-permissioned, so there is no shared no-deploy contract — each user deploys their own instance bound to their oracle wallet (recommended path: Base Sepolia + a MockUSDC). The oracle is a named Compose smart wallet (`compliance-oracle-wallet`, gas-sponsored) with no private key to manage on the default path. For a custom/novel Compose app, use /compose. For debugging a deployed app, use /compose-doctor. For manifest/CLI/API field lookups, use /compose-reference."
 ---
 
 # Build: Compose compliance-oracle
 
-Stand up the compliance payment gateway under the user's own Goldsky account. A `ComplianceGatedTransfer` contract accepts a USDC payment from any sender and holds it in escrow, emitting `TransferRequested`. Compose reacts to that event, screens the sender wallet via the **Webacy** AML API, then signs a callback: `approveTransfer` (escrowed funds go to the oracle/business wallet) or `rejectTransfer` (funds returned to the sender). Every decision is written to a durable `transfer-audits` collection, and a `reconcile` cron catches transfers left stuck in `Pending`. Gas is sponsored — the oracle wallet never needs native token.
+Stand up a compliance-gated payment system under the user's own Goldsky account. A `ComplianceGatedTransfer` contract accepts a payment from any sender and holds it in escrow, emitting `TransferRequested`. Compose reacts to that event, screens the sender wallet via a compliance API, then signs a callback: `approveTransfer` (funds go to the intended recipient) or `rejectTransfer` (funds returned to the sender). Every decision is written to a durable `transfer-audits` collection, and a `reconcile` cron catches transfers left stuck in `Pending`. Gas is sponsored — the oracle wallet never needs native token.
 
-This template supplies only what's specific to the compliance app — how it works and its **full source** (below). Unlike the VRF or bitcoin-oracle examples, **there is no shared no-deploy contract**: `approveTransfer`/`rejectTransfer` are `onlyOracle`-gated (that's the security model — only the oracle may release escrow), so each instance is bound at construction to one oracle address. Every user deploys their own contract with their own oracle wallet as `oracle`. The recommended path is **Base Sepolia** with a `MockUSDC` you deploy, so it's free and fully gas-sponsored; graduate to Base mainnet with native USDC for production.
+**Two payment models** (chosen during configuration):
+- **Single-payee** (payment gateway / deposit flow) — all approved funds go to one configurable `recipient` address, set at construction and changeable via `setRecipient()`. The recipient is separate from the oracle signer.
+- **Multi-payee** (P2P transfers) — the sender specifies a recipient per transfer via `requestTransfer(amount, recipient)`.
+
+**Three compliance provider options:**
+- **Webacy (recommended)** — simple REST API, one API key. Sign up at https://developers.webacy.co/ for a free demo key.
+- **Mock mode** — hardcoded allow/deny list, no API key needed. Good for testing the flow before committing to a provider.
+- **Bring your own** — scaffolds the `screenWallet()` interface for you to implement with any provider.
+
+This template supplies only what's specific to the compliance app — how it works and its **full source** (below). Unlike the VRF or bitcoin-oracle examples, **there is no shared no-deploy contract**: `approveTransfer`/`rejectTransfer` are `onlyOracle`-gated (that's the security model — only the oracle may release escrow), so each instance is bound at construction to one oracle address. Every user deploys their own contract with their own oracle wallet as `oracle`. The recommended path is **Base Sepolia** with a `MockUSDC` you deploy, so it's free and fully gas-sponsored; graduate to mainnet for production. Any EVM chain Compose supports works — Base Sepolia is recommended because it's free and gas-sponsored.
 
 ## Step 0a — Load the base skills first
 
@@ -22,7 +31,7 @@ This template deliberately omits those rules and that reference — they are **r
 
 Pick the mode from the tools available to you:
 
-- **A `deployComposeApp` tool is available (Goldsky webapp chatbot).** Compliance now deploys fully in-app. In-app flow: run the Step 1 interview (app name first), `walletCreate({ appName: "<chosen app name>", walletName: "compliance-oracle-wallet" })` to get the oracle wallet address (pass `appName` as the chosen app name and `walletName` explicitly; passing the wallet name positionally as `appName` creates the wrong app scope, and the resulting address never matches the runtime `evm.wallet({ name: "compliance-oracle-wallet" })`), `deployContract` MockUSDC, then `deployContract` ComplianceGatedTransfer with `constructorArgs: ["<USDC_addr>", "<oracle-wallet-addr>"]` (these are tool inputs: `sources` and `constructorArgs`, not CLI flags). Wire the deployed contract address and chain into the inlined source (Step 3), then `deployComposeApp`. The `WEBACY_API_KEY` secret is the user's LAST step: the in-app deploy skips secret validation, so `deployComposeApp` succeeds without it, but the app won't run until the user adds the secret in the Compose app's dashboard **and redeploys from the dashboard** so the pod picks it up (secrets are baked into the pod at deploy, not hot-reloaded). NEVER attempt to set a secret from chat; there is no tool, by design. Scaffold the inlined source from **The app (full source)** below in-memory.
+- **A `deployComposeApp` tool is available (Goldsky webapp chatbot).** Compliance now deploys fully in-app. In-app flow: run the Step 1 interview (app name first), `walletCreate({ appName: "<chosen app name>", walletName: "compliance-oracle-wallet" })` to get the oracle wallet address (pass `appName` as the chosen app name and `walletName` explicitly; passing the wallet name positionally as `appName` creates the wrong app scope, and the resulting address never matches the runtime `evm.wallet({ name: "compliance-oracle-wallet" })`), `deployContract` MockUSDC, then `deployContract` ComplianceGatedTransfer with `constructorArgs: ["<token_addr>", "<oracle-wallet-addr>", "<recipient_addr>"]` for single-payee or `["<token_addr>", "<oracle-wallet-addr>"]` for P2P (these are tool inputs: `sources` and `constructorArgs`, not CLI flags). Wire the deployed contract address and chain into the inlined source (Step 3), then `deployComposeApp`. The `WEBACY_API_KEY` secret is the user's LAST step: the in-app deploy skips secret validation, so `deployComposeApp` succeeds without it, but the app won't run until the user adds the secret in the Compose app's dashboard **and redeploys from the dashboard** so the pod picks it up (secrets are baked into the pod at deploy, not hot-reloaded). NEVER attempt to set a secret from chat; there is no tool, by design. Scaffold the inlined source from **The app (full source)** below in-memory.
 - **`Bash` is available (local CLI / coding agent):** execute the steps below directly, parse output, and substitute captured values into later commands.
 - **Neither (pure reference Q&A):** explain what the app does and the escrow → screen → approve/reject lifecycle; only if asked for step-by-step help, output one command at a time and have the user paste output back. Point them at `npx skills add goldsky-io/goldsky-agent` to run it locally with Bash.
 
@@ -106,7 +115,11 @@ tasks:
 
 ### `contracts/ComplianceGatedTransfer.sol`
 
-Single-payee escrow: on approval, funds go to the `oracle` (business) wallet; on rejection, back to the sender. Imports OpenZeppelin's `IERC20` (installed in Preflight).
+**Use the single-payee OR P2P variant below based on the user's choice in Step 1.** Only scaffold one.
+
+#### Single-payee variant
+
+On approval, funds go to a configurable `recipient` address (separate from the oracle signer); on rejection, back to the sender. Imports OpenZeppelin's `IERC20` (installed in Preflight).
 
 ```solidity
 // SPDX-License-Identifier: MIT
@@ -123,8 +136,9 @@ contract ComplianceGatedTransfer {
         Status status;
     }
 
-    IERC20 public immutable usdc;
+    IERC20 public immutable token;
     address public oracle;
+    address public recipient;
     uint256 public nextTransferId;
 
     mapping(uint256 => Transfer) public transfers;
@@ -136,6 +150,7 @@ contract ComplianceGatedTransfer {
     );
     event TransferApproved(uint256 indexed id);
     event TransferRejected(uint256 indexed id);
+    event RecipientUpdated(address indexed oldRecipient, address indexed newRecipient);
     event OracleUpdated(address indexed oldOracle, address indexed newOracle);
 
     modifier onlyOracle() {
@@ -143,18 +158,15 @@ contract ComplianceGatedTransfer {
         _;
     }
 
-    constructor(address _usdc, address _oracle) {
-        usdc = IERC20(_usdc);
+    constructor(address _token, address _oracle, address _recipient) {
+        token = IERC20(_token);
         oracle = _oracle;
+        recipient = _recipient;
     }
 
-    /// @notice User calls this to send a compliance-screened payment.
-    ///         User must have approved this contract to spend `amount` of USDC first.
-    ///         If approved, funds go to the oracle (business) wallet.
     function requestTransfer(uint256 amount) external {
         require(amount > 0, "zero amount");
-
-        usdc.transferFrom(msg.sender, address(this), amount);
+        token.transferFrom(msg.sender, address(this), amount);
 
         uint256 id = nextTransferId++;
         transfers[id] = Transfer({
@@ -166,25 +178,27 @@ contract ComplianceGatedTransfer {
         emit TransferRequested(id, msg.sender, amount);
     }
 
-    /// @notice Oracle approves the transfer — funds go to the oracle (business) wallet.
     function approveTransfer(uint256 id) external onlyOracle {
         Transfer storage t = transfers[id];
         require(t.status == Status.Pending, "not pending");
         t.status = Status.Approved;
-        usdc.transfer(oracle, t.amount);
+        token.transfer(recipient, t.amount);
         emit TransferApproved(id);
     }
 
-    /// @notice Oracle rejects the transfer — funds returned to sender.
     function rejectTransfer(uint256 id) external onlyOracle {
         Transfer storage t = transfers[id];
         require(t.status == Status.Pending, "not pending");
         t.status = Status.Rejected;
-        usdc.transfer(t.sender, t.amount);
+        token.transfer(t.sender, t.amount);
         emit TransferRejected(id);
     }
 
-    /// @notice Allow oracle address to be updated (for key rotation).
+    function setRecipient(address _recipient) external onlyOracle {
+        emit RecipientUpdated(recipient, _recipient);
+        recipient = _recipient;
+    }
+
     function setOracle(address _oracle) external onlyOracle {
         emit OracleUpdated(oracle, _oracle);
         oracle = _oracle;
@@ -192,9 +206,94 @@ contract ComplianceGatedTransfer {
 }
 ```
 
-### `contracts/MockUSDC.sol` (Base Sepolia / recommended path only)
+#### Multi-payee (P2P) variant
 
-Native USDC only exists on mainnet. On Base Sepolia, deploy this mintable 6-decimal ERC-20 first and use its address as the escrow's `_usdc` constructor arg. Open `mint` so you can fund sender wallets freely on testnet.
+The sender specifies a recipient per transfer. On approval, funds go to the transfer's `recipient`; on rejection, back to the sender. No `setRecipient` — each transfer carries its own.
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+contract ComplianceGatedTransfer {
+    enum Status { Pending, Approved, Rejected }
+
+    struct Transfer {
+        address sender;
+        address recipient;
+        uint256 amount;
+        Status status;
+    }
+
+    IERC20 public immutable token;
+    address public oracle;
+    uint256 public nextTransferId;
+
+    mapping(uint256 => Transfer) public transfers;
+
+    event TransferRequested(
+        uint256 indexed id,
+        address indexed sender,
+        address indexed recipient,
+        uint256 amount
+    );
+    event TransferApproved(uint256 indexed id);
+    event TransferRejected(uint256 indexed id);
+    event OracleUpdated(address indexed oldOracle, address indexed newOracle);
+
+    modifier onlyOracle() {
+        require(msg.sender == oracle, "not oracle");
+        _;
+    }
+
+    constructor(address _token, address _oracle) {
+        token = IERC20(_token);
+        oracle = _oracle;
+    }
+
+    function requestTransfer(uint256 amount, address _recipient) external {
+        require(amount > 0, "zero amount");
+        require(_recipient != address(0), "zero recipient");
+        token.transferFrom(msg.sender, address(this), amount);
+
+        uint256 id = nextTransferId++;
+        transfers[id] = Transfer({
+            sender: msg.sender,
+            recipient: _recipient,
+            amount: amount,
+            status: Status.Pending
+        });
+
+        emit TransferRequested(id, msg.sender, _recipient, amount);
+    }
+
+    function approveTransfer(uint256 id) external onlyOracle {
+        Transfer storage t = transfers[id];
+        require(t.status == Status.Pending, "not pending");
+        t.status = Status.Approved;
+        token.transfer(t.recipient, t.amount);
+        emit TransferApproved(id);
+    }
+
+    function rejectTransfer(uint256 id) external onlyOracle {
+        Transfer storage t = transfers[id];
+        require(t.status == Status.Pending, "not pending");
+        t.status = Status.Rejected;
+        token.transfer(t.sender, t.amount);
+        emit TransferRejected(id);
+    }
+
+    function setOracle(address _oracle) external onlyOracle {
+        emit OracleUpdated(oracle, _oracle);
+        oracle = _oracle;
+    }
+}
+```
+
+### `contracts/MockUSDC.sol` (testnet / recommended path only)
+
+Native USDC only exists on mainnet. On testnets, deploy this mintable 6-decimal ERC-20 first and use its address as the escrow's `_token` constructor arg. Open `mint` so you can fund sender wallets freely on testnet.
 
 ```solidity
 // SPDX-License-Identifier: MIT
@@ -313,9 +412,77 @@ export async function screenWallet(
 }
 ```
 
+### `src/lib/mock-screener.ts` (mock mode only)
+
+Use this instead of `webacy.ts` when the user chose mock mode. Same `WalletScreeningResult` interface, no API key needed.
+
+```typescript
+import { TaskContext } from "compose";
+
+export type WalletScreeningResult = {
+  address: string;
+  riskScore: number | null;
+  passed: boolean;
+  triggeredRules: string[];
+};
+
+// Add addresses to this set to simulate flagged/risky wallets
+const DENY_LIST = new Set<string>([
+  "0x000000000000000000000000000000000000dead",
+  // Add your test "risky" addresses here (lowercase)
+]);
+
+export async function screenWallet(
+  address: string,
+  _apiKey: string,
+  riskThreshold: number,
+  _fetchFn: TaskContext["fetch"],
+): Promise<WalletScreeningResult> {
+  const isRisky = DENY_LIST.has(address.toLowerCase());
+
+  return {
+    address,
+    riskScore: isRisky ? 85 : 5,
+    passed: !isRisky,
+    triggeredRules: isRisky ? ["Deny list match"] : [],
+  };
+}
+```
+
+### `src/lib/screener.ts` (bring-your-own mode only)
+
+Scaffold this interface for the user to implement with their own provider. Same `WalletScreeningResult` interface.
+
+```typescript
+import { TaskContext } from "compose";
+
+export type WalletScreeningResult = {
+  address: string;
+  riskScore: number | null;
+  passed: boolean;
+  triggeredRules: string[];
+};
+
+export async function screenWallet(
+  address: string,
+  _apiKey: string,
+  riskThreshold: number,
+  fetchFn: TaskContext["fetch"],
+): Promise<WalletScreeningResult> {
+  // TODO: Implement your screening logic here.
+  // Use fetchFn (not fetch/axios) for any HTTP calls — Compose sandboxes network access.
+  //
+  // Return { passed: true } to approve, { passed: false } to reject.
+  // riskScore and triggeredRules are for audit logging.
+  throw new Error("Not implemented — replace with your screening provider");
+}
+```
+
+> **Provider swap:** all three providers export the same `screenWallet` function signature and `WalletScreeningResult` type. The task imports from whichever provider was chosen — change the import in `on-transfer-requested.ts` to swap: `"../lib/webacy"`, `"../lib/mock-screener"`, or `"../lib/screener"`.
+
 ### `src/tasks/on-transfer-requested.ts`
 
-The main task. Decodes the event, screens the sender, signs `approveTransfer`/`rejectTransfer` via the private-key oracle wallet (gas-sponsored), and writes an audit record.
+The main task. Decodes the event, screens the sender, signs `approveTransfer`/`rejectTransfer` via the private-key oracle wallet (gas-sponsored), and writes an audit record. **The import path for the screener depends on the provider choice.** The P2P variant differs only in the event type and decoding — see the note after the source.
 
 ```typescript
 import { TaskContext, OnchainEvent } from "compose";
@@ -440,6 +607,14 @@ export async function main(ctx: TaskContext, payload: OnchainEvent) {
 }
 ```
 
+> **P2P variant changes:** For the multi-payee contract, change the event type and decoding in `on-transfer-requested.ts`:
+> - Event type: `args: { id: bigint; sender: string; recipient: string; amount: bigint }`
+> - Add `{ name: "recipient", type: "address", indexed: true }` to the ABI inputs (between sender and amount)
+> - Destructure: `const { id, sender, recipient, amount } = decoded.args;`
+> - Update `compose.yaml` event signature to `TransferRequested(uint256,address,address,uint256)`
+>
+> The rest of the task (screening, approve/reject, audit record) is identical — the contract handles routing funds to `transfer.recipient`.
+
 ### `src/tasks/reconcile.ts`
 
 A safety-net cron (every 5 minutes). Scans the contract for transfers stuck in `Pending` — an event the main task missed or a failed callback — and logs an alert so nothing sits in escrow silently.
@@ -522,7 +697,18 @@ mkdir -p compliance-oracle/src/tasks compliance-oracle/src/lib compliance-oracle
 cd compliance-oracle
 ```
 
-Write these files verbatim from the source above: `compose.yaml`, `tsconfig.json`, `foundry.toml`, `contracts/ComplianceGatedTransfer.sol`, `contracts/MockUSDC.sol`, `src/lib/constants.ts`, `src/lib/webacy.ts`, `src/tasks/on-transfer-requested.ts`, and `src/tasks/reconcile.ts`. Then wire the deployed address and chain in Step 3. Add a `.gitignore` containing `.env`, `node_modules/`, and `.compose/`.
+Write these files verbatim from the source above — choose the correct contract variant (single-payee or P2P) and screening provider (webacy.ts, mock-screener.ts, or screener.ts) based on the user's choices in Step 1. Update the import in `on-transfer-requested.ts` to match the chosen provider. Files to write: `compose.yaml`, `tsconfig.json`, `foundry.toml`, `contracts/ComplianceGatedTransfer.sol` (chosen variant), `contracts/MockUSDC.sol` (testnet only), `src/lib/constants.ts`, the chosen screening library, `src/tasks/on-transfer-requested.ts`, and `src/tasks/reconcile.ts`. Then wire the deployed address and chain in Step 3.
+
+Add a `.gitignore`:
+
+```
+.env
+.compose/
+cache/
+lib/
+out/
+node_modules/
+```
 
 ## Preflight
 
@@ -546,9 +732,16 @@ The `goldsky` CLI and auth checks are the standard Compose preflight — see `/c
 Per the golden rules in `/compose`, ask only what you can't derive, one question at a time — and ask the app name first:
 
 1. **"What should the app be called? (suggest `compliance-oracle`)"** — ask FIRST, before any wallet or contract step. The name is hard to change later: it scopes named wallets and participates in the CREATE2 salt for every `deployContract` (Step 2), so it must be settled now. Accept the default `compliance-oracle` on a shrug, and set it as the top-level `name:` in `compose.yaml`.
-2. **"Which chain?"** — **Base Sepolia (recommended)** — free, gas-sponsored, and you mint your own test USDC. Base mainnet is production (real USDC, real screening, real funds). Use the camelCase form in TS (`baseSepolia`) and snake_case in `compose.yaml` (`base_sepolia`).
-3. **"What risk threshold?"** — Webacy `overallRisk` is 0-100; senders scoring at or above the threshold are rejected. Default `50`. Set `RISK_THRESHOLD` in `src/lib/constants.ts`.
-4. **Recipient.** Approved funds go to the **oracle (business) wallet** itself (the contract sends escrow to `oracle` on approval). That's the `compliance-oracle-wallet` Compose smart wallet set at construction. No separate recipient to configure.
+2. **"Is this a single-payee system (like a payment gateway or deposit flow) or a multi-payee system (like P2P transfers)?"**
+   - **Single payee (recommended for getting started)** — all approved payments go to one configured `recipient` address. The recipient is separate from the oracle and can be updated on the contract independently via `setRecipient()`. Use the single-payee contract variant and `TransferRequested(uint256,address,uint256)` event.
+   - **Multi payee (P2P)** — the sender specifies the recipient per transfer. Use the P2P contract variant and `TransferRequested(uint256,address,address,uint256)` event.
+3. **"Which compliance/wallet screening API do you want to use?"**
+   - **Webacy (recommended)** — simple REST API, one API key. Sign up at https://developers.webacy.co/ — you can create a demo API key right after signup.
+   - **Mock mode** — hardcoded allow/deny list, no API key needed. Good for testing the flow before committing to a provider. Remove `WEBACY_API_KEY` from `compose.yaml`'s `secrets` array.
+   - **Bring your own** — scaffolds the `screenWallet()` function signature; you fill in the body.
+4. **"Which chain?"** — **Base Sepolia (recommended)** — free, gas-sponsored, and you mint your own test USDC. Any EVM chain Compose supports works (Ethereum Sepolia, Polygon Amoy, Arbitrum Sepolia, etc. for testnet; Base, Ethereum, Polygon, Arbitrum, Optimism, etc. for mainnet). Use the camelCase form in TS (`baseSepolia`) and the compose network name in `compose.yaml` (`base_sepolia`).
+5. **"What risk threshold?"** — Risk score is 0-100; senders scoring at or above the threshold are rejected. Default `50`. Set `RISK_THRESHOLD` in `src/lib/constants.ts`.
+6. **Recipient (single-payee only)** — **"What address should approved payments be sent to?"** They can provide an address now, or use the oracle wallet address for testing (simplest — "I'll use the oracle wallet for now"). This can be changed later via `setRecipient()` on the contract. The recipient becomes the third constructor arg.
 
 ## Step 2 — Oracle wallet and contract deploy
 
@@ -567,21 +760,32 @@ goldsky compose wallet list
 # → copy the compliance-oracle-wallet address as $ORACLE_ADDRESS
 ```
 
-**Base Sepolia (recommended): deploy a MockUSDC first**, then use its address as the escrow's `_usdc` arg. Both deploys go through the gas-sponsored Compose wallet (Base Sepolia is sponsored, so nothing needs funding). The `oracle` is the `compliance-oracle-wallet` address captured above. (Each `deployContract`/`writeContract` needs a project API key; pass `-t <key>` or have an active `goldsky login` session; generate the key at **Settings > API Keys** in the Goldsky dashboard.)
+**Base Sepolia (recommended): deploy a MockUSDC first**, then use its address as the escrow's `_token` arg. Both deploys go through the gas-sponsored Compose wallet (Base Sepolia is sponsored, so nothing needs funding). The `oracle` is the `compliance-oracle-wallet` address captured above. (Each `deployContract`/`writeContract` needs a project API key; pass `-t <key>` or have an active `goldsky login` session; generate the key at **Settings > API Keys** in the Goldsky dashboard.)
 
 ```bash
-# 1) MockUSDC - no constructor args
-goldsky compose deployContract contracts/MockUSDC.sol --chain-id 84532
-# capture the printed address as $USDC_ADDRESS
+# 1) MockUSDC — no constructor args (testnet only)
+goldsky compose deployContract contracts/MockUSDC.sol --chain-id $CHAIN_ID
+# capture the printed address as $TOKEN_ADDRESS
 
-# 2) ComplianceGatedTransfer(usdc, oracle) - oracle is the compliance-oracle-wallet address
+# 2) ComplianceGatedTransfer — oracle is the compliance-oracle-wallet address;
+#    constructor args depend on the payment model:
+
+# Single-payee (3 args: token, oracle, recipient):
 goldsky compose deployContract contracts/ComplianceGatedTransfer.sol \
-  --chain-id 84532 \
-  --constructor-args $USDC_ADDRESS $ORACLE_ADDRESS
+  --chain-id $CHAIN_ID \
+  --constructor-args $TOKEN_ADDRESS $ORACLE_ADDRESS $RECIPIENT_ADDRESS
+
+# P2P (2 args: token, oracle):
+goldsky compose deployContract contracts/ComplianceGatedTransfer.sol \
+  --chain-id $CHAIN_ID \
+  --constructor-args $TOKEN_ADDRESS $ORACLE_ADDRESS
+
 # capture the printed address as $CONTRACT_ADDRESS
 ```
 
-The ABI for each contract is auto-saved to `src/contracts/<Name>.json`. Once both deploys print `Address:`, generate the typed contract classes (required before any typecheck; the `tsconfig.json` `paths` entry points at `.compose/types.d.ts`, which codegen produces):
+Use the chain ID for the user's chosen chain (e.g. `84532` for Base Sepolia, `8453` for Base mainnet, `11155111` for Ethereum Sepolia, etc.).
+
+The ABI for each contract is auto-saved to `src/contracts/<Name>.json`. Once both deploys print `Address:`, generate the typed contract classes (required before any typecheck — the `tsconfig.json` `paths` entry points at `.compose/types.d.ts`, which codegen produces):
 
 ```bash
 goldsky compose codegen
@@ -589,29 +793,28 @@ goldsky compose codegen
 
 > **TypeScript pin:** the inlined `tsconfig.json` typechecks on **TypeScript 5.x**; TS 6 rejects `baseUrl`. If you run a typecheck, pin `npx -y typescript@5 tsc` rather than a bare `tsc`.
 
-**Base mainnet (production):** skip MockUSDC; pass native USDC `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` straight in as `$USDC_ADDRESS`:
+**Mainnet (production):** skip MockUSDC — use the native token address on the user's chosen chain (e.g. USDC on Base is `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`). Ask the user for the token contract address and use it as `$TOKEN_ADDRESS` directly.
 
-```bash
-goldsky compose deployContract contracts/ComplianceGatedTransfer.sol \
-  --chain-id 8453 \
-  --constructor-args 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913 $ORACLE_ADDRESS
-```
+Capture `$CONTRACT_ADDRESS` and `$TOKEN_ADDRESS` for the next step, then run `goldsky compose codegen` here too.
 
-Capture `$CONTRACT_ADDRESS` and `$USDC_ADDRESS` for the next step, then run `goldsky compose codegen` here too.
 ## Step 3 — Wire the contract address and chain into the app
 
 Two files reference the chain/addresses. Use grep anchors — line numbers shift.
 
 **`src/lib/constants.ts`:**
-- `chain:` → `"baseSepolia"` (Base Sepolia) or leave `"base"` (mainnet).
+- `chain:` → the user's chosen chain in camelCase (e.g. `"baseSepolia"`, `"base"`, `"polygonAmoy"`, etc.).
 - `contractAddress:` → `$CONTRACT_ADDRESS`.
-- `usdcAddress:` → `$USDC_ADDRESS` (your MockUSDC on Sepolia; native USDC on mainnet).
+- `usdcAddress:` → `$TOKEN_ADDRESS` (your MockUSDC on testnet; native token on mainnet).
 
 **`compose.yaml`** (inside the `on_transfer_requested` trigger):
-- `network:` → `"base_sepolia"` or `"base"` (snake_case).
+- `network:` → the compose network name for the user's chain (e.g. `"base_sepolia"`, `"base"`, `"polygon_amoy"`, etc.).
 - `contract:` → `$CONTRACT_ADDRESS`.
 
-The event signature `TransferRequested(uint256,address,uint256)` stays as-is — it matches the contract. Show a diff before applying, then apply with Edit.
+The event signature should match the chosen contract variant:
+- Single-payee: `TransferRequested(uint256,address,uint256)` (already the default)
+- P2P: `TransferRequested(uint256,address,address,uint256)`
+
+Show a diff before applying, then apply with Edit.
 
 Note: `src/lib/webacy.ts` hardcodes `?chain=base` in its Webacy request deliberately — testnet screening reuses mainnet reputation data, so leave it `base` even on Base Sepolia (the source comment doesn't say so).
 
@@ -632,7 +835,7 @@ fi
 
 ## Step 5 — Set your secret (before deploy)
 
-The running task uses `WEBACY_API_KEY` to screen sender wallets via the Webacy AML API. If you haven't already, sign up at https://developers.webacy.co/ and create an API key. (The whole flow was verified working with a stub key set here before deploy, so a placeholder is fine right up to the smoke test.)
+**Webacy mode only** — mock mode and bring-your-own need no `WEBACY_API_KEY` (make sure it's removed from `compose.yaml`'s `secrets` array, per Step 1) and skip this step. The running task uses `WEBACY_API_KEY` to screen sender wallets via the Webacy AML API. If you haven't already, sign up at https://developers.webacy.co/ and create an API key. (The whole flow was verified working with a stub key set here before deploy, so a placeholder is fine right up to the smoke test.)
 
 - **CLI:** set the secret BEFORE `goldsky compose deploy` (Step 6): `goldsky compose secret set WEBACY_API_KEY --value <your_webacy_api_key>`. `compose deploy` validates that every manifest-declared secret exists and bakes it into the pod at deploy time, so an unset secret 400s the deploy with "The following secrets referenced in the manifest do not exist". Secrets are not hot-reloaded: setting or updating a secret after deploy only writes to storage and does NOT reach the running pod without a redeploy.
 - **In-app (chatbot):** the in-app deploy skips secret validation, so `deployComposeApp` (Step 6) succeeds without it. After deploy, add `WEBACY_API_KEY` in the Compose app's dashboard under the app's **Secrets** page, then **redeploy from the dashboard** so the pod picks it up. The app does not start working on set alone; the redeploy is required. NEVER attempt to set a secret from chat; there is no tool, by design.
@@ -649,7 +852,7 @@ First deploy may take 1-2 minutes. Watch for `Deployed compose app: <the chosen 
 
 This step runs **after** `compose deploy` (Step 6), so the app's wallets now exist. The **primary** path drives the whole flow from the app's gas-sponsored default smart wallet via `writeContract`, so no funded EOA is needed. (A `cast` alternative with your own EOA follows.)
 
-For the `cast` verification and alternative below, set `RPC_URL=https://sepolia.base.org` (or `https://mainnet.base.org` for production).
+For the `cast` verification and alternative below, set `RPC_URL` to an RPC for the user's chosen chain (e.g. `https://sepolia.base.org` for Base Sepolia, `https://mainnet.base.org` for Base mainnet).
 
 **Primary — sponsored `writeContract` from the app wallet.** List the app's wallets and grab the default smart wallet as the sender:
 
@@ -662,11 +865,11 @@ Then mint, approve, and request the transfer (each needs `-t <project API key>` 
 
 ```bash
 # mint 1.00 mUSDC to the app wallet (MockUSDC.mint is open)
-goldsky compose writeContract --chain-id 84532 --to $USDC_ADDRESS \
+goldsky compose writeContract --chain-id 84532 --to $TOKEN_ADDRESS \
   --function "mint(address,uint256)" --args $COMPOSE_WALLET 1000000
 
 # approve the escrow to pull the app wallet's USDC
-goldsky compose writeContract --chain-id 84532 --to $USDC_ADDRESS \
+goldsky compose writeContract --chain-id 84532 --to $TOKEN_ADDRESS \
   --function "approve(address,uint256)" --args $CONTRACT_ADDRESS 1000000
 
 # request a 1.00 USDC transfer — emits TransferRequested, which the task screens
@@ -692,10 +895,10 @@ cast call $CONTRACT_ADDRESS "transfers(uint256)(address,uint256,uint8)" <id> --r
 
 ```bash
 # mint is open — any funded key mints to the sender
-cast send $USDC_ADDRESS "mint(address,uint256)" $SENDER_ADDRESS 1000000 \
+cast send $TOKEN_ADDRESS "mint(address,uint256)" $SENDER_ADDRESS 1000000 \
   --rpc-url $RPC_URL --private-key $SENDER_KEY   # 1.00 mUSDC
 # approve the escrow, then request (ERC-20 needs prior approval)
-cast send $USDC_ADDRESS "approve(address,uint256)" $CONTRACT_ADDRESS 1000000 \
+cast send $TOKEN_ADDRESS "approve(address,uint256)" $CONTRACT_ADDRESS 1000000 \
   --rpc-url $RPC_URL --private-key $SENDER_KEY
 cast send $CONTRACT_ADDRESS "requestTransfer(uint256)" 1000000 \
   --rpc-url $RPC_URL --private-key $SENDER_KEY
@@ -713,7 +916,7 @@ Generate `$SENDER_KEY` without printing it (a separate funded EOA, not the oracl
 - **Webacy returns an empty response / task throws.** Check `WEBACY_API_KEY` is set as a secret and valid, and the address is well-formed hex. Transient failures are absorbed by the `retry_config` (3 attempts, backoff).
 - **Reject scenario approves instead.** On Base Sepolia, a fresh test wallet has no on-chain history, so Webacy scores it low (it passes). Use a known-flagged address, or test the reject path on mainnet where real risk data exists.
 - **`insufficient funds for gas` on deploy.** On Base / Base Sepolia the deploy is sponsored. On other chains, fund the **Compose wallet** (the deployer) with native gas; the oracle wallet needs nothing.
-- **Re-running `deployContract` with identical contract + args + app is refused ("This contract has already been deployed with this app...").** This is a CREATE2 pre-tx refusal — it prints **no** `Deploy Block:`. The address is deterministic from contract code + constructor args + app name + project, so an identical combination reproduces the same address. Fresh-deploy levers: change a constructor arg, change the source, or use a different app name. For the no-arg `MockUSDC` the **only** lever is the app name; for `ComplianceGatedTransfer` (takes `(usdc, oracle)`) changing a constructor arg also works. ⚠ Renaming the app changes **all** future deploy addresses and conflicts with the `compose deploy` app name, so prefer the constructor-arg lever where possible — for no-arg contracts the app-name lever is the only option.
+- **Re-running `deployContract` with identical contract + args + app is refused ("This contract has already been deployed with this app...").** This is a CREATE2 pre-tx refusal — it prints **no** `Deploy Block:`. The address is deterministic from contract code + constructor args + app name + project, so an identical combination reproduces the same address. Fresh-deploy levers: change a constructor arg, change the source, or use a different app name. For the no-arg `MockUSDC` the **only** lever is the app name; for `ComplianceGatedTransfer` (takes `(token, oracle)` or `(token, oracle, recipient)`) changing a constructor arg also works. ⚠ Renaming the app changes **all** future deploy addresses and conflicts with the `compose deploy` app name, so prefer the constructor-arg lever where possible — for no-arg contracts the app-name lever is the only option.
 
 ## What you should NOT do
 
