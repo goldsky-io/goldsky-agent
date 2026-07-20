@@ -55,7 +55,7 @@ api_version: "stable"
 secrets:
   # Project API key used to spawn / poll / delete Turbo pipelines from
   # inside declare_campaign. Set once:
-  #   goldsky secret create GOLDSKY_PROJECT_KEY <key>
+  #   goldsky compose secret set GOLDSKY_PROJECT_KEY --value "$GOLDSKY_PROJECT_KEY"
   - GOLDSKY_PROJECT_KEY
 
 tasks:
@@ -1032,7 +1032,7 @@ import type { Hex } from "./types";
  *
  * Auth is a project API token surfaced as `context.env.GOLDSKY_PROJECT_KEY`
  * — declared in compose.yaml's `secrets:` block, set once via
- * `goldsky secret create GOLDSKY_PROJECT_KEY <value>`.
+ * `goldsky compose secret set GOLDSKY_PROJECT_KEY --value "$GOLDSKY_PROJECT_KEY"`.
  */
 
 const API_BASE = "https://api.goldsky.com/api/v1";
@@ -1042,7 +1042,7 @@ function authHeaders(env: Record<string, string>): Record<string, string> {
   if (!key) {
     throw new Error(
       "GOLDSKY_PROJECT_KEY missing — declare it under `secrets:` in compose.yaml " +
-        "and set its value with `goldsky secret create GOLDSKY_PROJECT_KEY <key>`",
+        "and set its value with `goldsky compose secret set GOLDSKY_PROJECT_KEY`",
     );
   }
   return {
@@ -1560,15 +1560,15 @@ contract ShareToken {
 Pull just the corporate-actions example into a fresh directory (no git history):
 
 ```bash
-npx -y degit goldsky-io/documentation-examples/compose/corporate-actions dividend-distribution
+npx -y degit goldsky-io/documentation-examples/compose/corporate-actions#6abe62878cb92f2569538ba9572b049ed5949a01 dividend-distribution
 cd dividend-distribution
 ```
 
 If `npx degit` is unavailable, fall back to a sparse clone:
 
 ```bash
-git clone --depth 1 --filter=blob:none --sparse https://github.com/goldsky-io/documentation-examples.git
-cd documentation-examples && git sparse-checkout set compose/corporate-actions && cd compose/corporate-actions
+git clone --filter=blob:none --sparse https://github.com/goldsky-io/documentation-examples.git
+cd documentation-examples && git checkout 6abe62878cb92f2569538ba9572b049ed5949a01 && git sparse-checkout set compose/corporate-actions && cd compose/corporate-actions
 ```
 
 If the user already cloned the example, skip this and `cd` into it.
@@ -1615,7 +1615,9 @@ Copy the three addresses plus `shareTokenDeployBlock` (the ShareToken Deploy Blo
 The running app uses this to spawn / poll / delete Turbo pipelines:
 
 ```bash
-goldsky compose secret set GOLDSKY_PROJECT_KEY --value <your project API key>
+# export GOLDSKY_PROJECT_KEY once in your shell (or source it from a chmod-600 .env);
+# never paste the literal key into a command or the transcript
+goldsky compose secret set GOLDSKY_PROJECT_KEY --value "$GOLDSKY_PROJECT_KEY"
 ```
 
 (The scaffolded repo's `compose.yaml` comment and README still point at the plain project-secret command — that's stale; use the Compose secret command above, or deploy fails with "The following secrets referenced in the manifest do not exist or do not belong to this app".)
@@ -1623,7 +1625,7 @@ goldsky compose secret set GOLDSKY_PROJECT_KEY --value <your project API key>
 ## Step 3 — Deploy the Compose app
 
 ```bash
-goldsky compose deploy -t <your project API key>
+goldsky compose deploy -t "$GOLDSKY_PROJECT_KEY"
 ```
 
 Compose-cloud auto-provisions a hosted Neon Postgres DB and creates a project secret named `CORPORATE_ACTIONS` pointing at it; the job-mode pipelines write snapshots into that DB. First deploy may take 1-2 minutes. Watch for `Deployed compose app: <the chosen app name>` (e.g. `corporate-actions`) and the HTTP task URL.
@@ -1689,7 +1691,7 @@ Returned fields, in order: `operator, payToken, shareToken, totalAmount, escrowR
 The app is deployed but won't run until the `GOLDSKY_PROJECT_KEY` secret is set AND the app is (re)deployed with it. The running app uses it to spawn, poll, and delete the job-mode Turbo pipelines (see `src/lib/turbo.ts`).
 
 - **In-app (chatbot):** the in-app deploy skips secret validation, so `deployComposeApp` succeeds without the secret. After deploy, add `GOLDSKY_PROJECT_KEY` in the Compose app's dashboard under the app's **Secrets** page, then **redeploy from the dashboard** so the pod picks it up. The app does not start working on set alone; secrets are baked into the pod at deploy, not hot-reloaded, so the redeploy is required. NEVER attempt to set a secret from chat; there is no tool, by design.
-- **CLI:** you set this in Step 2 (it must exist before the CLI deploy, which validates and bakes it in). If you skipped it: `goldsky compose secret set GOLDSKY_PROJECT_KEY --value <your project API key>`, then redeploy so the pod picks it up.
+- **CLI:** you set this in Step 2 (it must exist before the CLI deploy, which validates and bakes it in). If you skipped it: `goldsky compose secret set GOLDSKY_PROJECT_KEY --value "$GOLDSKY_PROJECT_KEY"` (exported in your shell, never pasted literally), then redeploy so the pod picks it up.
 
 ## Troubleshooting
 
@@ -1700,7 +1702,7 @@ The app is deployed but won't run until the `GOLDSKY_PROJECT_KEY` secret is set 
 - **`declare()` reverts.** Ensure the `corp-actions-operator` Compose wallet holds enough MockUSDC for `totalAmount` (the task does the `approve` itself at declare time; mint more to the wallet in Step 4). `payToken` is **not** a contract-level setting — it's a per-`declare()` argument sourced from `CONFIG.payToken` in `src/lib/constants.ts`. If the token is wrong, edit `CONFIG.payToken` there to match the token you minted/hold, then redeploy.
 - **`deployContract` refuses: "This contract has already been deployed with this app..."** An identical contract + constructor args + app name yields the same CREATE2 address, so the CLI refuses *before* the transaction and prints **no** `Deploy Block`. Levers: change a constructor arg, change the source, or use a different app name. For the two no-arg contracts here (MockUSDC, DistributionCampaign) the constructor-arg/source levers don't apply — a **different app name is the only lever**. ShareToken takes `(address[],uint256[])`, so for it the constructor-arg lever applies. ⚠ Renaming the app changes every future deploy address and conflicts with the `compose deploy` app name (the chosen app name, e.g. `corporate-actions`), so prefer the constructor-arg lever wherever it applies.
 - **Campaign returns `paying` (not `complete`).** Some `pay()` calls didn't land this drive. Re-POST the same `campaignId` — already-paid holders are skipped via on-chain `isPaid()`, and the run resumes.
-- **No hosted DB / snapshot rows.** Confirm the deploy created the `CORPORATE_ACTIONS` secret (compose-cloud does this automatically); if not, redeploy with `-t <key>`.
+- **No hosted DB / snapshot rows.** Confirm the deploy created the `CORPORATE_ACTIONS` secret (compose-cloud does this automatically); if not, redeploy with `-t "$GOLDSKY_PROJECT_KEY"`.
 
 ## What you should NOT do
 

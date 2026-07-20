@@ -37,13 +37,14 @@ Pick the mode from the tools available to you:
 
 ## Variable handling for agents
 
-When this skill says `$FOO`, capture the literal value from the prior command's output and substitute it directly into the next command. Do not rely on shell variables persisting between separate Bash tool invocations — each invocation gets a fresh shell.
+When this skill says `$FOO`, capture the literal value from the prior command's output and substitute it directly into the next command. Do not rely on shell variables persisting between separate Bash tool invocations — each invocation gets a fresh shell. **Exception, secret values:** never capture `WEBACY_API_KEY`, `ORACLE_PRIVATE_KEY` (BYO-key path), or any `*_KEY` value into your context or substitute it literally into a command. Have the user export the value in their shell (or write it into a chmod-600 `.env` themselves) and reference it with `"$VAR"` expansion inside a single Bash invocation — never paste it into the chat or echo it back.
 
 ## Non-negotiables
 
 - **There is no shared, reusable contract.** `approveTransfer`, `rejectTransfer`, and `setOracle` are all `onlyOracle` (`require(msg.sender == oracle)`), and `oracle` is fixed at construction. A user cannot point their app at someone else's deployed instance — only that instance's oracle key can sign valid callbacks. Every user deploys their own via Step 2. (An older demo instance exists on Base **mainnet** at `0x39efE8A851A4Da22fa40828F6D4b3DC6b54545Aa`, but its oracle is a fixed key nobody else holds, so it is reference-only, not reusable.)
 - **The oracle is the Compose smart wallet `compliance-oracle-wallet`.** Its address IS the contract's `oracle` constructor arg. Capture the address from `walletCreate({ appName: "<chosen app name>", walletName: "compliance-oracle-wallet" })` (in-app; `appName` is the chosen app name, `walletName` is explicit) or `goldsky compose wallet create compliance-oracle-wallet` (CLI), and pass it as the second constructor arg to `ComplianceGatedTransfer`. The Compose task loads the same wallet via `evm.wallet({ name: "compliance-oracle-wallet", sponsorGas: true })`. If they don't match, every `approveTransfer`/`rejectTransfer` reverts with `not oracle`. Gas is sponsored, no private key to manage.
 - **Gas sponsorship:** the oracle wallet uses `sponsorGas: true`, so it never needs native token for gas on sponsored chains (Base, Base Sepolia). `goldsky compose deployContract` deploys through the gas-sponsored Compose wallet, so neither the deploy nor the runtime callbacks cost the oracle anything.
+- **`WEBACY_API_KEY` is a real secret.** Never print, commit, or log it — Compose secrets only, never echoed back or substituted literally into a command or the transcript. On the Advanced BYO-key path, treat `ORACLE_PRIVATE_KEY` with the same discipline.
 - **Do not import external packages in task code.** `evm`, `fetch`, `collection`, `env`, and `logger` all come from the injected `context` argument. The only import allowed in tasks is `compose` (for types) and sibling project files.
 - **Never run `goldsky compose deployContract`, `goldsky compose deploy`, `goldsky compose secret set`, `git push`, or `gh repo create` without showing the exact command first and getting explicit confirmation.**
 
@@ -51,7 +52,7 @@ When this skill says `$FOO`, capture the literal value from the prior command's 
 
 The default path uses a gas-sponsored Compose smart wallet (`compliance-oracle-wallet`) with no key to manage. If you need your own key custody (for example, a production signer you control), you can bring your own EOA private key instead:
 
-- Set `ORACLE_PRIVATE_KEY` as a Compose secret: `goldsky compose secret set ORACLE_PRIVATE_KEY --value <key>`. Never print, commit, or log this key.
+- Set `ORACLE_PRIVATE_KEY` as a Compose secret: `goldsky compose secret set ORACLE_PRIVATE_KEY --value "$ORACLE_PRIVATE_KEY"` (exported by the user in their own shell — never paste the literal key). Never print, commit, or log this key.
 - In `compose.yaml`, add `ORACLE_PRIVATE_KEY` to the `secrets:` block and set `api_version: "internal-pk-sponsored-otel"` (the internal channel is required for BYO-private-key combined with `sponsorGas`).
 - In the task source, load the wallet with `evm.wallet({ privateKey: env.ORACLE_PRIVATE_KEY, sponsorGas: true })` instead of the named `compliance-oracle-wallet`.
 - The contract's `oracle` constructor arg is `cast wallet address $ORACLE_PRIVATE_KEY`.
@@ -398,10 +399,14 @@ export async function screenWallet(
 
   const riskScore = data.overallRisk ?? null;
 
+  // Use tag.key (stable machine identifier), not tag.name/tag.description:
+  // those are free text from an external API and must stay out of logs and
+  // audit records. They are a prompt-injection surface for anything that
+  // later reads the audit trail.
   const triggeredRules: string[] = (data.issues ?? [])
     .flatMap((issue) => issue.tags ?? [])
     .filter((tag) => tag.severity >= 2)
-    .map((tag) => tag.name);
+    .map((tag) => tag.key);
 
   return {
     address,
@@ -760,7 +765,7 @@ goldsky compose wallet list
 # → copy the compliance-oracle-wallet address as $ORACLE_ADDRESS
 ```
 
-**Base Sepolia (recommended): deploy a MockUSDC first**, then use its address as the escrow's `_token` arg. Both deploys go through the gas-sponsored Compose wallet (Base Sepolia is sponsored, so nothing needs funding). The `oracle` is the `compliance-oracle-wallet` address captured above. (Each `deployContract`/`writeContract` needs a project API key; pass `-t <key>` or have an active `goldsky login` session; generate the key at **Settings > API Keys** in the Goldsky dashboard.)
+**Base Sepolia (recommended): deploy a MockUSDC first**, then use its address as the escrow's `_token` arg. Both deploys go through the gas-sponsored Compose wallet (Base Sepolia is sponsored, so nothing needs funding). The `oracle` is the `compliance-oracle-wallet` address captured above. (Each `deployContract`/`writeContract` needs a project API key; pass `-t "$GOLDSKY_PROJECT_KEY"` or have an active `goldsky login` session; generate the key at **Settings > API Keys** in the Goldsky dashboard.)
 
 ```bash
 # 1) MockUSDC — no constructor args (testnet only)
@@ -837,7 +842,7 @@ fi
 
 **Webacy mode only** — mock mode and bring-your-own need no `WEBACY_API_KEY` (make sure it's removed from `compose.yaml`'s `secrets` array, per Step 1) and skip this step. The running task uses `WEBACY_API_KEY` to screen sender wallets via the Webacy AML API. If you haven't already, sign up at https://developers.webacy.co/ and create an API key. (The whole flow was verified working with a stub key set here before deploy, so a placeholder is fine right up to the smoke test.)
 
-- **CLI:** set the secret BEFORE `goldsky compose deploy` (Step 6): `goldsky compose secret set WEBACY_API_KEY --value <your_webacy_api_key>`. `compose deploy` validates that every manifest-declared secret exists and bakes it into the pod at deploy time, so an unset secret 400s the deploy with "The following secrets referenced in the manifest do not exist". Secrets are not hot-reloaded: setting or updating a secret after deploy only writes to storage and does NOT reach the running pod without a redeploy.
+- **CLI:** set the secret BEFORE `goldsky compose deploy` (Step 6): `goldsky compose secret set WEBACY_API_KEY --value "$WEBACY_API_KEY"` — the user exports the value in their own shell (or writes it into a chmod-600 `.env` and `source`s it) rather than pasting it into the chat, and it is never echoed back. `compose deploy` validates that every manifest-declared secret exists and bakes it into the pod at deploy time, so an unset secret 400s the deploy with "The following secrets referenced in the manifest do not exist". Secrets are not hot-reloaded: setting or updating a secret after deploy only writes to storage and does NOT reach the running pod without a redeploy.
 - **In-app (chatbot):** the in-app deploy skips secret validation, so `deployComposeApp` (Step 6) succeeds without it. After deploy, add `WEBACY_API_KEY` in the Compose app's dashboard under the app's **Secrets** page, then **redeploy from the dashboard** so the pod picks it up. The app does not start working on set alone; the redeploy is required. NEVER attempt to set a secret from chat; there is no tool, by design.
 
 ## Step 6 — Deploy to Goldsky
@@ -861,7 +866,7 @@ goldsky compose wallet list
 # set $COMPOSE_WALLET to the app's default smart wallet address
 ```
 
-Then mint, approve, and request the transfer (each needs `-t <project API key>` or an active `goldsky login` session):
+Then mint, approve, and request the transfer (each needs `-t "$GOLDSKY_PROJECT_KEY"` or an active `goldsky login` session):
 
 ```bash
 # mint 1.00 mUSDC to the app wallet (MockUSDC.mint is open)
