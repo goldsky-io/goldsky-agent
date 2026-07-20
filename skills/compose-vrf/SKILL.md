@@ -38,6 +38,7 @@ Pick the mode from the tools available to you:
 - **Three places share the contract address:** the `contract:` field in `compose.yaml`, and `CONTRACT_ADDRESS` in both `src/tasks/fulfill-randomness.ts` and `src/tasks/request-randomness.ts`. If the user changes it, change all three.
 - **Deploy-your-own path only:** the drand fulfillment is permissionless in the reference contract, but if the user's own contract restricts fulfillment, the authorized fulfiller must be the Compose wallet or every `fulfillRandomness` reverts. On the shared contract there is no such restriction.
 - **Never run `goldsky compose deployContract`, `goldsky compose deploy`, `git push`, or `gh repo create` without showing the exact command first and getting explicit confirmation.**
+- **Never place a literal private key or API key in a command line, a file shown in chat, or any transcript output.** Keys live in chmod-600 files (`.env`, `.eoa.env`) and are referenced only via shell expansion (`source` + `"$VAR"`) inside a single Bash invocation. When this skill writes `$SOME_KEY`, that is a shell expansion to perform in-shell, not a value to capture and substitute.
 
 ## The app (full source)
 
@@ -498,15 +499,15 @@ contract RandomnessConsumer {
 Pull just the VRF example into a fresh directory (no git history):
 
 ```bash
-npx -y degit goldsky-io/documentation-examples/compose/VRF compose-vrf
+npx -y degit goldsky-io/documentation-examples/compose/VRF#6abe62878cb92f2569538ba9572b049ed5949a01 compose-vrf
 cd compose-vrf
 ```
 
 If `npx -y degit` is unavailable, fall back to a sparse clone:
 
 ```bash
-git clone --depth 1 --filter=blob:none --sparse https://github.com/goldsky-io/documentation-examples.git
-cd documentation-examples && git sparse-checkout set compose/VRF && cd compose/VRF
+git clone --filter=blob:none --sparse https://github.com/goldsky-io/documentation-examples.git
+cd documentation-examples && git checkout 6abe62878cb92f2569538ba9572b049ed5949a01 && git sparse-checkout set compose/VRF && cd compose/VRF
 ```
 
 If the user already cloned the example, skip this step and `cd` into it. Either way, set the `CONTRACT_ADDRESS` in both task files and the `contract:` field in `compose.yaml` to the shared no-deploy address `0x6273AB73C95Ba2233281F1eb8aa3b21D9352AD6d` unless the user is deploying their own (Step 3, Branch B).
@@ -554,7 +555,7 @@ goldsky compose deployContract contracts/RandomnessConsumer.sol \
   --constructor-args $COMPOSE_WALLET \
   --wallet randomness-fulfiller
 ```
-**Auth:** `deployContract` needs a project API key — pass `-t <PROJECT_API_KEY>`, or run it inside a `goldsky login` session. On a `401` it prints "Generate an API key from Settings > API Keys in the Goldsky dashboard" — generate one there if you don't have it; OFFER to run the deploy with `-t` for the user.
+**Auth:** `deployContract` needs a project API key — pass `-t "$GOLDSKY_PROJECT_KEY"` (exported once from a chmod-600 `.env`; never paste the literal key into a command or the transcript), or run it inside a `goldsky login` session. On a `401` it prints "Generate an API key from Settings > API Keys in the Goldsky dashboard" — generate one there if you don't have it; OFFER to run the deploy with `-t` for the user.
 
 Chain IDs and routing — **`deployContract` is gas-sponsored (no funded EOA, no RPC URL) on Base / Base Sepolia only**; every other supported chain below must use the forge fallback that follows:
 
@@ -565,12 +566,22 @@ Chain IDs and routing — **`deployContract` is gas-sponsored (no funded EOA, no
 
 **Non-Base chains (forge fallback).** `deployContract` is gas-sponsored on Base / Base Sepolia only today (broader coverage tracked as FOU-991). On any other chain, deploy with a funded EOA via `forge create` — the fulfiller label is still `$COMPOSE_WALLET`, so the task code is unchanged.
 
-**Funded EOA (zero-friction generate offer).** Don't ask the user for a private key — OFFER to generate a throwaway funded EOA: run `cast wallet new` and capture the private key **without printing it** (write it to a `chmod 600` file or an env var the user never sees), then show only `cast wallet address` / the address line. Point the user at the right-chain faucet for the chosen chain, then OFFER to check funding with `cast balance <address> --rpc-url <RPC>` before deploying. If they decline, tell them plainly the alternative is deploying with their own funded wallet.
+**Funded EOA (zero-friction generate offer).** Don't ask the user for a private key — OFFER to generate a throwaway funded EOA: generate it straight into a chmod-600 file the model never reads, showing only the address:
 
 ```bash
+cast wallet new --json > /tmp/k.json
+umask 077 && printf 'FUNDED_EOA_KEY=%s\n' "$(jq -r '.[0].private_key' /tmp/k.json)" > .eoa.env
+cast wallet address "$(jq -r '.[0].private_key' /tmp/k.json)"   # the ONLY thing ever printed
+shred -u /tmp/k.json
+```
+
+Point the user at the right-chain faucet for the chosen chain, then OFFER to check funding with `cast balance <address> --rpc-url <RPC>` before deploying. If they decline, tell them plainly the alternative is deploying with their own funded wallet.
+
+```bash
+source .eoa.env   # provides FUNDED_EOA_KEY; keep this in the SAME shell invocation as the command
 forge create contracts/RandomnessConsumer.sol:RandomnessConsumer \
   --rpc-url <RPC_URL> \
-  --private-key <FUNDED_EOA_PRIVATE_KEY> \
+  --private-key "$FUNDED_EOA_KEY" \
   --broadcast \
   --constructor-args $COMPOSE_WALLET
 ```
@@ -648,7 +659,7 @@ goldsky compose writeContract \
   --function "requestRandomness()"
 ```
 
-(This `writeContract` is gas-sponsored on Base / Base Sepolia only — use `--chain-id 84532` (Base Sepolia) or `8453` (Base); on any other chain, skip it and use the `cast send` alternative below. It sends from the named/default gas-sponsored wallet and needs `-t <PROJECT_API_KEY>` or a `goldsky login` session; on `401` it points you to Settings > API Keys. To get the request id, read `nextRequestId` on-chain and subtract 1.)
+(This `writeContract` is gas-sponsored on Base / Base Sepolia only — use `--chain-id 84532` (Base Sepolia) or `8453` (Base); on any other chain, skip it and use the `cast send` alternative below. It sends from the named/default gas-sponsored wallet and needs `-t "$GOLDSKY_PROJECT_KEY"` (from `.env`, never the literal key) or a `goldsky login` session; on `401` it points you to Settings > API Keys. To get the request id, read `nextRequestId` on-chain and subtract 1.)
 
 **Alternatives** (keep them labeled — the sponsored `writeContract` above is preferred on the recommended path):
 
@@ -663,7 +674,7 @@ goldsky compose writeContract \
   ```bash
   cast send $CONTRACT_ADDRESS "requestRandomness()" \
     --rpc-url <RPC_URL> \
-    --private-key $PRIVATE_KEY
+    --private-key "$PRIVATE_KEY"   # from your own .env; never a pasted literal
   ```
 
 Wait 10–30 seconds for Compose to pick up the event, then **stream** logs (`-f` follows; without it `logs` is a one-shot dump and you'll likely miss the fire):

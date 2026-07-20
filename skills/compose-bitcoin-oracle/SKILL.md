@@ -46,15 +46,15 @@ Pick the mode from the tools available to you:
 Pull just the bitcoin-oracle example into a fresh directory (no git history):
 
 ```bash
-npx -y degit goldsky-io/documentation-examples/compose/bitcoin-oracle bitcoin-oracle
+npx -y degit goldsky-io/documentation-examples/compose/bitcoin-oracle#6abe62878cb92f2569538ba9572b049ed5949a01 bitcoin-oracle
 cd bitcoin-oracle
 ```
 
 If `npx degit` is unavailable, fall back to a sparse clone:
 
 ```bash
-git clone --depth 1 --filter=blob:none --sparse https://github.com/goldsky-io/documentation-examples.git
-cd documentation-examples && git sparse-checkout set compose/bitcoin-oracle && cd compose/bitcoin-oracle
+git clone --filter=blob:none --sparse https://github.com/goldsky-io/documentation-examples.git
+cd documentation-examples && git checkout 6abe62878cb92f2569538ba9572b049ed5949a01 && git sparse-checkout set compose/bitcoin-oracle && cd compose/bitcoin-oracle
 ```
 
 If the user already cloned the example, skip this step and `cd` into it.
@@ -130,7 +130,7 @@ contract PriceOracle {
 }
 ```
 
-Then deploy through the Compose wallet — `deployContract` compiles in-CLI and deploys via a CREATE2 proxy signed by the gas-sponsored Compose wallet, so on Base / Base Sepolia it needs no funded EOA and no RPC URL. Every `deployContract` / `writeContract` needs `-t <project API key>` (or a `goldsky login` session) — make a key at Settings > API Keys in the dashboard. The constructor arg authorizes the wallet from step 1 as the writer:
+Then deploy through the Compose wallet — `deployContract` compiles in-CLI and deploys via a CREATE2 proxy signed by the gas-sponsored Compose wallet, so on Base / Base Sepolia it needs no funded EOA and no RPC URL. Every `deployContract` / `writeContract` needs `-t "$GOLDSKY_PROJECT_KEY"` (or a `goldsky login` session) — make a key at Settings > API Keys in the dashboard. The constructor arg authorizes the wallet from step 1 as the writer:
 
 ```bash
 goldsky compose deployContract contracts/PriceOracle.sol \
@@ -141,12 +141,22 @@ goldsky compose deployContract contracts/PriceOracle.sol \
 
 Chain IDs: `baseSepolia` → `84532`, `base` → `8453`, `polygonAmoy` → `80002`, `polygon` → `137`, `arbitrum` → `42161`, `optimism` → `10`. It auto-saves the ABI to `src/contracts/PriceOracle.json`. Capture the printed contract address as `$CONTRACT_ADDRESS`.
 
-**Non-Base chains (forge fallback).** The `deployContract` cloud path is gas-sponsored on Base and Base Sepolia only today (broader coverage tracked as FOU-991). On any other chain, deploy with a funded EOA via `forge create` instead — the writer is still `$COMPOSE_WALLET`, so the task code is unchanged; extract the bare ABI afterward (see the note under the command). Don't ask the user for a private key — OFFER to generate a throwaway funded EOA: run `cast wallet new` and capture the private key **without printing it** (write it to a `chmod 600` file or an env var the user never sees), then show only `cast wallet address` / the address line. Point the user at the right-chain faucet for the chosen chain, then OFFER to check funding with `cast balance <address> --rpc-url <RPC>` before deploying. If they decline, tell them plainly the alternative is deploying with their own funded wallet:
+**Non-Base chains (forge fallback).** The `deployContract` cloud path is gas-sponsored on Base and Base Sepolia only today (broader coverage tracked as FOU-991). On any other chain, deploy with a funded EOA via `forge create` instead — the writer is still `$COMPOSE_WALLET`, so the task code is unchanged; extract the bare ABI afterward (see the note under the command). Don't ask the user for a private key — OFFER to generate a throwaway funded EOA: generate it straight into a chmod-600 file the model never reads, showing only the address:
 
 ```bash
+cast wallet new --json > /tmp/k.json
+umask 077 && printf 'FUNDED_EOA_KEY=%s\n' "$(jq -r '.[0].private_key' /tmp/k.json)" > .eoa.env
+cast wallet address "$(jq -r '.[0].private_key' /tmp/k.json)"   # the ONLY thing ever printed
+shred -u /tmp/k.json
+```
+
+Point the user at the right-chain faucet for the chosen chain, then OFFER to check funding with `cast balance <address> --rpc-url <RPC>` before deploying. If they decline, tell them plainly the alternative is deploying with their own funded wallet:
+
+```bash
+source .eoa.env   # provides FUNDED_EOA_KEY; keep this in the SAME shell invocation as the command
 forge create contracts/PriceOracle.sol:PriceOracle \
   --rpc-url <RPC_URL> \
-  --private-key <FUNDED_EOA_PRIVATE_KEY> \
+  --private-key "$FUNDED_EOA_KEY" \
   --broadcast \
   --constructor-args $COMPOSE_WALLET
 ```

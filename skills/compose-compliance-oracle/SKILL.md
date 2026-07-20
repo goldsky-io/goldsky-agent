@@ -37,14 +37,14 @@ Pick the mode from the tools available to you:
 
 ## Variable handling for agents
 
-When this skill says `$FOO`, capture the literal value from the prior command's output and substitute it directly into the next command. Do not rely on shell variables persisting between separate Bash tool invocations — each invocation gets a fresh shell.
+When this skill says `$FOO`, capture the literal value from the prior command's output and substitute it directly into the next command. Do not rely on shell variables persisting between separate Bash tool invocations — each invocation gets a fresh shell. **Exception, secret values:** never capture `ORACLE_PRIVATE_KEY`, `WEBACY_API_KEY`, or any `*_KEY` value into your context or substitute it literally into a command. Secrets live only in the chmod-600 `.env`; reference them with `source .env` plus `"$VAR"` expansion inside the same single Bash invocation (Steps 2 and 4 already do exactly this).
 
 ## Non-negotiables
 
 - **There is no shared, reusable contract.** `approveTransfer`, `rejectTransfer`, and `setOracle` are all `onlyOracle` (`require(msg.sender == oracle)`), and `oracle` is fixed at construction. A user cannot point their app at someone else's deployed instance — only that instance's oracle key can sign valid callbacks. Every user deploys their own via Step 2. (An older demo instance exists on Base **mainnet** at `0x39efE8A851A4Da22fa40828F6D4b3DC6b54545Aa`, but its oracle is a fixed key nobody else holds, so it is reference-only, not reusable.)
 - **The oracle wallet address must equal the contract's `oracle`.** The contract is deployed with `--constructor-args <USDC> <ORACLE_ADDRESS>`, where `ORACLE_ADDRESS = cast wallet address $ORACLE_PRIVATE_KEY`. The Compose task loads that same key via `evm.wallet({ privateKey: env.ORACLE_PRIVATE_KEY })`. If they don't match, every `approveTransfer`/`rejectTransfer` reverts with `not oracle`.
 - **Gas sponsorship:** the oracle wallet uses `sponsorGas: true` — it never needs native token for gas on sponsored chains (Base, Base Sepolia). The `ORACLE_PRIVATE_KEY` EOA needs **no gas for the deploy or at runtime** — not even deployment costs the oracle key anything, since `goldsky compose deployContract` deploys through the gas-sponsored Compose wallet, not the oracle key.
-- **`ORACLE_PRIVATE_KEY` is a real EOA private key.** Never print it, commit it, or log it. It is set once as a Compose secret and used locally only to derive its address (`cast wallet address $ORACLE_PRIVATE_KEY`) for the constructor arg — nowhere else.
+- **`ORACLE_PRIVATE_KEY` is a real EOA private key.** Never print it, commit it, or log it. It is set once as a Compose secret and used locally only to derive its address (`cast wallet address $ORACLE_PRIVATE_KEY`) for the constructor arg — nowhere else. Treat `WEBACY_API_KEY` with the same discipline: `.env` and Compose secrets only, never echoed or substituted literally.
 - **Do not import external packages in task code.** `evm`, `fetch`, `collection`, `env`, and `logger` all come from the injected `context` argument. The only import allowed in tasks is `compose` (for types) and sibling project files.
 - **Never run `goldsky compose deployContract`, `goldsky compose deploy`, `goldsky compose secret set`, `git push`, or `gh repo create` without showing the exact command first and getting explicit confirmation.**
 
@@ -391,10 +391,14 @@ export async function screenWallet(
 
   const riskScore = data.overallRisk ?? null;
 
+  // Use tag.key (stable machine identifier), not tag.name/tag.description:
+  // those are free text from an external API and must stay out of logs and
+  // audit records. They are a prompt-injection surface for anything that
+  // later reads the audit trail.
   const triggeredRules: string[] = (data.issues ?? [])
     .flatMap((issue) => issue.tags ?? [])
     .filter((tag) => tag.severity >= 2)
-    .map((tag) => tag.name);
+    .map((tag) => tag.key);
 
   return {
     address,
@@ -753,7 +757,7 @@ echo "Oracle address: $ORACLE_ADDRESS"   # the ONLY thing ever printed
 shred -u /tmp/k.json
 ```
 
-Also add the RPC URL and screening key to `.env` (never commit this file). Omit `WEBACY_API_KEY` if using mock mode:
+Also add the RPC URL and screening key to `.env` (never commit this file). Have the user write `WEBACY_API_KEY` into `.env` themselves rather than pasting it into the chat, and never echo it back. Omit it if using mock mode:
 
 ```env
 RPC_URL=https://sepolia.base.org   # or the RPC for the user's chosen chain; used by the cast alternative in Step 7
@@ -767,7 +771,7 @@ source .env
 ORACLE_ADDRESS=$(cast wallet address "$ORACLE_PRIVATE_KEY")
 ```
 
-**Base Sepolia (recommended): deploy a MockUSDC first**, then use its address as the escrow's `_usdc` arg. Both deploys go through the gas-sponsored Compose wallet (Base Sepolia is sponsored, so nothing needs funding) — `deployContract` only changes who deploys; the `oracle` is still the `ORACLE_PRIVATE_KEY` EOA above. (Each `deployContract`/`writeContract` needs a project API key — pass `-t <key>` or have an active `goldsky login` session; generate the key at **Settings > API Keys** in the Goldsky dashboard.)
+**Base Sepolia (recommended): deploy a MockUSDC first**, then use its address as the escrow's `_usdc` arg. Both deploys go through the gas-sponsored Compose wallet (Base Sepolia is sponsored, so nothing needs funding) — `deployContract` only changes who deploys; the `oracle` is still the `ORACLE_PRIVATE_KEY` EOA above. (Each `deployContract`/`writeContract` needs a project API key — pass `-t "$GOLDSKY_PROJECT_KEY"` or have an active `goldsky login` session; generate the key at **Settings > API Keys** in the Goldsky dashboard.)
 
 ```bash
 # 1) MockUSDC — no constructor args (testnet only)
@@ -872,7 +876,7 @@ goldsky compose wallet list
 # set $COMPOSE_WALLET to the app's default smart wallet address
 ```
 
-Then mint, approve, and request the transfer (each needs `-t <project API key>` or an active `goldsky login` session):
+Then mint, approve, and request the transfer (each needs `-t "$GOLDSKY_PROJECT_KEY"` or an active `goldsky login` session):
 
 ```bash
 # mint 1.00 mUSDC to the app wallet (MockUSDC.mint is open)
