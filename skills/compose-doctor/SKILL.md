@@ -1,19 +1,19 @@
 ---
 name: compose-doctor
-description: "Diagnose and fix broken Goldsky Compose apps interactively. Triggers on: compose app in error state, crashlooping, not running, not processing tasks, cron not firing, HTTP trigger returning 500, onchain event listener missing events, wallet errors, gas sponsorship failures, 'No bundler provider available', manifest validation errors, bundling/esbuild failures, secret missing, 'You cannot use a smart wallet in local dev', 'Transaction Receipt failed with status'. Also use when the user mentions a Compose app name alongside a problem, even if they don't say 'compose' explicitly, if they're referring to `goldsky compose` commands (not `goldsky turbo` or `goldsky pipeline`). Runs `status`/`logs`/`secret list`/`wallet list` to identify root cause, and offers fixes. For building a new app from scratch, use /compose instead. For manifest field / CLI flag / API lookups without an active problem, use /compose-reference instead. Do NOT trigger on Turbo or Mirror pipeline problems."
+description: "Use this skill whenever the user is asking about an existing Goldsky Compose app that is not doing what they expect, has failing or erroring task runs, or just needs general debugging. This is the debugging layer of the Compose skill family: it runs status, logs, secret list, and wallet list to identify the root cause and offers fixes. Triggers on: compose app in error state, crashlooping, not running, not processing tasks, cron not firing, HTTP trigger returning 500, onchain event listener missing events, wallet or gas sponsorship failures, 'No bundler provider available', manifest validation errors, bundling or esbuild failures, missing secrets, 'You cannot use a smart wallet in local dev', 'Transaction Receipt failed with status'. Also use when the user names a Compose app alongside a problem, even if they never say 'compose', as long as they mean `goldsky compose` (not `goldsky turbo` or `goldsky pipeline`). Pairs with /compose (the entry-point guide, loaded first): use /compose to build a new app from scratch, /compose-reference for manifest field, CLI flag, or API lookups without an active problem, /secrets for secret management mechanics, /auth-setup for login problems. Do NOT trigger on Turbo, Mirror, Subgraph, or Edge problems: those have their own skills."
 ---
 
 # Compose Doctor
 
-Diagnose and fix broken Compose apps. Workflow-oriented: we walk through auth → app identification → status → logs → secrets → wallets → manifest → diagnosis → fix.
+Diagnose and fix broken Compose apps. Workflow-oriented: we walk through auth → app identification → status → logs → secrets → wallets → manifest → diagnosis → fix. Part of the Compose skill family: /compose is the entry point, /compose-reference is the lookup layer, and this skill is the debugger.
 
 ## Boundaries
 
 - Diagnose and fix EXISTING Compose apps interactively.
-- Do not build new apps — use `/compose` for that.
-- Do not serve as a CLI/manifest reference — use `/compose-reference`.
+- Do not build new apps. Use `/compose` for that.
+- Do not serve as a CLI/manifest reference. Use `/compose-reference`.
 - For secrets creation/management mechanics, use `/secrets`. But DO check whether required secrets exist as part of diagnosis.
-- Do not handle Turbo pipeline problems — use `/turbo-doctor`.
+- Do not handle Turbo, Mirror, or Subgraph pipeline problems. Use `/turbo-doctor`, `/mirror-doctor`, or `/subgraph-doctor`.
 
 ## Mode Detection
 
