@@ -35,8 +35,8 @@ Most common lookups:
 
 | Field         | Type                 | Required    | Notes                                                                                 |
 | ------------- | -------------------- | ----------- | ------------------------------------------------------------------------------------- |
-| `name`        | string               | yes         | RFC 1123: lowercase, letters/numbers/hyphens, letter-start                            |
-| `api_version` | string               | deploy-only | semver (e.g. `0.1.0`) or `stable` / `preview` / `canary`                              |
+| `name`        | string               | yes         | `/^[a-zA-Z0-9]([a-zA-Z0-9_\-]*[a-zA-Z0-9])?$/`, starts and ends with a letter or number; letters, numbers, underscores, hyphens. Uppercase and leading digits are allowed. The platform additionally rejects a name that canonicalizes (lowercase, `[-_]+`->`-`) onto an existing app's, with a 409, so `my-app`, `My_App`, and `my__app` cannot coexist |
+| `api_version` | string               | deploy-only | semver (e.g. `0.1.0`) or `stable` / `preview` / `canary` (any `internal-*` prefix is also accepted) |
 | `tasks`       | array                | yes         | Non-empty                                                                             |
 | `secrets`     | string[]             | no          | Names only — values set via `compose secret set`                                      |
 | `env`         | `{ local?, cloud? }` | no          | **`env`'s only valid children are `local` and `cloud`** — each a `Record<string, string>` flattened into `context.env`. A bare `env.MY_VAR` (a var name directly under `env`) is rejected: "not a valid key". A hardcoded per-app constant belongs in the task file, not here. |
@@ -45,10 +45,10 @@ Most common lookups:
 
 | Field          | Type     | Required | Notes                                                                                |
 | -------------- | -------- | -------- | ------------------------------------------------------------------------------------ |
-| `name`         | string   | yes      | `/^([a-zA-Z]\|_[a-zA-Z0-9])[a-zA-Z0-9_]*$/`                                          |
+| `name`         | string   | yes      | `/^[a-zA-Z0-9][a-zA-Z0-9_.\-]*$/`, starts with a letter or number; letters, numbers, underscores, hyphens, dots. A **leading underscore is no longer allowed** (`_internal_task` is now rejected) |
 | `path`         | string   | yes      | Relative path to the `.ts` task file                                                 |
 | `triggers`     | array    | yes      | One or more; at most one per type                                                    |
-| `retry_config` | object   | no       | `{ max_attempts, initial_interval_ms, backoff_factor }` — all three required when set |
+| `retry_config` | object   | no       | `{ max_attempts, initial_interval_ms, backoff_factor }` - all three required when set; the manifest validator rejects a task with any field outside `name`, `path`, `retry_config`, `triggers` |
 
 ### Trigger types
 
@@ -110,25 +110,29 @@ tasks:
 
 ## CLI Commands
 
-All commands accept `-t/--token` and `--api-server`; the `-n/--name` flag selects the app by name (falls back to `-m/--manifest`, then `./compose.yaml`).
+All commands accept `-t/--token` and `--api-server`; the `-n/--name` flag selects the app by name (falls back to `-m/--manifest`, then `./compose.yaml`). Token precedence is `--token` > the `GOLDSKY_API_TOKEN` env var > `~/.goldsky/auth_token` (written by `goldsky login`). With none of the three the CLI errors with "Please run goldsky login, set GOLDSKY_API_TOKEN, or pass --token to the command."
+
+> **Non-interactive guards.** `init` without a name, `deploy` with a major `api_version` mismatch (needs `--force`, message "Refusing to deploy with a major api_version mismatch in non-interactive mode. Pass --force to override."), and `clean` without `-f` ("Use --force for non-interactive cleanup.") all abort in a non-TTY. Agents always run non-TTY.
 
 ### Lifecycle
 
 | Command                            | Purpose                                                  | Key flags                                                                  |
 | ---------------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------- |
-| `compose init`                   | Scaffold new app (prompts for a name)                   | (interactive)                                                              |
+| `compose init`                   | Scaffold new app                                          | `[name]` (prompts only when a TTY and no name)                              |
 | `compose start`                  | Run locally (there is no `dev` command)                 | `--fork-chains`, `--cloud`, `--impersonate`, `-p/--port`                   |
-| `compose deploy`                 | Bundle + upload to cloud                                | `-m`, `-t`, `-f`, `--sync-env`                                             |
+| `compose deploy`                 | Bundle + upload to cloud                                | `-m`, `-t`, `-f` (Skip version compatibility prompts (required to deploy with a major version mismatch when not running in a terminal)), `--sync-env`, `--json` |
 | `compose status`                 | Show runtime status                                     | `-n`, `--json`                                                             |
 | `compose list`                   | List all apps                                           | `--json`                                                                   |
-| `compose history`                | Show deployment history for an app                      | `-n`, `--limit`, `--include-failures`, `--json`                            |
-| `compose pause`                  | Pause                                                   | `-n`                                                                       |
-| `compose resume`                 | Resume                                                  | `-n`                                                                       |
-| `compose delete`                 | Delete (type-to-confirm; `--force` for CI)              | `-n`, `--force`, `--delete-database`                                       |
-| `compose logs`                   | View / tail logs                                        | `-f`, `--tail`, `--level`, `--search`, `--since`, `--max-lines`, `--json`  |
-| `compose clean`                  | Wipe local `.compose/stage.db`                          | `-f`                                                                       |
+| `compose history`                | Show deployment history for an app                      | `-n`, `--limit` (default 20, server caps at 100), `--offset` (default 0), `--include-failures`, `--json` |
+| `compose pause`                  | Pause                                                   | `-n`, `--json`                                                             |
+| `compose resume`                 | Resume                                                  | `-n`, `--json`                                                             |
+| `compose delete`                 | Delete (type-to-confirm; `--force` for CI)              | `-n`, `--force`, `--delete-database`, `--json`                             |
+| `compose logs`                   | View / tail logs                                        | `-f`, `--tail` (default 100), `--level`, `--search`, `--since`, `--max-lines`, `--timeout <duration>`, `--json` |
+| `compose clean`                  | Wipe local `.compose/stage.db`                          | `-f`, `-c/--config <config>`                                               |
 | `compose update [version]`       | Re-download the compose binary                          | `[version]` (stable/preview/semver), `--preview`                           |
-| `compose callTask <name> <json>` | POST payload to a local task                            |                                                                            |
+| `compose callTask <task_name> <payload>` | Invoke a task with a JSON payload. **Defaults to the deployed app** | `--env <local\|cloud>` (default `cloud`), `-p/--port <port>` (implies local; `--port` with an explicit `--env cloud` is an error), `-n`, `-m`, `-t`, `--api-server`, `--json` |
+
+Local port resolution for `callTask --env local`: `--port` flag > `.compose/.port` > 4000. Connection refused, an unknown task name, and a stale port file each produce a distinct message and exit 1 (codes `CONNECTION_REFUSED`, `TASK_NOT_FOUND`, `INVALID_RESPONSE`, `INVALID_PAYLOAD`, `INVALID_ENV`, `INVALID_FLAGS`).
 
 ### Secrets
 
@@ -143,8 +147,8 @@ All commands accept `-t/--token` and `--api-server`; the `-n/--name` flag select
 
 | Command                                               | Purpose                                                                |
 | ----------------------------------------------------- | ---------------------------------------------------------------------- |
-| `compose wallet create <wallet_name> [-n <app>] [--env local\|cloud]` | Create managed wallet; prints address (name is positional; `-n` = app) |
-| `compose wallet list [-n <app>] [--env local\|cloud]`                 | Table: name, address, type (privy / private_key / tevm), created_at    |
+| `compose wallet create <wallet_name> [-n <app>] [--env local\|cloud] [--json]` | Create managed wallet; prints address (name is positional; `-n` = app) |
+| `compose wallet list [-n <app>] [--env local\|cloud] [--json]`                 | Table: name, address, type (privy / private_key / tevm), created_at    |
 
 ### Codegen
 
@@ -164,24 +168,38 @@ Compile and deploy a contract, or submit a write call, straight from the CLI —
 | `--verify` | Verify the contract on the block explorer. |
 | `--force` | Bypass the `msg.sender`-in-constructor guard (the sender is the CREATE2 proxy, not the wallet). |
 | `-m` / `-t` | Manifest path / project token (see Lifecycle). |
+| `--api-server` | API server URL (global flag). |
+| `--json` | JSON output (see CLI JSON Schemas). |
 
-Run from the app directory — it reads `compose.yaml` for the app name; app name + project id derive the deterministic CREATE2 salt. On gas-sponsored chains (Base `8453`, Base Sepolia `84532`) it needs **no funded key and no RPC URL**. The cloud deploy path is Base / Base Sepolia only today (broader coverage tracked as FOU-991) — on other chains deploy with `forge create` from a funded EOA instead (the constructor args stay the same; supply the ABI to `src/contracts/` yourself). Runtime task-gas sponsorship (see [Gas Sponsorship](#gas-sponsorship)) covers many more chains than this deploy endpoint.
+Run from the app directory - it reads `compose.yaml` for the app name; app name + project id derive the deterministic CREATE2 salt. On gas-sponsored chains (Base `8453`, Base Sepolia `84532`) it needs **no funded key and no RPC URL**. `deployContract` routes through the cloud's Alchemy bundler, which covers Ethereum, Sepolia, Polygon, Polygon Amoy, Arbitrum, Arbitrum Sepolia, Optimism, Optimism Sepolia, Base and Base Sepolia (chain IDs 1, 11155111, 137, 80002, 42161, 421614, 10, 11155420, 8453, 84532). On a chain outside that set the deploy fails with `No Alchemy bundler URL for chain <id>`, so use the `forge create` fallback there (the constructor args stay the same; supply the ABI to `src/contracts/` yourself). Multi-provider coverage is tracked as FOU-991. Runtime task-gas sponsorship (see [Gas Sponsorship](#gas-sponsorship)) covers many more chains than this deploy endpoint.
 
 **Wallet lifecycle.** `wallet create` and `wallet list` now work even before the app is deployed (they provision the hosted store on demand, like `deployContract`/`writeContract`); `wallet create` returns the wallet's address pre-deploy. To authorize a wallet inside a constructor: `wallet create <name>` → `deployContract --constructor-args <address>` → wire the address into the task → `compose deploy`.
 
-**CREATE2 collisions.** Re-running `deployContract` with identical contract source + constructor args + app name is refused by the CLI *before* any transaction is sent ("This contract has already been deployed with this app…"), and no Deploy Block is printed on that refusal. A changed constructor arg, changed source, or a different app name produces a fresh address. Note the **app name participates in the CREATE2 salt** — renaming the app changes every future deploy address. On success it prints the contract address, tx hash, and **Deploy Block**, and **auto-saves the ABI to `src/contracts/<Name>.json`** — then `compose codegen` gives typed bindings.
+**CREATE2 collisions.** Re-deploying the same contract source + constructor args from the same app hits a CREATE2 collision: the platform returns HTTP 400 `CONTRACT_ALREADY_DEPLOYED` and the CLI reports "This contract has already been deployed with this app. The same contract + app name + project produces the same address via CREATE2." with exit 1 and no Deploy Block (`--json` code `ALREADY_DEPLOYED`; any other deploy failure is `DEPLOY_CONTRACT_FAILED`). A changed constructor arg, changed source, or a different app name produces a fresh address. Note the **app name participates in the CREATE2 salt** - renaming the app changes every future deploy address. On success it prints the contract address, tx hash, and **Deploy Block**, and **auto-saves the ABI to `src/contracts/<Name>.json`** - then `compose codegen` gives typed bindings.
 
 **`compose writeContract`** — submit a write call to a deployed contract.
 
 | Flag | Purpose |
 | --- | --- |
 | `--chain-id <id>` | Target chain (**required**). |
-| `--to <address>` | Target contract address. |
+| `--to <address>` | Target contract address (**required**). |
 | `--function "sig(types)"` | Function signature, e.g. `"setValue(uint256)"`. |
 | `--args <tokens...>` | Same forge-style grammar as `--constructor-args`. |
 | `--data <hex>` | Raw calldata alternative to `--function` / `--args`. |
 | `--value <amount>` | Native value to send; suffix a unit (`wei`, `gwei`, `ether`), e.g. `--value 1ether`. |
 | `--wallet <name>` | App wallet that signs (default `default`). |
+| `--api-server` | API server URL (global flag). |
+| `--json` | JSON output (see CLI JSON Schemas). |
+
+### Read-back
+
+| Command | Purpose | Key flags |
+| --- | --- | --- |
+| `compose runs [runId]` | List runs, or show one run's detail | `--limit`, `--offset`, `--task <name>`, `--status <success\|error\|pending>`, `--since <1h\|30m\|7d>`, `--until <duration>`, `--json`, `-n`/`-m`, `-t`, `--api-server` |
+| `compose collections list` | Table of the app's collection names | targeting + `--json` |
+| `compose collections query <collectionName>` | Query one collection | `--filter <json>` (must be a JSON object), `--limit` (default 100, backend max 1000), `--offset`, `--json`, targeting |
+| `compose source [taskName]` | Print the deployed app's source file list, or one task's source. Never writes to disk | targeting + `--json` |
+| `compose download` | Download the deployed app's source archive | `-o/--output <path>` (default `<app>.zip`, refuses to overwrite an existing file), `--json`, targeting |
 
 ## TaskContext API
 
@@ -190,33 +208,45 @@ Run from the app directory — it reads `compose.yaml` for the app name; app nam
 ```ts
 type TaskContext = {
   env: Record<string, string>;
+  logger: {
+    info(message: string, data?: Record<string, unknown>): void;
+    warn(message: string, data?: Record<string, unknown>): void;
+    error(message: string, data?: Record<string, unknown>): void;
+  };
   fetch: FetchFn;
   callTask: <Args, T>(name: string, args: Args, retryConfig?: RetryConfig) => Promise<T>;
   logEvent: (event: { code: string; message: string; data?: unknown }) => Promise<void>;
   evm: {
     chains: Record<string, Chain>;              // re-exported from viem internally — access via context.evm.chains.<name>, do NOT import viem
     wallet: (config: WalletConfig) => Promise<IWallet>;
-    decodeEventLog: <T>(abi: AbiItem[], log: EventLog) => Promise<T>;
+    decodeEventLog: <T>(abi: AbiItem[], log: OnchainEvent) => Promise<T>;
     contracts: Record<string, ContractClass>;   // populated by codegen
   };
-  collection: <T>(name: string, indexes?: string[]) => Promise<Collection<T>>;
+  collection: <T>(name: string, indexes?: CollectionIndexSpec[]) => Promise<Collection<T>>;
+  sideEffect: <T>(fn: () => T | Promise<T>) => Promise<T>;
 };
 ```
 
-**No `logger` or `secrets` namespace.** Secrets flatten into `context.env`. Use `console.log` for free-form logging, `logEvent` for structured events.
+**No `secrets` namespace.** Secrets flatten into `context.env`. For output: `context.logger.info/warn/error(message, data?)` is the structured, run-correlated logger (each line carries `taskName`, `runId`, `appId`, `level`, `timestamp`). `console.log` is fine for free-form output. `logEvent` still works but is marked `@deprecated` in the runtime types and will be removed in a future major version.
 
 ### `fetch` (overloads)
 
 ```ts
+type FetchConfig = {
+  method?: string;                                  // defaults to "GET"
+  headers?: Record<string, string>;
+  body?: Record<string, unknown> | string;          // objects are JSON.stringify'd
+};
+
 interface FetchFn {
   <T>(url: string, retryConfig?: RetryConfig): Promise<T | undefined>;
-  <T>(url: string, body: unknown, retryConfig?: RetryConfig): Promise<T | undefined>;
+  <T>(url: string, config?: FetchConfig, retryConfig?: RetryConfig): Promise<T | undefined>;
 }
 ```
-
-- `body` is serialized as JSON and sent as POST. Omit `body` for GET.
-- Response is JSON-parsed; returns `undefined` when the body isn't JSON.
-- Not `window.fetch` — use this, not native `fetch`.
+- The second argument is a **config object**, not a bare body: `ctx.fetch(url, { method: "POST", body: { a: 1 }, headers: { "X-Key": k } })`. Passing a raw payload object as the second argument does not send a body. Unrecognized keys are dropped and the request goes out as a GET.
+- A non-2xx response **throws** `Fetch failed with status <code> <statusText>: <body>`.
+- The response is JSON-parsed and returns `undefined` when the body is not JSON.
+- This is not `window.fetch`. Use this, not native `fetch`.
 
 ### `callTask`
 
@@ -226,6 +256,14 @@ callTask<Args, T>(name: string, args: Args, retryConfig?: RetryConfig): Promise<
 
 - `T` is whatever the callee returns. A `void`-returning task resolves to `undefined`.
 - Use for task-to-task invocation (parent/child patterns).
+
+### `sideEffect`
+
+```ts
+sideEffect<T>(fn: () => T | Promise<T>): Promise<T>
+```
+
+Wraps a non-deterministic value (timestamp, UUID, random) so it is cached like any other context call. Durable resumption replays a task from the start, so an unwrapped `Date.now()` changes on replay. The callback runs once. On replay the host returns the cached value and the callback never runs.
 
 ### `RetryConfig`
 
@@ -237,22 +275,31 @@ type RetryConfig = {
 };
 ```
 
-No defaults — supply all three when you pass a `retryConfig`. Without it, the task runs once and any thrown error surfaces to the run record.
+All three fields are required **when you pass a `retryConfig` explicitly** (the manifest validator enforces this for `retry_config` too). Omitting it does **not** mean one attempt:
 
-### `EventLog` (for `decodeEventLog` and `onchain_event` triggers)
+| Scope | Default |
+| --- | --- |
+| A task with no `retry_config` | `{ max_attempts: 3, initial_interval_ms: 1000, backoff_factor: 2 }` |
+| Safe/read-only context calls: `readContract`, `simulate`, `getBalance`, and `ctx.fetch` with `GET`/`HEAD`/`OPTIONS` | `{ max_attempts: 3, initial_interval_ms: 500, backoff_factor: 2 }` |
+| Everything else (`callTask`, `writeContract`, `sendTransaction`, `prepareUserOperation`, `submitSignedUserOperation`, wallet create/save, and `ctx.fetch` with POST/PUT/PATCH/DELETE) | `{ max_attempts: 1, initial_interval_ms: 500, backoff_factor: 2 }`, held at 1 deliberately to avoid blind retries of non-idempotent calls |
+
+### `OnchainEvent` (for `decodeEventLog` and `onchain_event` triggers)
 
 ```ts
-type EventLog = {
-  address: Address;     // "0x…"
-  topics: Hex[];        // indexed topics
-  data: Hex;            // non-indexed data
-  blockNumber?: bigint;
-  transactionHash?: Hex;
-  logIndex?: number;
+type OnchainEvent = {
+  blockNumber: number;
+  blockHash: string;
+  transactionIndex: number;
+  removed: boolean;
+  address: string;
+  data: Hex;
+  topics: Hex[];
+  transactionHash: string;
+  logIndex: number;
 };
 ```
 
-For `onchain_event`-triggered tasks, `params` contains `{ log: EventLog }` plus chain-specific metadata. `decodeEventLog(abi, params.log)` returns the decoded struct.
+For `onchain_event`-triggered tasks, `params` contains `{ log: OnchainEvent }` plus chain-specific metadata. `decodeEventLog(abi, params.log)` returns the decoded struct.
 
 ### IWallet
 
@@ -262,68 +309,70 @@ interface IWallet {
   readonly address: Address;
   writeContract(
     chain: Chain,
-    address: Address,
-    signatureOrAbi: string | AbiItem,
-    args?: unknown[],
-    options?: WriteOptions,
-  ): Promise<TxResult>;
-  readContract(
-    chain: Chain,
-    address: Address,
-    signatureOrAbi: string | AbiItem,
-    args?: unknown[],
-  ): Promise<unknown>;
+    contractAddress: Address,
+    functionSig: string,                 // signature string only, no ABI item
+    args: unknown[],
+    confirmation?: TransactionConfirmation,
+    retryConfig?: RetryConfig,
+  ): Promise<{ hash: string; receipt: TransactionReceipt; userOpHash?: string }>;
   sendTransaction(
-    chain: Chain,
-    to: Address,
-    value: bigint,
-    data?: Hex,
-    options?: WriteOptions,
-  ): Promise<TxResult>;
-  simulate(
-    chain: Chain,
-    address: Address,
-    signatureOrAbi: string | AbiItem,
-    args?: unknown[],
-  ): Promise<SimulateResult>;
-  getBalance(chain: Chain): Promise<bigint>;
+    config: {
+      to: Address; data: Hex; chain: Chain;
+      value?: bigint; maxFeePerGas?: bigint; maxPriorityFeePerGas?: bigint;
+      gas?: bigint; nonce?: number;
+    },
+    confirmation?: TransactionConfirmation,
+    retryConfig?: RetryConfig,
+  ): Promise<{ hash: string; receipt: TransactionReceipt; userOpHash?: string }>;
+  readContract<T = unknown>(
+    chain: Chain, contractAddress: Address, functionSig: string,
+    args: unknown[], retryConfig?: RetryConfig,
+  ): Promise<T>;
+  simulate(                              // throws on revert
+    chain: Chain, contractAddress: Address, functionSig: string,
+    args: unknown[], retryConfig?: RetryConfig,
+  ): Promise<unknown>;                   // viem simulateContract result
+  getBalance(chain: Chain, retryConfig?: RetryConfig): Promise<string>; // decimal wei string
 }
 
-type WriteOptions = {
+type TransactionConfirmation = {
   confirmations?: number;
-  onReorg?: { action: { type: "replay" | "skip" }; depth: number };
-  retryConfig?: RetryConfig;
-  gas?: bigint;
-  gasPrice?: bigint;
-};
-
-type TxResult = {
-  hash: Hex;
-  userOpHash?: Hex;     // only for sponsored transactions
-  chainId: number;
-  blockNumber?: bigint; // present after mining
-};
-
-type SimulateResult = {
-  success: boolean;
-  result?: unknown;
-  error?: string;
+  onReorg?: {
+    action:
+      | { type: "replay" }
+      | { type: "log"; logLevel?: "error" | "info" | "warn" }   // default "error"
+      | { type: "task"; task: string };
+    depth: number;
+  };
 };
 ```
+
+`TransactionReceipt` carries `status: "success" | "reverted"`, `blockNumber: bigint`, `blockHash`, `gasUsed: bigint`, `effectiveGasPrice: bigint`, `cumulativeGasUsed: bigint`, `from`, `to`, `contractAddress: Address | null`, `logs: Log[]`, `logsBloom`, `transactionHash`, `transactionIndex`, `type`.
+
+Specifically: there is no `string | AbiItem` overload; `retryConfig` is a separate 6th positional arg, not a key in an options bag; there are no `gas`/`gasPrice` options on `writeContract`; the return has no `chainId` and no top-level `blockNumber` (the `TxResult` type as documented does not exist); `sendTransaction` is object-first, the positional `(chain, to, value, data?, options?)` form does not exist; `simulate` returns `{ result, request }` and throws on revert, so `SimulateResult { success, ... }` and `if (!sim.success)` are dead code; `getBalance` returns a decimal wei **string**, so arithmetic without `BigInt(...)` string-concatenates; `onReorg.action.type` is `"replay" | "log" | "task"`, there is no `"skip"`.
 
 ### Collection
 
 ```ts
+type CollectionIndexSpec = {
+  path: string;
+  type: "text" | "numeric" | "boolean" | "timestamptz";
+  unique?: boolean;
+};
+
 interface Collection<T> {
-  insertOne(doc: T): Promise<void>;
-  findOne(filter: Filter<T>): Promise<T | null>;
-  findMany(filter: Filter<T>, options?: { limit?: number; skip?: number }): Promise<T[]>;
-  getById(id: string): Promise<T | null>;
-  setById(id: string, doc: T, opts?: { upsert?: boolean }): Promise<void>; // upsert defaults true
-  deleteById(id: string): Promise<void>;
+  readonly name: string;
+  insertOne(doc: T, opts?: { id?: string }): Promise<{ id: string }>;
+  findOne(filter: Filter): Promise<(T & { id: string }) | null>;
+  findMany(filter: Filter, options?: { limit?: number; offset?: number }): Promise<Array<T & { id: string }>>;
+  getById(id: string): Promise<(T & { id: string }) | null>;
+  setById(id: string, doc: T, opts?: { upsert?: boolean }): Promise<{ id: string; upserted?: boolean; matched?: number }>; // upsert defaults true; false throws if absent
+  deleteById(id: string): Promise<{ deletedCount: number }>;
   drop(): Promise<void>;
 }
 ```
+
+`collection<T>(name, indexes?)` takes `CollectionIndexSpec[]`, not `string[]`. `findMany` options are `{ limit?, offset? }`: `skip` does not exist and is silently ignored, so paging written against it always returns page 1. Reads return `T & { id: string }`. A filter is flat `Record<string, string | number | boolean | HelperValue>`, so nested-path filters are not supported.
 
 Filter operators: `$gt`, `$gte`, `$lt`, `$lte`, `$in`, `$ne`, `$nin`, `$exists`. Equality: `{ field: value }`.
 
@@ -342,7 +391,7 @@ For agents parsing `--json` output:
 }
 ```
 
-`status` is one of `RUNNING | PAUSED | ERROR | STARTING | STOPPED | PROVISIONING`. Timestamps are ms epoch.
+`status` is one of `RUNNING`, `PAUSED`, `STARTING`, `STOPPING`, `ERROR`, `NOT_FOUND` (the value comes from the API, so treat the list as non-exhaustive). Timestamps are ms epoch.
 
 ### `compose list --json`
 
@@ -357,13 +406,14 @@ For agents parsing `--json` output:
 NDJSON (one object per line):
 
 ```json
-{"timestamp":"2026-04-20T10:00:00Z","level":"info","message":"...","dashboard_url":"https://app.goldsky.com/<project_id>/dashboard/compose/<app>/runs/<run_id>"}
+{"timestamp":"2026-04-20T10:00:00Z","level":"info","message":"..."}
 ```
+Exactly three fields. There is no `dashboard_url` in CLI log output. To link a user to a specific run, get the run id from `compose runs` and build `https://app.goldsky.com/<project_id>/dashboard/compose/<app-name>/runs/<run_id>` yourself. The CLI's `logs` command also has no `--run-id` filter (the underlying API accepts one, the CLI does not pass it), so use `compose runs <runId>` for per-run detail.
 
 ### `compose secret list -n <app> --json`
 
 ```json
-[{ "name": "MY_SECRET" }]
+[{ "name": "MY_SECRET", "created_at": 1771630350411 }]
 ```
 
 Values are never returned.
@@ -376,6 +426,10 @@ Values are never returned.
 
 `type` is one of `privy` (smart wallet), `private_key` (BYO EOA), `tevm` (local forked).
 
+### Errors in `--json` mode
+
+In `--json` mode stdout carries only the result document (ascii art and progress bars are suppressed). Failures go to **stderr** as `{"error": true, "code": "<CODE>", "message": "..."}` with exit 1. Codes present in the CLI: `VALIDATION_FAILED`, `SECRET_MISSING`, `DEPLOY_FAILED`, `DEPLOY_CONTRACT_FAILED`, `ALREADY_DEPLOYED`, `WRITE_CONTRACT_FAILED`, `WALLET_CREATE_FAILED`, `WALLET_LIST_FAILED`, `NOT_FOUND`, `TASK_NOT_FOUND`, `CONNECTION_REFUSED`, `INVALID_ENV`, `INVALID_FLAGS`, `INVALID_PAYLOAD`, `INVALID_RESPONSE`, `INVALID_FILTER`, `UNKNOWN`.
+
 ## Wallets — Deep Dive
 
 ### Smart wallet (managed, Privy-backed)
@@ -384,7 +438,7 @@ Values are never returned.
 const w = await evm.wallet({ name: "my-oracle" }); // sponsorGas defaults TRUE
 ```
 
-Created cloud-side by Privy. Address is persisted. **Gas-sponsored by default.** **Cannot be used in plain local dev** — throws `"You cannot use a smart wallet in local dev unless you use chain forking."` Use `compose start --fork-chains` or switch to a BYO EOA for local iteration.
+Created cloud-side by Privy. Address is persisted. **Gas-sponsored by default.** **Cannot be used in plain local dev** - throws `"You cannot use a named wallet without a private key in local dev. Start with "goldsky compose start --fork-chains" for full wallet support, or use a private key wallet: const wallet = await evm.wallet({ privateKey: MY_SECRET }); See https://docs.goldsky.com/compose/secrets for more info on private key wallets"` Use `compose start --fork-chains` or switch to a BYO EOA for local iteration.
 
 ### BYO EOA (private key)
 
@@ -404,7 +458,7 @@ Bundler fallback order: **Alchemy → Pimlico → Gelato**. Override via `BUNDLE
 
 ### Supported chains
 
-A chain is runtime-sponsorable if **any** of the three bundler providers covers it (tried in fallback order Alchemy → Pimlico → Gelato, each gated on its API keys being set). In the 0.8.1 source that union spans **112 chains**. This is the **runtime** task-gas sponsorship set — far broader than the `deployContract` / `writeContract` cloud *deploy* path, which is Base (`8453`) / Base Sepolia (`84532`) only for now (FOU-991); runtime sponsorship also covers the Arbitrum, Optimism (incl. **Arbitrum Sepolia (`421614`)** / Optimism Sepolia (`11155420`)), Polygon, Ethereum and BNB families, among many others. **Don't hardcode the list** — it changes; confirm current coverage on the Goldsky docs chains page.
+A chain is runtime-sponsorable if **any** of the three bundler providers covers it (tried in fallback order Alchemy → Pimlico → Gelato, each gated on its API keys being set). In the 0.8.1 source that union spans **112 chains**. This is the **runtime** task-gas sponsorship set - far broader than the `deployContract` / `writeContract` cloud *deploy* path, which covers the 10-chain Alchemy set (1, 11155111, 137, 80002, 42161, 421614, 10, 11155420, 8453, 84532; FOU-991 tracks broader coverage); runtime sponsorship also covers the Arbitrum, Optimism (incl. **Arbitrum Sepolia (`421614`)** / Optimism Sepolia (`11155420`)), Polygon, Ethereum and BNB families, among many others. **Don't hardcode the list** - it changes; confirm current coverage on the Goldsky docs chains page.
 
 ### Error on unsupported chain
 
@@ -479,19 +533,11 @@ https://app.goldsky.com/<project_id>/dashboard/compose/<app-name>
 https://app.goldsky.com/<project_id>/dashboard/compose/<app-name>/runs/<run_id>
 ```
 
-The dashboard shows status, secrets, logs, and per-run traces. Log lines include a `dashboard_url` attribute in their metadata so agents can link the user directly to the relevant run.
+The dashboard shows status, secret **names**, logs, a Code tab file browser, a Download app button, and per-run traces. Build run URLs from a run id returned by `compose runs`.
 
 ## Pricing
 
-Compose is in **Beta**. Pricing is **enterprise-only** — schedule a call with Goldsky to discuss your use case. Source: https://goldsky.com/pricing (Compose section).
-
-Internally, usage is tracked across three metered dimensions:
-
-- **Function calls** (`compose_function_calls`) — number of task invocations.
-- **Worker hours** (`compose_worker_hours`) — runtime consumed.
-- **Gas spend** (`compose_gas_spend`) — gas paid for sponsored transactions.
-
-These metrics drive enterprise-tier billing; per-unit prices are set per contract, not published.
+Pricing is not published. Usage is metered on three dimensions: **function calls** (`compose_function_calls`), **worker hours** (`compose_worker_hours`), and **gas spend** (`compose_gas_spend`). Gas spent by `writeContract` and `deployContract` is billed the same as runtime task gas. Per-unit prices are set per contract, so point the user at https://goldsky.com/pricing rather than quoting a tier.
 
 ## Related
 
