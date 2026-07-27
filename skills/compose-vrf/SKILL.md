@@ -76,7 +76,7 @@ tasks:
         contract: "0x6273AB73C95Ba2233281F1eb8aa3b21D9352AD6d"
         events:
           - "RandomnessRequested(uint256,address)"
-    retry_config:
+    retry_config:  # matches the CLI default; not an override
       max_attempts: 3
       initial_interval_ms: 1000
       backoff_factor: 2
@@ -205,11 +205,10 @@ import { TaskContext } from "compose";
  * Generate the Compose wallet and output its address.
  *
  * Only needed on the deploy-your-own path: the fulfiller address comes from
- * Step 3 Branch B's `goldsky compose wallet create randomness-fulfiller` — NOT from
- * this task. `callTask` only reaches a LOCALLY RUNNING app (start it with
- * `goldsky compose start` first), never the deployed app, so it cannot give
- * you the cloud wallet address either.
- *   goldsky compose callTask generate_wallet '{}'
+ * Step 3 Branch B's `goldsky compose wallet create randomness-fulfiller`.
+ * `callTask` targets the DEPLOYED app by default:
+ *   goldsky compose callTask generate_wallet '{}'                # deployed app
+ *   goldsky compose callTask generate_wallet '{}' --env local     # local `compose start` server
  *
  * (The upstream goldsky-io/documentation-examples repo ships the same stale
  * "run this before deploying" comment — do NOT fix the upstream repo here.)
@@ -514,9 +513,9 @@ If the user already cloned the example, skip this step and `cd` into it. Either 
 
 ## Preflight
 
-The `goldsky` CLI, auth, and `deno` checks are the standard Compose preflight — see `/compose` and `/auth-setup`. **Version gate (do this first):** run `goldsky compose --version` — it prints `goldsky compose 0.8.1` (or newer). If the version is older than `0.8.1`, OR `goldsky compose deployContract` / `goldsky compose writeContract` are reported as unknown commands, the CLI is too old for this skill: OFFER to run `goldsky compose update` (or `goldsky compose update 0.8.1` for a specific version), re-check `--version` after it finishes, and do not proceed until `0.8.1`+ is confirmed.
+If `goldsky compose --version` prints `compose CLI is not installed`, run `goldsky compose install` (idempotent on the stable channel), then re-check. The `goldsky` CLI, auth, and `deno` checks are the standard Compose preflight; see `/compose` and `/auth-setup`. Auth: export `GOLDSKY_API_TOKEN=<project API key>` once in the shell (preferred: keeps the key out of argv and shell history), or pass `-t "$GOLDSKY_PROJECT_KEY"` per command, or use an active `goldsky login` session. Precedence: `--token` > `GOLDSKY_API_TOKEN` > `~/.goldsky/auth_token`. **Version gate (do this first):** run `goldsky compose --version`; it prints `goldsky compose 0.8.1` (or newer). If the version is older than `0.8.1`, OR `goldsky compose deployContract` / `goldsky compose writeContract` are reported as unknown commands, the CLI is too old for this skill: OFFER to run `goldsky compose update` (or `goldsky compose update 0.8.1` for a specific version), re-check `--version` after it finishes, and do not proceed until `0.8.1`+ is confirmed.
 
-VRF-specific, Foundry: **Foundry (`forge` / `cast`) is NOT required on the Base / Base Sepolia recommended path** — Branch B's `goldsky compose deployContract` bundles its own compiler, and the Step 8 smoke test uses the gas-sponsored `goldsky compose writeContract`. Foundry IS required only if you take the **forge fallback** on a non-Base chain (Step 3, Branch B → "Non-Base chains") or the **cast-based** smoke-test alternative in Step 8 — so on the recommended path, treat Foundry as optional.
+VRF-specific, Foundry: **Foundry (`forge` / `cast`) is NOT required on the recommended path.** `deployContract` routes through the cloud's Alchemy bundler, which covers Ethereum, Sepolia, Polygon, Polygon Amoy, Arbitrum, Arbitrum Sepolia, Optimism, Optimism Sepolia, Base and Base Sepolia (chain IDs 1, 11155111, 137, 80002, 42161, 421614, 10, 11155420, 8453, 84532). On a chain outside that set the deploy fails with `No Alchemy bundler URL for chain <id>`, so use the `forge create` fallback there. Multi-provider coverage is tracked as FOU-991. Branch B's `goldsky compose deployContract` bundles its own compiler, and the Step 8 smoke test uses the gas-sponsored `goldsky compose writeContract`. Foundry IS required for that forge fallback or the **cast-based** smoke-test alternative in Step 8, so on the recommended path, treat Foundry as optional.
 
 ## Step 1 — Configuration interview
 
@@ -550,21 +549,21 @@ goldsky compose wallet create randomness-fulfiller
 **(2) Deploy the contract.** `deployContract` compiles in-CLI and deploys via a CREATE2 proxy signed by the gas-sponsored Compose wallet, so on Base / Base Sepolia it needs no funded EOA and no RPC URL. The constructor arg records the Compose wallet as the (informational) fulfiller label:
 
 ```bash
-goldsky compose deployContract contracts/RandomnessConsumer.sol \
+ADDR=$(goldsky compose deployContract contracts/RandomnessConsumer.sol \
   --chain-id <CHAIN_ID> \
   --constructor-args $COMPOSE_WALLET \
-  --wallet randomness-fulfiller
+  --wallet randomness-fulfiller \
+  --json | jq -r .address)
 ```
-**Auth:** `deployContract` needs a project API key — pass `-t "$GOLDSKY_PROJECT_KEY"` (exported once from a chmod-600 `.env`; never paste the literal key into a command or the transcript), or run it inside a `goldsky login` session. On a `401` it prints "Generate an API key from Settings > API Keys in the Goldsky dashboard" — generate one there if you don't have it; OFFER to run the deploy with `-t` for the user.
+**Auth:** export `GOLDSKY_API_TOKEN=<project API key>` once in the shell (preferred: keeps the key out of argv and shell history), or pass `-t "$GOLDSKY_PROJECT_KEY"` per command, or use an active `goldsky login` session. Precedence: `--token` > `GOLDSKY_API_TOKEN` > `~/.goldsky/auth_token`. On a `401` it prints "Generate an API key from Settings > API Keys in the Goldsky dashboard"; generate one there if you don't have it; OFFER to run the deploy with `-t` for the user.
 
-Chain IDs and routing — **`deployContract` is gas-sponsored (no funded EOA, no RPC URL) on Base / Base Sepolia only**; every other supported chain below must use the forge fallback that follows:
+Chain IDs and routing. `deployContract` routes through the cloud's Alchemy bundler, which covers Ethereum, Sepolia, Polygon, Polygon Amoy, Arbitrum, Arbitrum Sepolia, Optimism, Optimism Sepolia, Base and Base Sepolia (chain IDs 1, 11155111, 137, 80002, 42161, 421614, 10, 11155420, 8453, 84532). On a chain outside that set the deploy fails with `No Alchemy bundler URL for chain <id>`, so use the `forge create` fallback there. Multi-provider coverage is tracked as FOU-991.
 
-- **Deploy-sponsored → use `deployContract`:** `baseSepolia` → `84532`, `base` → `8453`.
-- **Forge-fallback-only (sponsored coverage tracked as FOU-991):** `arbitrumSepolia` → `421614`, `arbitrum` → `42161`, `optimismSepolia` → `11155420`, `optimism` → `10`.
+- **Deploy-sponsored → use `deployContract`:** `ethereum` → `1`, `sepolia` → `11155111`, `polygon` → `137`, `polygonAmoy` → `80002`, `arbitrum` → `42161`, `arbitrumSepolia` → `421614`, `optimism` → `10`, `optimismSepolia` → `11155420`, `base` → `8453`, `baseSepolia` → `84532`.
 
-`deployContract` auto-saves the ABI to `src/contracts/RandomnessConsumer.json`. Capture the printed contract address as `$CONTRACT_ADDRESS`.
+`deployContract` auto-saves the ABI to `src/contracts/RandomnessConsumer.json`. `--json` suppresses ascii art; on failure the command exits 1 with `{"error":true,"code":"...","message":"..."}` on stderr, so an empty capture means check stderr. Set `CONTRACT_ADDRESS=$ADDR`.
 
-**Non-Base chains (forge fallback).** `deployContract` is gas-sponsored on Base / Base Sepolia only today (broader coverage tracked as FOU-991). On any other chain, deploy with a funded EOA via `forge create` — the fulfiller label is still `$COMPOSE_WALLET`, so the task code is unchanged.
+**Non-Base chains (forge fallback).** `deployContract` routes through the cloud's Alchemy bundler, which covers Ethereum, Sepolia, Polygon, Polygon Amoy, Arbitrum, Arbitrum Sepolia, Optimism, Optimism Sepolia, Base and Base Sepolia (chain IDs 1, 11155111, 137, 80002, 42161, 421614, 10, 11155420, 8453, 84532). On a chain outside that set the deploy fails with `No Alchemy bundler URL for chain <id>`, so use the `forge create` fallback there. Multi-provider coverage is tracked as FOU-991. On the forge path, the fulfiller label is still `$COMPOSE_WALLET`, so the task code is unchanged.
 
 **Funded EOA (zero-friction generate offer).** Don't ask the user for a private key — OFFER to generate a throwaway funded EOA: generate it straight into a chmod-600 file the model never reads, showing only the address:
 
@@ -659,7 +658,7 @@ goldsky compose writeContract \
   --function "requestRandomness()"
 ```
 
-(This `writeContract` is gas-sponsored on Base / Base Sepolia only — use `--chain-id 84532` (Base Sepolia) or `8453` (Base); on any other chain, skip it and use the `cast send` alternative below. It sends from the named/default gas-sponsored wallet and needs `-t "$GOLDSKY_PROJECT_KEY"` (from `.env`, never the literal key) or a `goldsky login` session; on `401` it points you to Settings > API Keys. To get the request id, read `nextRequestId` on-chain and subtract 1.)
+(`writeContract` routes through the cloud's Alchemy bundler, which covers Ethereum, Sepolia, Polygon, Polygon Amoy, Arbitrum, Arbitrum Sepolia, Optimism, Optimism Sepolia, Base and Base Sepolia (chain IDs 1, 11155111, 137, 80002, 42161, 421614, 10, 11155420, 8453, 84532). On a chain outside that set the call fails with `No Alchemy bundler URL for chain <id>`, so use the `cast send` alternative below. Use `--chain-id 84532` (Base Sepolia) or any of the supported chain IDs. It sends from the named/default gas-sponsored wallet. Auth: export `GOLDSKY_API_TOKEN=<project API key>` once in the shell (preferred: keeps the key out of argv and shell history), or pass `-t "$GOLDSKY_PROJECT_KEY"` per command, or use an active `goldsky login` session. Precedence: `--token` > `GOLDSKY_API_TOKEN` > `~/.goldsky/auth_token`. On `401` it points you to Settings > API Keys. To get the request id, read `nextRequestId` on-chain and subtract 1.)
 
 **Alternatives** (keep them labeled — the sponsored `writeContract` above is preferred on the recommended path):
 
@@ -669,7 +668,7 @@ goldsky compose writeContract \
     -H "Authorization: Bearer $COMPOSE_TOKEN" \
     "https://api.goldsky.com/api/admin/compose/v1/<app name>/tasks/request_randomness"
   ```
-  (`$COMPOSE_TOKEN` is a Compose API token from **Settings > API Keys** in the Goldsky dashboard. `goldsky compose callTask` only invokes locally running tasks, not the deployed app.)
+(`goldsky compose callTask request_randomness '{}'` hits the deployed app directly and handles auth from your `goldsky login` session or `GOLDSKY_API_TOKEN`. The curl above is the equivalent raw call if you need it. Add `--env local` to hit a `compose start` server instead.)
 - **Cast (your own funded EOA)** — call the contract directly:
   ```bash
   cast send $CONTRACT_ADDRESS "requestRandomness()" \
@@ -681,6 +680,12 @@ Wait 10–30 seconds for Compose to pick up the event, then **stream** logs (`-f
 
 ```bash
 goldsky compose logs -f
+```
+
+Also check runs (agents run non-interactively, so `runs` is more reliable than watching a live stream):
+
+```bash
+goldsky compose runs --task fulfill_randomness --since 5m --json
 ```
 
 You should see `fetched drand round <N>` and `fulfilled request <requestId> in tx <hash>`. Verify on-chain:
@@ -698,7 +703,7 @@ cast call $CONTRACT_ADDRESS "isFulfilled(uint256)(bool)" <requestId> --rpc-url <
 - **`insufficient funds for gas`.** Only possible on a non-sponsored chain. Fund `$COMPOSE_WALLET`.
 - **drand fetch fails.** The default drand endpoint is public. The retry config in `compose.yaml` (max 3, backoff) handles transient failures. If it persistently fails, check https://api.drand.sh/chains.
 - **`error: Unknown command "deployContract". Did you mean command "deploy"?` (or the `writeContract` variant).** The Compose CLI is too old. OFFER `goldsky compose update` (or `goldsky compose update 0.8.1`), re-check `goldsky compose --version` shows `0.8.1`+, then retry.
-- **`deployContract` refuses with "This contract has already been deployed with this app…".** Re-running `deployContract` with identical contract + constructor args + app + project re-derives the same CREATE2 address and is refused *before* the tx (it prints **no** `Deploy Block:`). To get a fresh deployment, change a lever: a different constructor arg (`RandomnessConsumer` takes `_fulfiller`), a changed contract source, or a different app name. **Prefer the constructor-arg / source lever** — renaming the app changes *all* future deploy addresses and conflicts with the `compose deploy` app name, so it's the most disruptive option.
+- **`deployContract` refuses with "This contract has already been deployed with this app…".** Re-running `deployContract` with identical contract + constructor args + app + project re-derives the same CREATE2 address and is refused *before* the tx (it prints **no** `Deploy Block:`). To get a fresh deployment, change a lever: a different constructor arg (`RandomnessConsumer` takes `_fulfiller`), a changed contract source, or a different app name. The new name must not differ only by case or by `-`/`_`: names canonicalize (lowercase, `[-_]+` -> `-`), so `my-app`, `My_App`, and `my__app` collide and the deploy returns 409. **Prefer the constructor-arg / source lever**; renaming the app changes *all* future deploy addresses and conflicts with the `compose deploy` app name, so it's the most disruptive option.
 
 ## What you should NOT do
 

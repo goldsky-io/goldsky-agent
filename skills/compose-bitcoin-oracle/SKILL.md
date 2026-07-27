@@ -61,6 +61,8 @@ If the user already cloned the example, skip this step and `cd` into it.
 
 ## Preflight
 
+If `goldsky compose --version` prints `compose CLI is not installed`, run `goldsky compose install` (idempotent on the stable channel), then re-check.
+
 **Version (compose 0.8.1).** Run `goldsky compose --version` — it prints `goldsky compose 0.8.1`. If the version is older than `0.8.1`, or `deployContract` / `writeContract` are unknown commands, the deploy-your-own path (Branch B in Step 3) won't work — OFFER to run `goldsky compose update` for the user and re-check `--version`. (Branch A — the shared oracle — only needs `compose deploy`, so an older CLI is fine there.)
 
 The `goldsky` CLI, auth, and `deno` checks are the standard Compose preflight — see `/compose` and `/auth-setup`. Bitcoin-oracle-specific: the deploy-your-own path (Step 3, Branch B) uses **`goldsky compose deployContract`**, which bundles its own compiler — **Foundry is not required.**
@@ -94,7 +96,7 @@ Per the golden rules in `/compose`, ask only what you can't derive — and ask t
 **(1) Create the wallet** (works before any deploy) and capture its address as `$COMPOSE_WALLET`. It matches `evm.wallet({ name: "bitcoin-oracle-wallet" })` in `src/tasks/bitcoin-oracle.ts`:
 
 ```bash
-goldsky compose wallet create bitcoin-oracle-wallet
+COMPOSE_WALLET=$(goldsky compose wallet create bitcoin-oracle-wallet --json | jq -r .address)
 ```
 
 > ⚠ **Do NOT use `wallet create --env local`**: that's a LOCAL tevm wallet the cloud runtime never signs with, producing a bricked oracle the Troubleshooting section below will not diagnose. Use the default (cloud) wallet.
@@ -130,18 +132,19 @@ contract PriceOracle {
 }
 ```
 
-Then deploy through the Compose wallet — `deployContract` compiles in-CLI and deploys via a CREATE2 proxy signed by the gas-sponsored Compose wallet, so on Base / Base Sepolia it needs no funded EOA and no RPC URL. Every `deployContract` / `writeContract` needs `-t "$GOLDSKY_PROJECT_KEY"` (or a `goldsky login` session) — make a key at Settings > API Keys in the dashboard. The constructor arg authorizes the wallet from step 1 as the writer:
+Then deploy through the Compose wallet. `deployContract` compiles in-CLI and deploys via a CREATE2 proxy signed by the gas-sponsored Compose wallet, so on Base / Base Sepolia it needs no funded EOA and no RPC URL. Every `deployContract` / `writeContract` needs a project API key. Auth: export `GOLDSKY_API_TOKEN=<project API key>` once in the shell (preferred: keeps the key out of argv and shell history), or pass `-t "$GOLDSKY_PROJECT_KEY"` per command, or use an active `goldsky login` session. Precedence: `--token` > `GOLDSKY_API_TOKEN` > `~/.goldsky/auth_token`. Make a key at Settings > API Keys in the dashboard. The constructor arg authorizes the wallet from step 1 as the writer:
 
 ```bash
-goldsky compose deployContract contracts/PriceOracle.sol \
+ADDR=$(goldsky compose deployContract contracts/PriceOracle.sol \
   --chain-id <CHAIN_ID> \
   --constructor-args $COMPOSE_WALLET \
-  --wallet bitcoin-oracle-wallet
+  --wallet bitcoin-oracle-wallet \
+  --json | jq -r .address)
 ```
 
-Chain IDs: `baseSepolia` → `84532`, `base` → `8453`, `polygonAmoy` → `80002`, `polygon` → `137`, `arbitrum` → `42161`, `optimism` → `10`. It auto-saves the ABI to `src/contracts/PriceOracle.json`. Capture the printed contract address as `$CONTRACT_ADDRESS`.
+Chain IDs: `baseSepolia` → `84532`, `base` → `8453`, `polygonAmoy` → `80002`, `polygon` → `137`, `arbitrum` → `42161`, `optimism` → `10`. It auto-saves the ABI to `src/contracts/PriceOracle.json`. `--json` suppresses ascii art; on failure the command exits 1 with `{"error":true,"code":"...","message":"..."}` on stderr, so an empty capture means check stderr. Set `CONTRACT_ADDRESS=$ADDR`.
 
-**Non-Base chains (forge fallback).** The `deployContract` cloud path is gas-sponsored on Base and Base Sepolia only today (broader coverage tracked as FOU-991). On any other chain, deploy with a funded EOA via `forge create` instead — the writer is still `$COMPOSE_WALLET`, so the task code is unchanged; extract the bare ABI afterward (see the note under the command). Don't ask the user for a private key — OFFER to generate a throwaway funded EOA: generate it straight into a chmod-600 file the model never reads, showing only the address:
+**Non-Base chains (forge fallback).** `deployContract` routes through the cloud's Alchemy bundler, which covers Ethereum, Sepolia, Polygon, Polygon Amoy, Arbitrum, Arbitrum Sepolia, Optimism, Optimism Sepolia, Base and Base Sepolia (chain IDs 1, 11155111, 137, 80002, 42161, 421614, 10, 11155420, 8453, 84532). On a chain outside that set the deploy fails with `No Alchemy bundler URL for chain <id>`, so use the `forge create` fallback there. Multi-provider coverage is tracked as FOU-991. On the forge path, the writer is still `$COMPOSE_WALLET`, so the task code is unchanged; extract the bare ABI afterward (see the note under the command). Don't ask the user for a private key; OFFER to generate a throwaway funded EOA: generate it straight into a chmod-600 file the model never reads, showing only the address:
 
 ```bash
 cast wallet new --json > /tmp/k.json
@@ -188,7 +191,7 @@ If the user changed the cron cadence, edit the `expression:` under the `cron` tr
 
 ## Step 5 — Gas (deploy-your-own, non-sponsored chains only)
 
-Compose-managed wallets default to `sponsorGas: true` on sponsored chains (Base, Base Sepolia, Polygon, Polygon Amoy, and others). On those chains the wallet needs no funding — skip this step. On a non-sponsored chain, send native gas token to `$COMPOSE_WALLET` (testnet faucet, or budget for the cron cadence on mainnet: every-minute writes ≈ 1,440 tx/day). Note that this **runtime** task-gas sponsorship covers far more chains than the `deployContract` / `writeContract` cloud *deploy* path, which is Base / Base Sepolia only for now — on other chains, deploy via the Step 3 forge fallback, then let runtime sponsorship (or a funded wallet) cover the cron writes.
+Compose-managed wallets default to `sponsorGas: true` on sponsored chains (Base, Base Sepolia, Polygon, Polygon Amoy, and others). On those chains the wallet needs no funding; skip this step. On a non-sponsored chain, send native gas token to `$COMPOSE_WALLET` (testnet faucet, or budget for the cron cadence on mainnet: every-minute writes ≈ 1,440 tx/day). Note that this **runtime** task-gas sponsorship covers far more chains than the `deployContract` / `writeContract` cloud *deploy* path, which routes through the cloud's Alchemy bundler covering Ethereum, Sepolia, Polygon, Polygon Amoy, Arbitrum, Arbitrum Sepolia, Optimism, Optimism Sepolia, Base and Base Sepolia (chain IDs 1, 11155111, 137, 80002, 42161, 421614, 10, 11155420, 8453, 84532). On a chain outside that set the deploy fails with `No Alchemy bundler URL for chain <id>`, so use the `forge create` fallback there (Step 3). Multi-provider coverage is tracked as FOU-991. Then let runtime sponsorship (or a funded wallet) cover the cron writes.
 
 ## Step 6 — Optional: publish to a new GitHub repo
 
@@ -221,6 +224,12 @@ goldsky compose logs -f
 
 `-f` / `--follow` streams live so you catch the next cron fire; plain `goldsky compose logs` is a one-shot dump of the last 100 lines (`--tail`, default 100) and returns.
 
+Also check runs (agents run non-interactively, so `runs` is more reliable than watching a live stream):
+
+```bash
+goldsky compose runs --task bitcoin_oracle --since 5m --json
+```
+
 Good output is a return payload with `success: true` and an `oracleHash` 0x-prefixed tx hash, repeating on cadence with no retries.
 
 Verify on-chain (Base Sepolia explorer: `https://sepolia.basescan.org/address/$CONTRACT_ADDRESS#events`): you should see a `PriceUpdated` event per cron fire, and `latestPrice()` / `latestTimestamp()` should return recent `bytes32` values.
@@ -233,7 +242,7 @@ Verify on-chain (Base Sepolia explorer: `https://sepolia.basescan.org/address/$C
 - **CoinGecko 429 / rate-limited.** The default retry config (3 attempts, backoff) handles transient rate-limits. If persistent, reduce cron cadence or switch to a paid API.
 - **Task runs but no events on-chain.** Confirm the `evm.chains.*` reference matches the chain where the contract lives. A wallet on the wrong chain signs a tx that never appears on the intended chain.
 - **`error: Unknown command "deployContract". Did you mean command "deploy"?` (or the `writeContract` variant).** Cause: the CLI is too old (older than 0.8.1). Fix: offer `goldsky compose update`, then re-check `goldsky compose --version`.
-- **`This contract has already been deployed with this app` (re-running `deployContract`).** CREATE2 dedupes on contract + constructor args + app name, so an identical re-run is refused *before* the tx and prints NO `Deploy Block` — a rerun can't recover the block. Levers: change a constructor arg, change the source, or use a different app name. PriceOracle takes a constructor arg, so prefer the **constructor-arg lever**. ⚠ Renaming the app changes *every* future deploy address and conflicts with the app name you `compose deploy` under, so avoid it unless intended.
+- **`This contract has already been deployed with this app` (re-running `deployContract`).** CREATE2 dedupes on contract + constructor args + app name, so an identical re-run is refused *before* the tx and the `--json` output has no `deployBlock`. A rerun can't recover the block. Levers: change a constructor arg, change the source, or use a different app name. The new name must not differ only by case or by `-`/`_`: names canonicalize (lowercase, `[-_]+` -> `-`), so `my-app`, `My_App`, and `my__app` collide and the deploy returns 409. PriceOracle takes a constructor arg, so prefer the **constructor-arg lever**. ⚠ Renaming the app changes *every* future deploy address and conflicts with the app name you `compose deploy` under, so avoid it unless intended.
 
 ## What you should NOT do
 

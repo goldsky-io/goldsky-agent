@@ -717,7 +717,7 @@ node_modules/
 
 ## Preflight
 
-The `goldsky` CLI and auth checks are the standard Compose preflight — see `/compose` and `/auth-setup`. Compliance-specific:
+The `goldsky` CLI and auth checks are the standard Compose preflight (see `/compose` and `/auth-setup`). If `goldsky compose --version` prints `compose CLI is not installed`, run `goldsky compose install` (idempotent on the stable channel), then re-check. Compliance-specific:
 
 1. **Compose CLI version (check first).** `goldsky compose --version` must print `0.8.1` or newer, and `deployContract`/`writeContract` must be known commands — everything below (deploys, secrets, smoke test) depends on them. Run:
    ```bash
@@ -754,8 +754,7 @@ The oracle is a named Compose smart wallet, `compliance-oracle-wallet`. Its addr
 
 ```bash
 # Create the oracle smart wallet and capture its address
-goldsky compose wallet create compliance-oracle-wallet
-# → capture the printed address as $ORACLE_ADDRESS
+ORACLE_ADDRESS=$(goldsky compose wallet create compliance-oracle-wallet --json | jq -r .address)
 ```
 
 In a fresh shell, list the wallet to recover the address (it must match the contract's `oracle` at runtime):
@@ -765,28 +764,26 @@ goldsky compose wallet list
 # → copy the compliance-oracle-wallet address as $ORACLE_ADDRESS
 ```
 
-**Base Sepolia (recommended): deploy a MockUSDC first**, then use its address as the escrow's `_token` arg. Both deploys go through the gas-sponsored Compose wallet (Base Sepolia is sponsored, so nothing needs funding). The `oracle` is the `compliance-oracle-wallet` address captured above. (Each `deployContract`/`writeContract` needs a project API key; pass `-t "$GOLDSKY_PROJECT_KEY"` or have an active `goldsky login` session; generate the key at **Settings > API Keys** in the Goldsky dashboard.)
+**Base Sepolia (recommended): deploy a MockUSDC first**, then use its address as the escrow's `_token` arg. Both deploys go through the gas-sponsored Compose wallet (Base Sepolia is sponsored, so nothing needs funding). The `oracle` is the `compliance-oracle-wallet` address captured above. (Each `deployContract`/`writeContract` needs a project API key. Auth: export `GOLDSKY_API_TOKEN=<project API key>` once in the shell (preferred: keeps the key out of argv and shell history), or pass `-t "$GOLDSKY_PROJECT_KEY"` per command, or use an active `goldsky login` session. Precedence: `--token` > `GOLDSKY_API_TOKEN` > `~/.goldsky/auth_token`. Generate the key at **Settings > API Keys** in the Goldsky dashboard.)
 
 ```bash
-# 1) MockUSDC — no constructor args (testnet only)
-goldsky compose deployContract contracts/MockUSDC.sol --chain-id $CHAIN_ID
-# capture the printed address as $TOKEN_ADDRESS
+# 1) MockUSDC - no constructor args (testnet only)
+TOKEN_ADDRESS=$(goldsky compose deployContract contracts/MockUSDC.sol --chain-id $CHAIN_ID --json | jq -r .address)
 
-# 2) ComplianceGatedTransfer — oracle is the compliance-oracle-wallet address;
+# 2) ComplianceGatedTransfer - oracle is the compliance-oracle-wallet address;
 #    constructor args depend on the payment model:
 
 # Single-payee (3 args: token, oracle, recipient):
-goldsky compose deployContract contracts/ComplianceGatedTransfer.sol \
+CONTRACT_ADDRESS=$(goldsky compose deployContract contracts/ComplianceGatedTransfer.sol \
   --chain-id $CHAIN_ID \
-  --constructor-args $TOKEN_ADDRESS $ORACLE_ADDRESS $RECIPIENT_ADDRESS
+  --constructor-args $TOKEN_ADDRESS $ORACLE_ADDRESS $RECIPIENT_ADDRESS --json | jq -r .address)
 
 # P2P (2 args: token, oracle):
-goldsky compose deployContract contracts/ComplianceGatedTransfer.sol \
+CONTRACT_ADDRESS=$(goldsky compose deployContract contracts/ComplianceGatedTransfer.sol \
   --chain-id $CHAIN_ID \
-  --constructor-args $TOKEN_ADDRESS $ORACLE_ADDRESS
-
-# capture the printed address as $CONTRACT_ADDRESS
+  --constructor-args $TOKEN_ADDRESS $ORACLE_ADDRESS --json | jq -r .address)
 ```
+`--json` suppresses ascii art; on failure the command exits 1 with `{"error":true,"code":"...","message":"..."}` on stderr, so an empty capture means check stderr.
 
 Use the chain ID for the user's chosen chain (e.g. `84532` for Base Sepolia, `8453` for Base mainnet, `11155111` for Ethereum Sepolia, etc.).
 
@@ -842,7 +839,7 @@ fi
 
 **Webacy mode only** — mock mode and bring-your-own need no `WEBACY_API_KEY` (make sure it's removed from `compose.yaml`'s `secrets` array, per Step 1) and skip this step. The running task uses `WEBACY_API_KEY` to screen sender wallets via the Webacy AML API. If you haven't already, sign up at https://developers.webacy.co/ and create an API key. (The whole flow was verified working with a stub key set here before deploy, so a placeholder is fine right up to the smoke test.)
 
-- **CLI:** set the secret BEFORE `goldsky compose deploy` (Step 6): `goldsky compose secret set WEBACY_API_KEY --value "$WEBACY_API_KEY"` — the user exports the value in their own shell (or writes it into a chmod-600 `.env` and `source`s it) rather than pasting it into the chat, and it is never echoed back. `compose deploy` validates that every manifest-declared secret exists and bakes it into the pod at deploy time, so an unset secret 400s the deploy with "The following secrets referenced in the manifest do not exist". Secrets are not hot-reloaded: setting or updating a secret after deploy only writes to storage and does NOT reach the running pod without a redeploy.
+- **CLI:** set the secret BEFORE `goldsky compose deploy` (Step 6): `goldsky compose secret set WEBACY_API_KEY --value "$WEBACY_API_KEY"` - the user exports the value in their own shell (or writes it into a chmod-600 `.env` and `source`s it) rather than pasting it into the chat, and it is never echoed back. `compose deploy` validates that every manifest-declared secret exists and bakes it into the pod at deploy time, so an unset secret 400s the deploy with "The following secrets referenced in the manifest do not exist". Secrets are not hot-reloaded: setting or updating a secret after deploy only writes to storage and does NOT reach the running pod without a redeploy. For the after-deploy case, `goldsky compose secret set WEBACY_API_KEY --value "$WEBACY_API_KEY" --redeploy` sets the secret and triggers a redeploy in one step.
 - **In-app (chatbot):** the in-app deploy skips secret validation, so `deployComposeApp` (Step 6) succeeds without it. After deploy, add `WEBACY_API_KEY` in the Compose app's dashboard under the app's **Secrets** page, then **redeploy from the dashboard** so the pod picks it up. The app does not start working on set alone; the redeploy is required. NEVER attempt to set a secret from chat; there is no tool, by design.
 
 ## Step 6 — Deploy to Goldsky
@@ -859,14 +856,15 @@ This step runs **after** `compose deploy` (Step 6), so the app's wallets now exi
 
 For the `cast` verification and alternative below, set `RPC_URL` to an RPC for the user's chosen chain (e.g. `https://sepolia.base.org` for Base Sepolia, `https://mainnet.base.org` for Base mainnet).
 
-**Primary — sponsored `writeContract` from the app wallet.** List the app's wallets and grab the default smart wallet as the sender:
+**Primary - sponsored `writeContract` from the app wallet.** Create (or fetch) the app's default smart wallet, whose address is the sender:
 
 ```bash
-goldsky compose wallet list
-# set $COMPOSE_WALLET to the app's default smart wallet address
+# create (or fetch) the wallet the writeContract calls will send from, and print its address
+COMPOSE_WALLET=$(goldsky compose wallet create default --json | jq -r .address)
 ```
+(`POST /:appName/wallets` provisions the hosted Postgres and creates or resolves the wallet on demand, so this works before or after the app deploy.)
 
-Then mint, approve, and request the transfer (each needs `-t "$GOLDSKY_PROJECT_KEY"` or an active `goldsky login` session):
+Then mint, approve, and request the transfer (auth: export `GOLDSKY_API_TOKEN=<project API key>` once in the shell (preferred: keeps the key out of argv and shell history), or pass `-t "$GOLDSKY_PROJECT_KEY"` per command, or use an active `goldsky login` session. Precedence: `--token` > `GOLDSKY_API_TOKEN` > `~/.goldsky/auth_token`):
 
 ```bash
 # mint 1.00 mUSDC to the app wallet (MockUSDC.mint is open)
@@ -888,6 +886,13 @@ Then **stream** the logs and watch the decision land (bare `goldsky compose logs
 
 ```bash
 goldsky compose logs -f
+```
+
+Better, foundry-free checks (run alongside or instead of the `logs -f` + `cast call` below):
+
+```bash
+goldsky compose runs --task on_transfer_requested --since 5m --json
+goldsky compose collections query transfer-audits
 ```
 
 **What to look for:** `deposit received`, `screening complete ... risk score N`, then `transfer #<id> APPROVED` (or a reject warning) with an `oracleTxHash`. Verify on-chain — `transfers(<id>)` status should be `1` (Approved) or `2` (Rejected), not `0`:
@@ -920,8 +925,8 @@ Generate `$SENDER_KEY` without printing it (a separate funded EOA, not the oracl
 - **Task never fires when a transfer is requested.** Confirm `compose.yaml`'s `contract:` and `network:` match where you deployed, the deploy succeeded, and the trigger is active (`goldsky compose status`). Wiring only one of `chain` (constants.ts) / `network` (compose.yaml) is the usual cause.
 - **Webacy returns an empty response / task throws.** Check `WEBACY_API_KEY` is set as a secret and valid, and the address is well-formed hex. Transient failures are absorbed by the `retry_config` (3 attempts, backoff).
 - **Reject scenario approves instead.** On Base Sepolia, a fresh test wallet has no on-chain history, so Webacy scores it low (it passes). Use a known-flagged address, or test the reject path on mainnet where real risk data exists.
-- **`insufficient funds for gas` on deploy.** On Base / Base Sepolia the deploy is sponsored. On other chains, fund the **Compose wallet** (the deployer) with native gas; the oracle wallet needs nothing.
-- **Re-running `deployContract` with identical contract + args + app is refused ("This contract has already been deployed with this app...").** This is a CREATE2 pre-tx refusal — it prints **no** `Deploy Block:`. The address is deterministic from contract code + constructor args + app name + project, so an identical combination reproduces the same address. Fresh-deploy levers: change a constructor arg, change the source, or use a different app name. For the no-arg `MockUSDC` the **only** lever is the app name; for `ComplianceGatedTransfer` (takes `(token, oracle)` or `(token, oracle, recipient)`) changing a constructor arg also works. ⚠ Renaming the app changes **all** future deploy addresses and conflicts with the `compose deploy` app name, so prefer the constructor-arg lever where possible — for no-arg contracts the app-name lever is the only option.
+- **Deploy fails with `No Alchemy bundler URL for chain <id>`.** The chosen chain is outside the cloud deploy path's bundler coverage (Ethereum, Sepolia, Polygon, Polygon Amoy, Arbitrum, Arbitrum Sepolia, Optimism, Optimism Sepolia, Base, Base Sepolia). Pick a covered chain or deploy that contract with your own funded EOA. Funding the Compose wallet does not help, the deploy is a sponsored UserOp, not an EOA transaction. Broader provider coverage is FOU-991.
+- **Re-running `deployContract` with identical contract + args + app is refused ("This contract has already been deployed with this app...").** This is a CREATE2 pre-tx refusal - it prints **no** `Deploy Block:`. The address is deterministic from contract code + constructor args + app name + project, so an identical combination reproduces the same address. Fresh-deploy levers: change a constructor arg, change the source, or use a different app name. The new name must not differ only by case or by `-`/`_`: names canonicalize (lowercase, `[-_]+` -> `-`), so `my-app`, `My_App`, and `my__app` collide and the deploy returns 409. For the no-arg `MockUSDC` the **only** lever is the app name; for `ComplianceGatedTransfer` (takes `(token, oracle)` or `(token, oracle, recipient)`) changing a constructor arg also works. ⚠ Renaming the app changes **all** future deploy addresses and conflicts with the `compose deploy` app name, so prefer the constructor-arg lever where possible - for no-arg contracts the app-name lever is the only option.
 
 ## What you should NOT do
 
