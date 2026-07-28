@@ -61,7 +61,7 @@ goldsky project list 2>&1
 
 **Do NOT attempt interactive login.** Always use token-based authentication.
 
-**Do NOT use AskUserQuestion for token input.** Simply ask the user to paste their token directly in the chat:
+**Do NOT use AskUserQuestion for token input.** Simply ask the user to paste their token directly in the chat. The token is a sensitive credential — do not echo it back, log it, or store it anywhere beyond the `goldsky login` call below:
 
 ```
 You're not logged in. Please paste your API token:

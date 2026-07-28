@@ -30,8 +30,8 @@ Replace `{chainId}` with the chain ID (e.g., `1` for Ethereum, `8453` for Base, 
 ### Authentication
 
 Three options:
-- **Query parameter**: `?secret=YOUR_SECRET`
-- **Header**: `X-ERPC-Secret-Token: YOUR_SECRET`
+- **Header (recommended)**: `X-ERPC-Secret-Token: YOUR_SECRET` — keeps the secret out of URLs, which are commonly logged by proxies, CDNs, and server access logs.
+- **Query parameter**: `?secret=YOUR_SECRET` — convenient for quick tests, but the secret leaks into any log that records the full URL. Prefer the header for production traffic. The examples below use the query param for brevity.
 - **x402 (pay-per-request)**: Clients without a secret receive an HTTP 402 response with payment requirements. An x402-compatible client signs a USDC payment and retries; Edge settles via a facilitator before forwarding the request upstream. Payment is settled on **Base** (chain `8453`) in USDC. Pricing is `$0.000005` per request (same as the standard `$5 per million` rate). See https://www.x402.org/ for the protocol spec.
 
 ### Example (curl)
