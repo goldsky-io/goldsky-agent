@@ -9,6 +9,8 @@ Create and manage secrets for pipeline sink credentials.
 
 ## Agent Instructions
 
+**Handling credentials safely:** a credential passed inline via `--value '...'` is written to the user's shell history and is visible in the process list while the command runs. Whenever possible, omit `--value` on `goldsky secret create` and let the CLI prompt for the connection string interactively (nothing sensitive touches argv or history). Reserve inline `--value` for non-interactive scripting, and never echo a revealed secret (`goldsky secret reveal`) back into the conversation.
+
 When this skill is invoked, follow this streamlined workflow:
 
 ### Step 1: Verify Login + List Existing Secrets
