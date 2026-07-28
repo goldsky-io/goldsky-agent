@@ -57,36 +57,34 @@ goldsky project list 2>&1
 
 **Not logged in:** Output contains `Make sure to run 'goldsky login'`. Continue to Step 3.
 
-### Step 3: Token-Based Login
+### Step 3: Have the User Log In
 
-**Do NOT attempt interactive login.** Always use token-based authentication.
+**Never handle the user's API token in the chat.** A token pasted into the conversation ends up in the transcript and is sent to the model — treat it like a password you must never see. Have the user authenticate themselves in their own terminal instead. The CLI persists credentials to disk, so the `goldsky` commands you run afterward will pick up their session automatically.
 
-**Do NOT use AskUserQuestion for token input.** Simply ask the user to paste their token directly in the chat. The token is a sensitive credential — do not echo it back, log it, or store it anywhere beyond the `goldsky login` call below:
-
-```
-You're not logged in. Please paste your API token:
-
-(Need a token? Go to https://app.goldsky.com → Settings → API Tokens → Create Token)
-```
-
-Wait for the user to paste their token in their next message.
-
-**If user says they don't have a token or need help:**
-Explain the steps:
-
-1. Go to https://app.goldsky.com
-2. Click Settings → API Tokens
-3. Click "Create Token" and give it a name
-4. Copy the token (it won't be shown again)
-
-Then ask them to paste it.
-
-**Once user provides the token:**
-Log them in:
+Ask the user to run login themselves:
 
 ```bash
-goldsky login --token USER_PROVIDED_TOKEN
+goldsky login                       # opens a browser to authenticate (simplest)
+# or, if they prefer a token or have no browser available:
+goldsky login --token <YOUR_TOKEN>  # they type this themselves — do not ask them to paste the token to you
 ```
+
+Need a token? Go to https://app.goldsky.com → Settings → API Tokens → Create Token (it won't be shown again).
+
+Use AskUserQuestion to confirm — do NOT collect the token yourself:
+
+```
+Question: "Run `goldsky login` in your terminal to authenticate, then let me know:"
+
+Options:
+1. Label: "Done, I'm logged in"
+   Description: "I ran login and it succeeded"
+
+2. Label: "I need help"
+   Description: "I hit an error during login"
+```
+
+Then verify (Step 4). If verification shows you're still not logged in, ask the user to re-run login — never ask them to hand you the token.
 
 ### Step 4: Verify Login
 
@@ -174,10 +172,10 @@ goldsky login
 
 | Issue             | Action                                                 |
 | ----------------- | ------------------------------------------------------ |
-| Not logged in     | Prompt user for API token, use `goldsky login --token` |
+| Not logged in     | Ask the user to run `goldsky login` themselves in their terminal |
 | Invalid token     | Ask user to generate a new token in dashboard          |
 | Permission denied | User needs role upgrade from project Owner/Admin       |
-| Session expired   | Prompt for new token and re-authenticate               |
+| Session expired   | Ask the user to re-run `goldsky login` themselves      |
 
 ## Related
 
