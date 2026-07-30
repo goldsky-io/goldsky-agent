@@ -82,7 +82,7 @@ sources:
 sources:
   base_logs:
     type: dataset
-    dataset_name: base.logs      # Use `goldsky dataset list` to discover names
+    dataset_name: base.logs      # Use `goldsky dataset list --output json` to discover names
     version: 1.0.0               # Use `goldsky dataset get <name>` for versions
     start_at: latest             # "earliest" or "latest" (default: latest)
     filter: "address = '0x...'"  # Optional — enables Fast Scan for backfills
@@ -523,8 +523,8 @@ Start small and scale up if needed. Resource size affects pricing.
 ## Dataset Discovery
 
 ```bash
-# List available datasets
-goldsky dataset list
+# List available datasets (non-interactive)
+goldsky dataset list --output json
 
 # Get schema for a specific dataset
 goldsky dataset get <dataset_name>

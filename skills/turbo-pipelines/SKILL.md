@@ -358,7 +358,7 @@ To reset checkpoints: rename the source or pipeline. Warning: this reprocesses a
 | Deploy/Update           | `goldsky turbo apply pipeline.yaml`                    |
 | Deploy + Inspect        | `goldsky turbo apply pipeline.yaml -i`                 |
 | List pipelines          | `goldsky turbo list`                                   |
-| List datasets           | `goldsky dataset list` (slow, 30-60s)                  |
+| List datasets           | `goldsky dataset list --output json`                   |
 | List secrets            | `goldsky secret list`                                  |
 
 For lifecycle commands (pause/resume/restart/delete) and monitoring (inspect/logs), see `/turbo-operations`.
