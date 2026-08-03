@@ -27,7 +27,9 @@ jobs:
         run: |
           set -euo pipefail
           git fetch --quiet --depth=1 origin "$BASE_REF"
-          base=$(git show "origin/$BASE_REF:package.json" | jq -r .version)
+          # read the base branch's package.json via FETCH_HEAD (robust regardless
+          # of how actions/checkout configured origin's remote-tracking refspec)
+          base=$(git show "FETCH_HEAD:package.json" | jq -r .version)
           pkg=$(jq -r .version package.json)
           plugin=$(jq -r .version .claude-plugin/plugin.json)
           cursor=$(jq -r .version .cursor-plugin/plugin.json)
