@@ -18,7 +18,7 @@ sources:
     start_at: earliest
 ```
 
-> **Tip:** Verify a dataset exists with `goldsky turbo validate file.yaml` (fast, ~3s) or `goldsky dataset get <chain>.<dataset> --outputFormat json` (returns the exact slug, version, and schema). To browse or search datasets non-interactively, use `goldsky dataset list --output json` (optionally `--group <chain>`).
+> **Tip:** Verify a dataset exists with `goldsky dataset get <chain>.<dataset> --outputFormat json` — returns the exact slug, version, schema, and `isTurboOnly` (`false` = usable by Turbo **and** Mirror; `true` = Turbo-only). To browse or search: `goldsky dataset list --output json` (optionally `--group <chain>`; the list is a slim index and omits `isTurboOnly` — use `dataset get` for that). `goldsky turbo validate file.yaml` validates a whole **Turbo** pipeline config — it is *not* a dataset-existence check (Turbo-specific, needs the `turbo` binary).
 >
 > ⚠️ **Plain `goldsky dataset list` with no flags is an interactive picker that only works in a real terminal** — in an agent/CI/piped context it produces **no output** at all. Always pass `--output json` (or `--group`). On an older CLI without those flags, fall back to the public read-only endpoint: `curl -s https://api.goldsky.com/api/public/datasets/v1`.
 
@@ -34,7 +34,7 @@ sources:
 
 **Data location:** `data/` (relative to this skill's directory)
 
-> **Dataset versions are not pinned in this skill.** Version numbers drift as datasets are revised, so confirm the exact version with `goldsky turbo validate file.yaml` (fast, ~3s) rather than trusting a static list. The dataset-type and schema tables below are stable references; treat any version number in them as a starting point to validate, not ground truth.
+> **Dataset versions are not pinned in this skill.** Version numbers drift as datasets are revised, so confirm the exact version with `goldsky dataset get <name> --outputFormat json` rather than trusting a static list. The dataset-type and schema tables below are stable references; treat any version number in them as a starting point to validate, not ground truth.
 
 ---
 
@@ -42,8 +42,7 @@ sources:
 
 | Action             | Command                               | Notes                        |
 | ------------------ | ------------------------------------- | ---------------------------- |
-| Validate dataset     | `goldsky turbo validate file.yaml`                   | **Preferred - fast (3s)**                          |
-| Verify slug + schema | `goldsky dataset get <name> --outputFormat json`     | Exact slug, version, and schema                    |
+| Verify a dataset     | `goldsky dataset get <name> --outputFormat json`     | **Preferred** — slug, version, schema, `isTurboOnly` |
 | Search datasets      | `goldsky dataset list --output json \| grep -i name` | Non-interactive                                    |
 | List all datasets    | `goldsky dataset list --output json`                 | Plain `dataset list` is TTY-only — always `--output json` |
 
