@@ -1,6 +1,6 @@
 {
   "name": "@goldsky/agent-skills",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "AI-powered tools for streaming real-time blockchain data. Build, deploy, and debug Turbo pipelines.",
   "keywords": [
     "goldsky",
@@ -26,6 +26,7 @@
     "npm": ">=11.10.0"
   },
   "scripts": {
-    "validate": "npx skills add . --list"
+    "validate": "npx skills add . --list",
+    "bump": "bash scripts/bump-version.sh"
   }
 }

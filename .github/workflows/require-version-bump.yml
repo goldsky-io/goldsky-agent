@@ -1,0 +1,46 @@
+name: Require version bump on skill changes
+
+# main requires a PR with no bypass (SOC-2), so nothing can push a version bump
+# to main directly. Instead, any PR that changes skills/ must bump + sync the
+# plugin version in the same PR — otherwise Claude Code / Cursor plugin users
+# never receive the update (those hosts gate updates on the plugin `version`).
+# Fix a failure by running `npm run bump` and committing the manifest changes.
+on:
+  pull_request:
+    paths:
+      - "skills/**"
+
+permissions:
+  contents: read
+
+jobs:
+  require-bump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify version bumped and all manifests in sync
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+          git fetch --quiet --depth=1 origin "$BASE_REF"
+          # read the base branch's package.json via FETCH_HEAD (robust regardless
+          # of how actions/checkout configured origin's remote-tracking refspec)
+          base=$(git show "FETCH_HEAD:package.json" | jq -r .version)
+          pkg=$(jq -r .version package.json)
+          plugin=$(jq -r .version .claude-plugin/plugin.json)
+          cursor=$(jq -r .version .cursor-plugin/plugin.json)
+          market=$(jq -r '.plugins[0].version' .claude-plugin/marketplace.json)
+
+          if [ "$pkg" != "$plugin" ] || [ "$pkg" != "$cursor" ] || [ "$pkg" != "$market" ]; then
+            echo "::error::Manifest versions disagree — package.json=$pkg plugin.json=$plugin cursor=$cursor marketplace=$market. Run \`npm run bump\` to sync them."
+            exit 1
+          fi
+          if [ "$pkg" = "$base" ]; then
+            echo "::error::skills/ changed but the plugin version was not bumped (still $base). Claude Code / Cursor plugin users won't get the update. Run \`npm run bump\` and commit the four manifest files."
+            exit 1
+          fi
+          echo "version bumped $base -> $pkg, all manifests in sync."

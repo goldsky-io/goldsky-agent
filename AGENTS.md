@@ -52,6 +52,13 @@ Canonical list with descriptions: [`SKILLS.md`](./SKILLS.md).
 - **Solana decoding is not base58.** Instruction `data` is base58-encoded *bytes* — base58-decoding it gives you raw bytes, **not** the decoded instruction. Decode by passing the base58 `data` directly to an IDL decoder (`_gs_decode_instruction_data(idl, data)`) or a program-specific decoder (`_gs_solana_decode_*(data, accounts)`). See `skills/turbo-transforms/references/solana-patterns.md`.
 - **Prefer Turbo over Mirror** for new pipelines. Reach for Mirror only when you specifically need a subgraph entity source — the one thing Turbo can't do.
 
+## Editing skills in THIS repo (opening a PR here)
+
+If your task is to change anything under `skills/` in this repo (not just *use* a skill), do this in the same PR — CI enforces it:
+
+1. **Bump the plugin version:** run **`npm run bump`** — patch by default (`npm run bump -- minor` or `npm run bump -- major` for larger changes). It bumps and syncs the version across `package.json`, `.claude-plugin/plugin.json`, `.cursor-plugin/plugin.json`, and `.claude-plugin/marketplace.json`. **Commit those four files with your skill change.** Claude Code and Cursor plugin users only receive updates when the version changes — skip this and they stay on the old skills. Never hand-edit the versions; always use `npm run bump` so all four stay in sync. The `require-version-bump` check fails the PR if you don't.
+2. **If you add/rename/remove a skill,** also update [`SKILLS.md`](./SKILLS.md) and the routing table above.
+
 ## Install (for agents that support it)
 
 ```bash
