@@ -56,7 +56,7 @@ Canonical list with descriptions: [`SKILLS.md`](./SKILLS.md).
 
 If your task is to change anything under `skills/` in this repo (not just *use* a skill), do this in the same PR — CI enforces it:
 
-1. **Bump the plugin version:** run **`npm run bump`**. It patch-bumps and syncs the version across `package.json`, `.claude-plugin/plugin.json`, `.cursor-plugin/plugin.json`, and `.claude-plugin/marketplace.json`. **Commit those four files with your skill change.** Claude Code and Cursor plugin users only receive updates when the version changes — skip this and they stay on the old skills. Never hand-edit the versions; always use `npm run bump` so all four stay in sync. The `require-version-bump` check fails the PR if you don't.
+1. **Bump the plugin version:** run **`npm run bump`** — patch by default (`npm run bump -- minor` or `npm run bump -- major` for larger changes). It bumps and syncs the version across `package.json`, `.claude-plugin/plugin.json`, `.cursor-plugin/plugin.json`, and `.claude-plugin/marketplace.json`. **Commit those four files with your skill change.** Claude Code and Cursor plugin users only receive updates when the version changes — skip this and they stay on the old skills. Never hand-edit the versions; always use `npm run bump` so all four stay in sync. The `require-version-bump` check fails the PR if you don't.
 2. **If you add/rename/remove a skill,** also update [`SKILLS.md`](./SKILLS.md) and the routing table above.
 
 ## Install (for agents that support it)
