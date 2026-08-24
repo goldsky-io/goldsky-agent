@@ -211,22 +211,25 @@ All fields from `solana.transactions` plus:
 | `post_token_balances` | object[] | token balances after tx |
 | `instructions` | object[] | see below |
 
-**Instruction object fields:** `id`, `index`, `parent_index`, `block_slot`, `block_timestamp`, `block_hash`, `tx_fee`, `tx_index`, `program_id`, `data` (base58), `accounts` (string[]), `status`, `err`
+**Instruction object fields:** `id`, `index`, `parent_index`, `block_slot`, `block_timestamp`, `block_hash`, `tx_signature`, `tx_fee`, `tx_index`, `program_id`, `data` (base58), `accounts` (string[]), `instruction_type`
 
 #### `solana.instructions`
 | Field | Type | Notes |
 | ----- | ---- | ----- |
 | `id` | string | |
+| `block_slot` | integer | |
+| `block_hash` | string | |
+| `block_timestamp` | timestamp | |
+| `tx_signature` | string | transaction signature |
 | `index` | integer | position in tx |
 | `parent_index` | integer \| null | for inner instructions |
-| `block_slot` | integer | |
-| `block_timestamp` | timestamp | |
-| `block_hash` | string | |
-| `program_id` | string | executing program address |
-| `data` | string | base58 encoded |
 | `accounts` | string[] | instruction accounts |
-| `status` | integer | |
-| `err` | string \| null | |
+| `data` | string | base58 encoded |
+| `program` | string | program name/label |
+| `program_id` | string | executing program address |
+| `instruction_type` | string | decoded instruction type |
+| `params` | object | decoded instruction params |
+| `parsed` | object | parsed payload |
 
 #### `solana.token_transfers`
 | Field | Type | Notes |

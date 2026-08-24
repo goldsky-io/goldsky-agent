@@ -23,7 +23,7 @@ In Goldsky's Solana datasets the instruction bytes live in a column literally na
 
 Custom (Anchor) programs identify each instruction by an 8-byte discriminator and Borsh-encode the arguments; the IDL is the schema that maps those bytes to names and values.
 
-> **Solana column names.** Solana rows use `block_slot`, `block_timestamp`, and `signature` — **not** `block_number` or `transaction_hash`. The per-instruction dataset is `solana.instructions` (columns include `id`, `program_id`, `data`, `accounts`, `block_slot`, `signature`).
+> **Solana column names.** Solana rows use `block_slot` and `block_timestamp` — **not** `block_number`. Transactions carry the transaction signature as `signature`; instructions carry it as `tx_signature`, not `signature` — **not** `transaction_hash` either way. The per-instruction dataset is `solana.instructions` (columns include `id`, `program_id`, `data`, `accounts`, `block_slot`, `tx_signature`).
 
 > **⚠️ Never fabricate program IDs or token mints.** The `program_id` / mint addresses in `filter:` and `WHERE program_id = '…'` are base58 Solana addresses — get them from the user, or look them up (e.g. a token mint via a token API); **never emit one from memory.** A guessed address is silently wrong: the pipeline validates and deploys fine but matches nothing (or the wrong program). If you don't have a verified address, ask the user to paste it rather than inventing one.
 
@@ -46,7 +46,7 @@ transforms:
         ) AS decoded,
         accounts,
         block_slot,
-        signature
+        tx_signature
       FROM solana_instructions
       WHERE program_id = 'CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C'
 ```
@@ -102,7 +102,7 @@ transforms:
       SELECT
         id,
         block_slot,
-        signature,
+        tx_signature,
         _gs_solana_decode_token_program_instruction(data, accounts) AS decoded
       FROM solana_ix
       WHERE program_id = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'
@@ -114,7 +114,7 @@ transforms:
       SELECT
         id,
         block_slot,
-        signature,
+        tx_signature,
         decoded.name AS instruction_type,
         decoded.value AS params
       FROM decoded_token_ops
