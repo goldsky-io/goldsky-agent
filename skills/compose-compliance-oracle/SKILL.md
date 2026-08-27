@@ -32,6 +32,13 @@ This template deliberately omits those rules and that reference — they are **r
 Pick the mode from the tools available to you:
 
 - **A `deployComposeApp` tool is available (Goldsky webapp chatbot).** Compliance now deploys fully in-app. In-app flow: run the Step 1 interview (app name first), `walletCreate({ appName: "<chosen app name>", walletName: "compliance-oracle-wallet" })` to get the oracle wallet address (pass `appName` as the chosen app name and `walletName` explicitly; passing the wallet name positionally as `appName` creates the wrong app scope, and the resulting address never matches the runtime `evm.wallet({ name: "compliance-oracle-wallet" })`), `deployContract` MockUSDC, then `deployContract` ComplianceGatedTransfer with `constructorArgs: ["<token_addr>", "<oracle-wallet-addr>", "<recipient_addr>"]` for single-payee or `["<token_addr>", "<oracle-wallet-addr>"]` for P2P (these are tool inputs: `sources` and `constructorArgs`, not CLI flags). Wire the deployed contract address and chain into the inlined source (Step 3), then `deployComposeApp`. The `WEBACY_API_KEY` secret is the user's LAST step: the in-app deploy skips secret validation, so `deployComposeApp` succeeds without it, but the app won't run until the user adds the secret in the Compose app's dashboard **and redeploys from the dashboard** so the pod picks it up (secrets are baked into the pod at deploy, not hot-reloaded). NEVER attempt to set a secret from chat; there is no tool, by design. Scaffold the inlined source from **The app (full source)** below in-memory.
+  - **Testing in webapp mode:** After deploy succeeds, **always proactively walk the user through the smoke test** (Step 7). The smoke test requires `goldsky compose writeContract` (a CLI command). Before giving the commands, ask the user if they have the Goldsky CLI installed. If they don't, walk them through installing it first:
+    ```
+    curl https://goldsky.com | sh
+    goldsky compose install
+    goldsky login
+    ```
+    Then proceed with the Step 7 smoke test commands. Do NOT skip the smoke test or wait for the user to ask — deploying without testing leaves the user unsure whether the app actually works.
 - **`Bash` is available (local CLI / coding agent):** execute the steps below directly, parse output, and substitute captured values into later commands.
 - **Neither (pure reference Q&A):** explain what the app does and the escrow → screen → approve/reject lifecycle; only if asked for step-by-step help, output one command at a time and have the user paste output back. Point them at `npx skills add goldsky-io/goldsky-agent` to run it locally with Bash.
 
@@ -120,13 +127,16 @@ tasks:
 
 #### Single-payee variant
 
-On approval, funds go to a configurable `recipient` address (separate from the oracle signer); on rejection, back to the sender. Imports OpenZeppelin's `IERC20` (installed in Preflight).
+On approval, funds go to a configurable `recipient` address (separate from the oracle signer); on rejection, back to the sender. The `IERC20` interface is inlined (two functions) so the contract is self-contained — no OpenZeppelin install needed, and it compiles in both the CLI and the webapp's in-app compiler.
 
 ```solidity
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+interface IERC20 {
+    function transfer(address to, uint256 amount) external returns (bool);
+    function transferFrom(address from, address to, uint256 amount) external returns (bool);
+}
 
 contract ComplianceGatedTransfer {
     enum Status { Pending, Approved, Rejected }
@@ -209,13 +219,16 @@ contract ComplianceGatedTransfer {
 
 #### Multi-payee (P2P) variant
 
-The sender specifies a recipient per transfer. On approval, funds go to the transfer's `recipient`; on rejection, back to the sender. No `setRecipient` — each transfer carries its own.
+The sender specifies a recipient per transfer. On approval, funds go to the transfer's `recipient`; on rejection, back to the sender. No `setRecipient` — each transfer carries its own. Same inlined `IERC20` interface as the single-payee variant.
 
 ```solidity
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+interface IERC20 {
+    function transfer(address to, uint256 amount) external returns (bool);
+    function transferFrom(address from, address to, uint256 amount) external returns (bool);
+}
 
 contract ComplianceGatedTransfer {
     enum Status { Pending, Approved, Rejected }
@@ -294,24 +307,57 @@ contract ComplianceGatedTransfer {
 
 ### `contracts/MockUSDC.sol` (testnet / recommended path only)
 
-Native USDC only exists on mainnet. On testnets, deploy this mintable 6-decimal ERC-20 first and use its address as the escrow's `_token` constructor arg. Open `mint` so you can fund sender wallets freely on testnet.
+Native USDC only exists on mainnet. On testnets, deploy this mintable 6-decimal ERC-20 first and use its address as the escrow's `_token` constructor arg. Open `mint` so you can fund sender wallets freely on testnet. Self-contained — no OpenZeppelin imports, so it compiles in both the CLI and the webapp's in-app compiler.
 
 ```solidity
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+contract MockUSDC {
+    string public name = "Mock USDC";
+    string public symbol = "USDC";
+    uint8 public constant decimals = 6;
+    uint256 public totalSupply;
 
-contract MockUSDC is ERC20 {
-    constructor() ERC20("Mock USDC", "USDC") {}
+    mapping(address => uint256) public balanceOf;
+    mapping(address => mapping(address => uint256)) public allowance;
 
-    function decimals() public pure override returns (uint8) {
-        return 6;
-    }
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
 
     /// @notice Open mint — testnet only.
     function mint(address to, uint256 amount) external {
-        _mint(to, amount);
+        totalSupply += amount;
+        balanceOf[to] += amount;
+        emit Transfer(address(0), to, amount);
+    }
+
+    function transfer(address to, uint256 amount) external returns (bool) {
+        _transfer(msg.sender, to, amount);
+        return true;
+    }
+
+    function approve(address spender, uint256 amount) external returns (bool) {
+        allowance[msg.sender][spender] = amount;
+        emit Approval(msg.sender, spender, amount);
+        return true;
+    }
+
+    function transferFrom(address from, address to, uint256 amount) external returns (bool) {
+        uint256 allowed = allowance[from][msg.sender];
+        require(allowed >= amount, "insufficient allowance");
+        if (allowed != type(uint256).max) {
+            allowance[from][msg.sender] = allowed - amount;
+        }
+        _transfer(from, to, amount);
+        return true;
+    }
+
+    function _transfer(address from, address to, uint256 amount) internal {
+        require(balanceOf[from] >= amount, "insufficient balance");
+        balanceOf[from] -= amount;
+        balanceOf[to] += amount;
+        emit Transfer(from, to, amount);
     }
 }
 ```
@@ -339,19 +385,25 @@ export const CONFIG = {
 // Webacy risk score threshold (0-100 scale)
 // Transfers from wallets scoring above this are rejected
 export const RISK_THRESHOLD = 50;
+
+// OFAC/sanctions screening (separate Webacy endpoint)
+// When enabled, sanctioned wallets are rejected immediately before the risk score check
+export const SANCTIONS_CHECK_ENABLED = false;
 ```
 
 ### `src/lib/webacy.ts`
 
-The screening client. GETs Webacy's address risk report and returns a normalized result; the task rejects any sender whose `overallRisk` is at or above `RISK_THRESHOLD`.
+The screening client. GETs Webacy's address risk report and returns a normalized result; the task rejects any sender whose `overallRisk` is at or above `RISK_THRESHOLD`. When `SANCTIONS_CHECK_ENABLED` is true, it also checks the Webacy sanctions endpoint first — a sanctioned wallet is rejected immediately with no risk score evaluation.
 
 ```typescript
 import { TaskContext } from "compose";
+import { SANCTIONS_CHECK_ENABLED } from "./constants";
 
 export type WalletScreeningResult = {
   address: string;
   riskScore: number | null;
   passed: boolean;
+  sanctioned: boolean;
   triggeredRules: string[];
 };
 
@@ -376,7 +428,23 @@ type WebacyResponse = {
   issues: WebacyIssue[];
 };
 
+type WebacySanctionsResponse = {
+  sanctioned: boolean;
+};
+
 const WEBACY_API_BASE = "https://api.webacy.com";
+
+async function checkSanctions(
+  address: string,
+  apiKey: string,
+  fetchFn: TaskContext["fetch"],
+): Promise<boolean> {
+  const data = await fetchFn<WebacySanctionsResponse>(
+    `${WEBACY_API_BASE}/addresses/sanctioned/${address}`,
+    { method: "GET", headers: { "x-api-key": apiKey } },
+  );
+  return data?.sanctioned ?? false;
+}
 
 export async function screenWallet(
   address: string,
@@ -384,13 +452,26 @@ export async function screenWallet(
   riskThreshold: number,
   fetchFn: TaskContext["fetch"],
 ): Promise<WalletScreeningResult> {
+  // --- Sanctions gate (hard reject, no threshold) ---
+  if (SANCTIONS_CHECK_ENABLED) {
+    const sanctioned = await checkSanctions(address, apiKey, fetchFn);
+    if (sanctioned) {
+      return {
+        address,
+        riskScore: null,
+        passed: false,
+        sanctioned: true,
+        triggeredRules: ["OFAC/sanctions match"],
+      };
+    }
+  }
+
+  // --- Risk score check ---
   const url = `${WEBACY_API_BASE}/addresses/${address}?chain=base`;
 
   const data = await fetchFn<WebacyResponse>(url, {
     method: "GET",
-    headers: {
-      "x-api-key": apiKey,
-    },
+    headers: { "x-api-key": apiKey },
   });
 
   if (!data) {
@@ -399,10 +480,6 @@ export async function screenWallet(
 
   const riskScore = data.overallRisk ?? null;
 
-  // Use tag.key (stable machine identifier), not tag.name/tag.description:
-  // those are free text from an external API and must stay out of logs and
-  // audit records. They are a prompt-injection surface for anything that
-  // later reads the audit trail.
   const triggeredRules: string[] = (data.issues ?? [])
     .flatMap((issue) => issue.tags ?? [])
     .filter((tag) => tag.severity >= 2)
@@ -412,6 +489,7 @@ export async function screenWallet(
     address,
     riskScore,
     passed: riskScore === null || riskScore < riskThreshold,
+    sanctioned: false,
     triggeredRules,
   };
 }
@@ -423,11 +501,13 @@ Use this instead of `webacy.ts` when the user chose mock mode. Same `WalletScree
 
 ```typescript
 import { TaskContext } from "compose";
+import { SANCTIONS_CHECK_ENABLED } from "./constants";
 
 export type WalletScreeningResult = {
   address: string;
   riskScore: number | null;
   passed: boolean;
+  sanctioned: boolean;
   triggeredRules: string[];
 };
 
@@ -437,18 +517,35 @@ const DENY_LIST = new Set<string>([
   // Add your test "risky" addresses here (lowercase)
 ]);
 
+// Add addresses to simulate sanctioned wallets (only checked when SANCTIONS_CHECK_ENABLED)
+const SANCTIONS_LIST = new Set<string>([
+  "0x0000000000000000000000000000000000000bad",
+  // Add your test "sanctioned" addresses here (lowercase)
+]);
+
 export async function screenWallet(
   address: string,
   _apiKey: string,
   riskThreshold: number,
   _fetchFn: TaskContext["fetch"],
 ): Promise<WalletScreeningResult> {
+  if (SANCTIONS_CHECK_ENABLED && SANCTIONS_LIST.has(address.toLowerCase())) {
+    return {
+      address,
+      riskScore: null,
+      passed: false,
+      sanctioned: true,
+      triggeredRules: ["OFAC/sanctions match"],
+    };
+  }
+
   const isRisky = DENY_LIST.has(address.toLowerCase());
 
   return {
     address,
     riskScore: isRisky ? 85 : 5,
     passed: !isRisky,
+    sanctioned: false,
     triggeredRules: isRisky ? ["Deny list match"] : [],
   };
 }
@@ -465,6 +562,7 @@ export type WalletScreeningResult = {
   address: string;
   riskScore: number | null;
   passed: boolean;
+  sanctioned: boolean;
   triggeredRules: string[];
 };
 
@@ -556,7 +654,20 @@ export async function main(ctx: TaskContext, payload: OnchainEvent) {
   let decision: "approved" | "rejected";
   let reason: string;
 
-  if (screenResult.passed) {
+  if (screenResult.sanctioned) {
+    decision = "rejected";
+    reason = "Sender is on OFAC/sanctions list";
+
+    log.warn(`rejecting transfer #${transferId} — sender ${sender} is sanctioned, returning ${formatUsdc(amount)}`);
+
+    const result = await wallet.writeContract(
+      evm.chains[CONFIG.chain],
+      CONFIG.contractAddress,
+      "rejectTransfer(uint256)",
+      [id],
+    );
+    txHash = result.hash;
+  } else if (screenResult.passed) {
     decision = "approved";
     reason = `Sender score: ${screenResult.riskScore}. Below threshold ${RISK_THRESHOLD}.`;
 
@@ -726,11 +837,7 @@ The `goldsky` CLI and auth checks are the standard Compose preflight (see `/comp
    ```
    If the version is older than `0.8.1` or either command is unknown, **offer** `goldsky compose update` (or `goldsky compose update 0.8.1` for a specific version), run it on confirmation, then re-check before proceeding.
 2. **`cast`** — `cast --version`. Install with `curl -L https://foundry.paradigm.xyz | bash && foundryup` if missing. Used only for the `cast` alternative in Step 7 (`forge` is no longer required — `deployContract` compiles in-CLI).
-3. **OpenZeppelin contracts** — the escrow imports `IERC20` and MockUSDC imports `ERC20`. The in-CLI solc resolves bare `@openzeppelin/contracts/...` imports by walking up from the source file to `node_modules/`, so install them in the app directory (before the Step 2 deploys — the compiler reads no `foundry.toml` and no `lib/` remappings):
-   ```bash
-   npm init -y >/dev/null 2>&1 || true   # ensure the app dir is the package root, so npm can't walk up to a parent
-   npm install @openzeppelin/contracts
-   ```
+3. **No OpenZeppelin install needed.** All contracts are self-contained — `IERC20` is inlined as a two-function interface in the escrow contract, and `MockUSDC` is a standalone ERC20 implementation. This means the contracts compile in both the CLI's `deployContract` and the webapp's in-app compiler without any `npm install`.
 
 ## Step 1 — Configuration interview
 
@@ -746,7 +853,8 @@ Per the golden rules in `/compose`, ask only what you can't derive, one question
    - **Bring your own** — scaffolds the `screenWallet()` function signature; you fill in the body.
 4. **"Which chain?"** — **Base Sepolia (recommended)** — free, gas-sponsored, and you mint your own test USDC. Any EVM chain Compose supports works (Ethereum Sepolia, Polygon Amoy, Arbitrum Sepolia, etc. for testnet; Base, Ethereum, Polygon, Arbitrum, Optimism, etc. for mainnet). Use the camelCase form in TS (`baseSepolia`) and the compose network name in `compose.yaml` (`base_sepolia`).
 5. **"What risk threshold?"** — Risk score is 0-100; senders scoring at or above the threshold are rejected. Default `50`. Set `RISK_THRESHOLD` in `src/lib/constants.ts`.
-6. **Recipient (single-payee only)** — **"What address should approved payments be sent to?"** They can provide an address now, or use the oracle wallet address for testing (simplest — "I'll use the oracle wallet for now"). This can be changed later via `setRecipient()` on the contract. The recipient becomes the third constructor arg.
+6. **"Do you want to enable OFAC/sanctions screening?"** *(Webacy only — skip for mock mode and bring-your-own.)* Webacy offers a separate sanctions endpoint that checks if a wallet appears on OFAC or other sanctions lists. This is a hard gate (sanctioned = instant reject, no threshold). Recommended for regulated or fintech use cases. Default `false`. Set `SANCTIONS_CHECK_ENABLED` in `src/lib/constants.ts`. Uses the same `WEBACY_API_KEY` — no extra credentials needed.
+7. **Recipient (single-payee only)** — **"What address should approved payments be sent to?"** They can provide an address now, or use the oracle wallet address for testing (simplest — "I'll use the oracle wallet for now"). This can be changed later via `setRecipient()` on the contract. The recipient becomes the third constructor arg.
 
 ## Step 2 — Oracle wallet and contract deploy
 
@@ -839,7 +947,11 @@ fi
 
 **Webacy mode only** — mock mode and bring-your-own need no `WEBACY_API_KEY` (make sure it's removed from `compose.yaml`'s `secrets` array, per Step 1) and skip this step. The running task uses `WEBACY_API_KEY` to screen sender wallets via the Webacy AML API. If you haven't already, sign up at https://developers.webacy.co/ and create an API key. (The whole flow was verified working with a stub key set here before deploy, so a placeholder is fine right up to the smoke test.)
 
-- **CLI:** set the secret BEFORE `goldsky compose deploy` (Step 6): `goldsky compose secret set WEBACY_API_KEY --value "$WEBACY_API_KEY"` - the user exports the value in their own shell (or writes it into a chmod-600 `.env` and `source`s it) rather than pasting it into the chat, and it is never echoed back. `compose deploy` validates that every manifest-declared secret exists and bakes it into the pod at deploy time, so an unset secret 400s the deploy with "The following secrets referenced in the manifest do not exist". Secrets are not hot-reloaded: setting or updating a secret after deploy only writes to storage and does NOT reach the running pod without a redeploy. For the after-deploy case, `goldsky compose secret set WEBACY_API_KEY --value "$WEBACY_API_KEY" --redeploy` sets the secret and triggers a redeploy in one step.
+- **CLI:** set the secret BEFORE `goldsky compose deploy` (Step 6). The user must run this command themselves (the agent should never capture or echo back the key value). **Always include `-n $APP_NAME`** when showing this command to the user — the user may not be in the app directory:
+  ```bash
+  goldsky compose secret set WEBACY_API_KEY --value "$WEBACY_API_KEY" -n $APP_NAME
+  ```
+  The user exports the value in their own shell (or writes it into a chmod-600 `.env` and `source`s it) — never paste it into the chat or echo it back. `compose deploy` validates that every manifest-declared secret exists and bakes it into the pod at deploy time, so an unset secret 400s the deploy with "The following secrets referenced in the manifest do not exist". Secrets are not hot-reloaded: setting or updating a secret after deploy only writes to storage and does NOT reach the running pod without a redeploy. For the after-deploy case, `goldsky compose secret set WEBACY_API_KEY --value "$WEBACY_API_KEY" --redeploy` sets the secret and triggers a redeploy in one step.
 - **In-app (chatbot):** the in-app deploy skips secret validation, so `deployComposeApp` (Step 6) succeeds without it. After deploy, add `WEBACY_API_KEY` in the Compose app's dashboard under the app's **Secrets** page, then **redeploy from the dashboard** so the pod picks it up. The app does not start working on set alone; the redeploy is required. NEVER attempt to set a secret from chat; there is no tool, by design.
 
 ## Step 6 — Deploy to Goldsky
@@ -850,45 +962,70 @@ goldsky compose deploy
 
 First deploy may take 1-2 minutes. Watch for `Deployed compose app: <the chosen app name>` (e.g. `compliance-oracle`). The `on_transfer_requested` event listener and the `reconcile` cron both go live.
 
+**⚠ MANDATORY: After deploy succeeds, always proceed directly to Step 7 (smoke test).** Do not stop at "deployed" or only mention secrets — the user needs to see their oracle actually process a transfer end-to-end. If the user is in the webapp (no Bash tool), check whether they have the Goldsky CLI installed and walk them through installing it (`curl https://goldsky.com | sh && goldsky compose install && goldsky login`) before giving the smoke test commands.
+
 ## Step 7 — Smoke test
 
-This step runs **after** `compose deploy` (Step 6), so the app's wallets now exist. The **primary** path drives the whole flow from the app's gas-sponsored default smart wallet via `writeContract`, so no funded EOA is needed. (A `cast` alternative with your own EOA follows.)
+This step runs **after** `compose deploy` (Step 6), so the app's wallets now exist. **Always walk the user through this step** — do not skip it or wait for them to ask. The flow differs depending on whether you deployed with MockUSDC (testnet) or real USDC (mainnet).
 
-For the `cast` verification and alternative below, set `RPC_URL` to an RPC for the user's chosen chain (e.g. `https://sepolia.base.org` for Base Sepolia, `https://mainnet.base.org` for Base mainnet).
-
-**Primary - sponsored `writeContract` from the app wallet.** Create (or fetch) the app's default smart wallet, whose address is the sender:
+**First, get the app's default wallet address** — this is the sender for the smoke test. **Always pass `-n $APP_NAME`** (the app name from Step 1, e.g. `compliance-oracle`) on every `wallet` and `writeContract` command. Without `-n`, the CLI tries to find `compose.yaml` in the current directory — which fails if the user isn't in the app directory (always the case for webapp users, and often for CLI users who navigated away).
 
 ```bash
 # create (or fetch) the wallet the writeContract calls will send from, and print its address
-COMPOSE_WALLET=$(goldsky compose wallet create default --json | jq -r .address)
+COMPOSE_WALLET=$(goldsky compose wallet create default -n $APP_NAME --json | jq -r .address)
 ```
 (`POST /:appName/wallets` provisions the hosted Postgres and creates or resolves the wallet on demand, so this works before or after the app deploy.)
 
-Then mint, approve, and request the transfer (auth: export `GOLDSKY_API_TOKEN=<project API key>` once in the shell (preferred: keeps the key out of argv and shell history), or pass `-t "$GOLDSKY_PROJECT_KEY"` per command, or use an active `goldsky login` session. Precedence: `--token` > `GOLDSKY_API_TOKEN` > `~/.goldsky/auth_token`):
+Each `writeContract` below needs `-t <project API key>` or an active `goldsky login` session. Auth: export `GOLDSKY_API_TOKEN=<project API key>` once in the shell (preferred), or pass `-t "$GOLDSKY_PROJECT_KEY"` per command. Precedence: `--token` > `GOLDSKY_API_TOKEN` > `~/.goldsky/auth_token`.
+
+### MockUSDC flow (testnet — recommended for first test)
+
+MockUSDC has an open `mint()` function, so `writeContract` can create test tokens out of thin air. No funding needed — everything is gas-sponsored.
 
 ```bash
-# mint 1.00 mUSDC to the app wallet (MockUSDC.mint is open)
-goldsky compose writeContract --chain-id 84532 --to $TOKEN_ADDRESS \
+# 1) Mint 1.00 mUSDC to the app wallet
+goldsky compose writeContract -n $APP_NAME --chain-id $CHAIN_ID --to $TOKEN_ADDRESS \
   --function "mint(address,uint256)" --args $COMPOSE_WALLET 1000000
 
-# approve the escrow to pull the app wallet's USDC
-goldsky compose writeContract --chain-id 84532 --to $TOKEN_ADDRESS \
+# 2) Approve the escrow contract to pull the app wallet's USDC
+goldsky compose writeContract -n $APP_NAME --chain-id $CHAIN_ID --to $TOKEN_ADDRESS \
   --function "approve(address,uint256)" --args $CONTRACT_ADDRESS 1000000
 
-# request a 1.00 USDC transfer — emits TransferRequested, which the task screens
-goldsky compose writeContract --chain-id 84532 --to $CONTRACT_ADDRESS \
+# 3) Request a 1.00 USDC transfer — emits TransferRequested, triggering the oracle
+goldsky compose writeContract -n $APP_NAME --chain-id $CHAIN_ID --to $CONTRACT_ADDRESS \
   --function "requestTransfer(uint256)" --args 1000000
 ```
 
-> **Why this works without the oracle wallet:** `MockUSDC.mint` is open; both `approve` and `requestTransfer` are sent from the same app wallet, and `requestTransfer` pulls via `transferFrom` from `msg.sender`, so the sender does not need to be the oracle. The oracle wallet only signs the `approveTransfer`/`rejectTransfer` callback at runtime.
+> **Why this works without the oracle wallet:** `MockUSDC.mint` is open; both `approve` and `requestTransfer` are sent from the same app wallet, and `requestTransfer` pulls via `transferFrom` from `msg.sender` — so the sender does not need to be the oracle. The oracle wallet only signs the `approveTransfer`/`rejectTransfer` callback at runtime.
 
-Then **stream** the logs and watch the decision land (bare `goldsky compose logs` is a one-shot dump; add `-f`/`--follow` to watch the next fire):
+### Real USDC flow (mainnet)
+
+You can't mint real USDC — you need to fund the app wallet first.
+
+1. **Send real USDC to `$COMPOSE_WALLET`** from any external wallet (MetaMask, Coinbase, exchange withdrawal, etc.). Even a small amount like 1.00 USDC is enough for testing.
+2. Once the USDC arrives at `$COMPOSE_WALLET`, run the approve + requestTransfer:
+
+```bash
+# 1) Approve the escrow contract to pull USDC from the app wallet
+goldsky compose writeContract -n $APP_NAME --chain-id $CHAIN_ID --to $TOKEN_ADDRESS \
+  --function "approve(address,uint256)" --args $CONTRACT_ADDRESS 1000000
+
+# 2) Request a 1.00 USDC transfer — emits TransferRequested, triggering the oracle
+goldsky compose writeContract -n $APP_NAME --chain-id $CHAIN_ID --to $CONTRACT_ADDRESS \
+  --function "requestTransfer(uint256)" --args 1000000
+```
+
+> **No mint step** — skip straight to approve. The USDC is already in the wallet from your external transfer. Gas is still sponsored on Base.
+
+### Verifying the result
+
+**Stream** the logs and watch the decision land (bare `goldsky compose logs` is a one-shot dump; add `-f`/`--follow` to watch the next fire):
 
 ```bash
 goldsky compose logs -f
 ```
 
-Better, foundry-free checks (run alongside or instead of the `logs -f` + `cast call` below):
+Better, foundry-free checks (run alongside or instead of `logs -f`):
 
 ```bash
 goldsky compose runs --task on_transfer_requested --since 5m --json
@@ -901,10 +1038,12 @@ goldsky compose collections query transfer-audits
 cast call $CONTRACT_ADDRESS "transfers(uint256)(address,uint256,uint8)" <id> --rpc-url $RPC_URL
 ```
 
-**Alternative — `cast` from your own funded EOA.** If you'd rather drive the flow with a separate sender key (`$SENDER_KEY`, not the oracle), it is **not** gas-sponsored, so fund it first: get Base Sepolia ETH from a faucet (e.g. https://www.coinbase.com/faucets/base-sepolia) into `$SENDER_ADDRESS`, then:
+### Alternative — `cast` from your own funded EOA
+
+If you'd rather drive the flow with a separate sender key (`$SENDER_KEY`, not the oracle), it is **not** gas-sponsored, so fund it first: get Base Sepolia ETH from a faucet (e.g. https://www.coinbase.com/faucets/base-sepolia) into `$SENDER_ADDRESS`, then:
 
 ```bash
-# mint is open — any funded key mints to the sender
+# mint is open — any funded key mints to the sender (MockUSDC only)
 cast send $TOKEN_ADDRESS "mint(address,uint256)" $SENDER_ADDRESS 1000000 \
   --rpc-url $RPC_URL --private-key $SENDER_KEY   # 1.00 mUSDC
 # approve the escrow, then request (ERC-20 needs prior approval)
