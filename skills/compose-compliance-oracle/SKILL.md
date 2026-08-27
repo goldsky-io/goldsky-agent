@@ -35,6 +35,7 @@ Pick the mode from the tools available to you:
   - **Testing in webapp mode:** After deploy succeeds, **always proactively walk the user through the smoke test** (Step 7). The smoke test requires `goldsky compose writeContract` (a CLI command). Before giving the commands, ask the user if they have the Goldsky CLI installed. If they don't, walk them through installing it first:
     ```
     curl https://goldsky.com | sh
+    goldsky compose install
     goldsky login
     ```
     Then proceed with the Step 7 smoke test commands. Do NOT skip the smoke test or wait for the user to ask — deploying without testing leaves the user unsure whether the app actually works.
@@ -961,7 +962,7 @@ goldsky compose deploy
 
 First deploy may take 1-2 minutes. Watch for `Deployed compose app: <the chosen app name>` (e.g. `compliance-oracle`). The `on_transfer_requested` event listener and the `reconcile` cron both go live.
 
-**⚠ MANDATORY: After deploy succeeds, always proceed directly to Step 7 (smoke test).** Do not stop at "deployed" or only mention secrets — the user needs to see their oracle actually process a transfer end-to-end. If the user is in the webapp (no Bash tool), check whether they have the Goldsky CLI installed and walk them through installing it (`curl https://goldsky.com | sh && goldsky login`) before giving the smoke test commands.
+**⚠ MANDATORY: After deploy succeeds, always proceed directly to Step 7 (smoke test).** Do not stop at "deployed" or only mention secrets — the user needs to see their oracle actually process a transfer end-to-end. If the user is in the webapp (no Bash tool), check whether they have the Goldsky CLI installed and walk them through installing it (`curl https://goldsky.com | sh && goldsky compose install && goldsky login`) before giving the smoke test commands.
 
 ## Step 7 — Smoke test
 
