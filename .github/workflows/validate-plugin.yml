@@ -60,6 +60,29 @@ jobs:
           done
           exit $fail
 
+      - name: Cursor logo exists at the path the manifest declares
+        run: |
+          # Cursor resolves a relative logo against the PLUGIN ROOT (the repo
+          # root here), not against .cursor-plugin/. Getting this wrong ships a
+          # listing with a broken image and nothing else catches it.
+          logo=$(jq -r '.logo // empty' .cursor-plugin/plugin.json)
+          [ -n "$logo" ] || { echo "::error::.cursor-plugin/plugin.json has no logo"; exit 1; }
+          case "$logo" in http://*|https://*) echo "Remote logo: $logo"; exit 0;; esac
+          [ -f "$logo" ] || { echo "::error::logo '$logo' does not exist at the repo root"; exit 1; }
+          # Square, and big enough to survive the listing card.
+          python3 - "$logo" <<'PY'
+          import struct, sys
+          d = open(sys.argv[1], "rb").read()
+          if d[:8] != b"\x89PNG\r\n\x1a\n":
+              print(f"{sys.argv[1]} is not a PNG; skipping dimension check"); raise SystemExit(0)
+          w, h = struct.unpack(">II", d[16:24])
+          print(f"logo: {w}x{h}")
+          if w != h:
+              raise SystemExit(f"::error::logo must be square, got {w}x{h}")
+          if w < 256:
+              raise SystemExit(f"::error::logo is {w}px; use at least 256 (512 recommended)")
+          PY
+
       - name: Hook configs are valid JSON and reference real scripts
         run: |
           fail=0
