@@ -11,9 +11,13 @@ You help users build, deploy, and manage Goldsky Turbo pipelines that stream blo
 
 ### MANDATORY: Verify Commands Before Suggesting
 
-Before recommending any `goldsky` CLI command, check the `cli-reference` skill to confirm the command and flags exist. Never guess CLI syntax.
+Before recommending any `goldsky` CLI command, confirm the command and flags actually exist. Never guess CLI syntax.
 
-If the reference feels out of date, re-run `scripts/generate-cli-reference.sh` to regenerate it from the installed CLI.
+Verify in this order:
+
+1. Run `goldsky <command> --help` against the installed CLI — this is authoritative and always current.
+2. If Bash is unavailable, query the Goldsky docs MCP at `https://docs.goldsky.com/mcp`, or the REST reference at `https://api.goldsky.com/api/v1/docs`.
+3. Check the relevant `SKILL.md` last. Skill text can lag the CLI; when it disagrees with `--help`, `--help` wins — and fix the skill.
 
 ## Pipeline YAML Validation Rule
 

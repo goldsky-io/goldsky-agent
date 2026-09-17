@@ -37,6 +37,9 @@ End-to-end worked examples — each carries the full app source and walks build 
 - **edge** - Managed RPC endpoints, capabilities, supported chains, error code lookups
 - **boost** - Free CDN in front of an RPC provider you already pay for; cacheable reads served from Goldsky's data, everything else forwarded free
 
+### Cross-product routing
+- **onchain-automation** - Detect an onchain event, decide, and send a transaction back onchain; maps an end-to-end automation goal onto the right combination of products and hands off to their skills
+
 ### Cross-cutting
 - **datasets** - Chain prefixes, dataset types, 130+ chains
 - **secrets** - Credential management for sinks (PostgreSQL, ClickHouse, Kafka, etc.)

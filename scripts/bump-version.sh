@@ -4,6 +4,10 @@
 # because Claude Code / Cursor plugin users only receive updates when the
 # plugin `version` changes. Then commit the four modified manifest files.
 #
+# NOTE: bumping delivers updates automatically on Claude Code (the directory pins a
+# commit SHA and advances it from main). Cursor does NOT auto-update — every release
+# needs a manual re-review and a re-index request to marketplace-publishing@cursor.com.
+#
 # Usage:
 #   npm run bump              # patch (default): 1.2.3 -> 1.2.4
 #   npm run bump -- minor     # minor:           1.2.3 -> 1.3.0
