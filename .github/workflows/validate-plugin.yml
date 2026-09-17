@@ -60,27 +60,68 @@ jobs:
           done
           exit $fail
 
-      - name: Cursor logo exists at the path the manifest declares
+      - name: Cursor logo exists, is square, and is safe
         run: |
-          # Cursor resolves a relative logo against the PLUGIN ROOT (the repo
+          # Cursor resolves a relative `logo` against the PLUGIN ROOT (the repo
           # root here), not against .cursor-plugin/. Getting this wrong ships a
           # listing with a broken image and nothing else catches it.
           logo=$(jq -r '.logo // empty' .cursor-plugin/plugin.json)
           [ -n "$logo" ] || { echo "::error::.cursor-plugin/plugin.json has no logo"; exit 1; }
           case "$logo" in http://*|https://*) echo "Remote logo: $logo"; exit 0;; esac
           [ -f "$logo" ] || { echo "::error::logo '$logo' does not exist at the repo root"; exit 1; }
-          # Square, and big enough to survive the listing card.
           python3 - "$logo" <<'PY'
-          import struct, sys
-          d = open(sys.argv[1], "rb").read()
-          if d[:8] != b"\x89PNG\r\n\x1a\n":
-              print(f"{sys.argv[1]} is not a PNG; skipping dimension check"); raise SystemExit(0)
-          w, h = struct.unpack(">II", d[16:24])
-          print(f"logo: {w}x{h}")
-          if w != h:
-              raise SystemExit(f"::error::logo must be square, got {w}x{h}")
-          if w < 256:
-              raise SystemExit(f"::error::logo is {w}px; use at least 256 (512 recommended)")
+          import re, struct, sys, xml.etree.ElementTree as ET
+
+          path = sys.argv[1]
+          raw = open(path, "rb").read()
+
+          def die(msg):
+              raise SystemExit(f"::error::{msg}")
+
+          if raw[:8] == b"\x89PNG\r\n\x1a\n":
+              w, h = struct.unpack(">II", raw[16:24])
+              kind = "PNG"
+          elif path.endswith(".svg"):
+              kind = "SVG"
+              text = raw.decode("utf-8", "replace")
+              try:
+                  root = ET.fromstring(text)
+              except ET.ParseError as e:
+                  die(f"{path} is not well-formed XML: {e}")
+              # Cursor re-hosts the file, so anything it pulls at render time must
+              # be self-contained. Reject active or remote content outright.
+              for pattern, label in [
+                  (r"<script", "a <script> tag"),
+                  (r"\bon[a-z]+\s*=", "an inline event handler"),
+                  (r"(?:xlink:)?href\s*=\s*[\"']\s*https?:", "a remote href"),
+                  (r"@import", "a CSS @import"),
+                  (r"<foreignObject", "a <foreignObject>"),
+              ]:
+                  if re.search(pattern, text, re.I):
+                      die(f"{path} contains {label}; the logo must be static and self-contained")
+
+              def px(v):
+                  if not v:
+                      return None
+                  m = re.match(r"^\s*([0-9.]+)\s*(px)?\s*$", v)
+                  return float(m.group(1)) if m else None
+
+              w = px(root.get("width"))
+              h = px(root.get("height"))
+              if w is None or h is None:
+                  vb = (root.get("viewBox") or "").replace(",", " ").split()
+                  if len(vb) == 4:
+                      w, h = float(vb[2]), float(vb[3])
+                  else:
+                      die(f"{path} needs square width/height or a viewBox so it renders at a fixed aspect")
+          else:
+              die(f"{path} must be a PNG or SVG")
+
+          print(f"logo: {kind} {w:g}x{h:g}")
+          if abs(w - h) > 0.5:
+              die(f"logo must be square, got {w:g}x{h:g}")
+          if kind == "PNG" and w < 256:
+              die(f"logo is {w:g}px; use at least 256 (512 recommended)")
           PY
 
       - name: Hook configs are valid JSON and reference real scripts
