@@ -1,8 +1,8 @@
 {
   "name": "goldsky",
   "displayName": "Goldsky",
-  "version": "1.4.1",
-  "description": "Stream real-time blockchain data to your infrastructure. Build, deploy, and debug data pipelines that index onchain events from 20+ chains into PostgreSQL, ClickHouse, Kafka, and more, plus hosted subgraphs, managed RPC, and onchain automation.",
+  "version": "1.5.0",
+  "description": "Index and stream onchain data for the questions finance teams actually ask: proof-of-reserves and circulating supply, stablecoin transfer and sanctions monitoring, deposit detection, cross-chain settlement tracking (CCTP), payment reconciliation, wallet balances and transaction history, tokenized assets and RWA holder registries, and prediction-market data including Polymarket fills, positions and PnL. Real-time pipelines, hosted subgraphs, and managed RPC across 150+ chains.",
   "author": {
     "name": "Goldsky"
   },
@@ -12,11 +12,22 @@
   "keywords": [
     "goldsky",
     "blockchain",
+    "onchain-data",
+    "indexing",
     "pipelines",
-    "turbo",
     "subgraphs",
     "rpc",
-    "boost",
+    "proof-of-reserves",
+    "stablecoins",
+    "compliance",
+    "aml",
+    "prediction-markets",
+    "polymarket",
+    "tokenized-assets",
+    "rwa",
+    "wallets",
+    "payments",
+    "defi",
     "web3",
     "data",
     "cursor"
@@ -32,9 +43,11 @@
   "category": "data-and-analytics",
   "tags": [
     "blockchain",
-    "data",
-    "pipelines",
+    "onchain-data",
     "indexing",
+    "analytics",
+    "compliance",
+    "fintech",
     "rpc",
     "web3"
   ],
