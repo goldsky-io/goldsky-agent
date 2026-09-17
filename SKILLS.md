@@ -36,6 +36,9 @@ End-to-end worked examples — each carries the full app source and walks build 
 ### Edge (managed RPC)
 - **edge** - Managed RPC endpoints, capabilities, supported chains, error code lookups
 
+### Cross-product routing
+- **onchain-automation** - Detect an onchain event, decide, and send a transaction back onchain; maps an end-to-end automation goal onto the right combination of products and hands off to their skills
+
 ### Cross-cutting
 - **datasets** - Chain prefixes, dataset types, 130+ chains
 - **secrets** - Credential management for sinks (PostgreSQL, ClickHouse, Kafka, etc.)

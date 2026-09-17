@@ -38,6 +38,9 @@ Each `SKILL.md` opens with a `description:` in its frontmatter stating what it c
 | `compose.yaml` fields, `goldsky compose` flags, `TaskContext` API | `compose-reference` |
 | Worked example: onchain BTC/USD price oracle | `compose-bitcoin-oracle` |
 | Worked example: onchain verifiable randomness (VRF) | `compose-vrf` |
+| Worked example: pro-rata dividend / corporate-action distribution | `compose-dividend-distribution` |
+| Worked example: compliance-gated payments (escrow + screening) | `compose-compliance-oracle` |
+| React to an onchain event and send a transaction back onchain (detect → decide → execute) | `onchain-automation` |
 | Get a fast, reliable managed RPC endpoint; RPC error codes | `edge` |
 | Find the right dataset name / chain prefix | `datasets` |
 | Store credentials for a sink (Postgres, ClickHouse, Kafka…) | `secrets` |
@@ -56,7 +59,7 @@ Canonical list with descriptions: [`SKILLS.md`](./SKILLS.md).
 
 If your task is to change anything under `skills/` in this repo (not just *use* a skill), do this in the same PR — CI enforces it:
 
-1. **Bump the plugin version:** run **`npm run bump`** — patch by default (`npm run bump -- minor` or `npm run bump -- major` for larger changes). It bumps and syncs the version across `package.json`, `.claude-plugin/plugin.json`, `.cursor-plugin/plugin.json`, and `.claude-plugin/marketplace.json`. **Commit those four files with your skill change.** Claude Code and Cursor plugin users only receive updates when the version changes — skip this and they stay on the old skills. Never hand-edit the versions; always use `npm run bump` so all four stay in sync. The `require-version-bump` check fails the PR if you don't.
+1. **Bump the plugin version:** run **`npm run bump`** — patch by default (`npm run bump -- minor` or `npm run bump -- major` for larger changes). It bumps and syncs the version across `package.json`, `.claude-plugin/plugin.json`, `.cursor-plugin/plugin.json`, and `.claude-plugin/marketplace.json`. **Commit those four files with your skill change.** Claude Code and Cursor plugin users only receive updates when the version changes — skip this and they stay on the old skills. Never hand-edit the versions; always use `npm run bump` so all four stay in sync. The `require-version-bump` check fails the PR if you don't. Note the two hosts differ downstream: Claude Code pins a commit SHA and advances it from `main` automatically, so a bump is all users need. **Cursor re-reviews every update manually** and needs a re-index request, so a bump alone does not ship it there.
 2. **If you add/rename/remove a skill,** also update [`SKILLS.md`](./SKILLS.md) and the routing table above.
 
 ## Install (for agents that support it)
@@ -65,7 +68,7 @@ If your task is to change anything under `skills/` in this repo (not just *use* 
 # Copies skills into your project for 30+ supported agents:
 npx skills add goldsky-io/goldsky-agent
 
-# From the docs site — also exposes skills as MCP resources and at /.well-known/skills:
+# From the docs site — also exposes the skills as MCP resources:
 npx skills add https://docs.goldsky.com
 ```
 

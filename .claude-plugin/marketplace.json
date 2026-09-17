@@ -11,7 +11,40 @@
       "name": "goldsky",
       "source": "./",
       "description": "Stream real-time blockchain data to your infrastructure. Build, deploy, and debug data pipelines that index onchain events from 20+ chains into PostgreSQL, ClickHouse, Kafka, and more.",
-      "version": "1.2.4"
+      "version": "1.3.0"
+    },
+    {
+      "name": "goldsky-data",
+      "displayName": "Goldsky (data)",
+      "source": "./",
+      "description": "Stream real-time blockchain data to your infrastructure. Build, deploy, and debug data pipelines that index onchain events from 20+ chains into PostgreSQL, ClickHouse, Kafka, and more, plus hosted subgraphs and managed RPC.",
+      "version": "1.3.0",
+      "category": "data-and-analytics",
+      "keywords": [
+        "goldsky",
+        "blockchain",
+        "pipelines",
+        "turbo",
+        "subgraphs",
+        "rpc",
+        "data"
+      ],
+      "skills": [
+        "./skills/turbo-builder",
+        "./skills/turbo-doctor",
+        "./skills/turbo-pipelines",
+        "./skills/turbo-transforms",
+        "./skills/turbo-operations",
+        "./skills/mirror",
+        "./skills/mirror-doctor",
+        "./skills/subgraph-builder",
+        "./skills/subgraph-doctor",
+        "./skills/subgraph-migrate",
+        "./skills/edge",
+        "./skills/datasets",
+        "./skills/secrets",
+        "./skills/auth-setup"
+      ]
     }
   ]
 }

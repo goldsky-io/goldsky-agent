@@ -10,8 +10,8 @@
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ERROR_PATTERNS_FILE="$SCRIPT_DIR/../data/error-patterns.json"
+# Patterns below are kept in sync by hand with ../data/error-patterns.json,
+# which is the machine-readable copy the skill reads.
 
 # Colors for output
 RED='\033[0;31m'
@@ -85,7 +85,7 @@ HEALTHY_SIGNS=0
 check_pattern() {
     local pattern="$1"
     local description="$2"
-    local category="$3"
+    # $3 is the category, kept in the call signature for readability but unused here
     local severity="$4"
     
     if echo "$LOGS" | grep -qiE "$pattern"; then
