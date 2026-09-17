@@ -121,19 +121,27 @@ goldsky-agent/
 │   ├── mirror-doctor/         # Diagnose and fix Mirror pipelines
 │   ├── subgraph-builder/      # Author, build & deploy subgraphs; schema/mappings/manifest
 │   ├── subgraph-doctor/       # Diagnose and fix failing/stalled subgraphs
-│   ├── subgraph-migrate/  # Guided migration from The Graph
+│   ├── subgraph-migrate/      # Guided migration from The Graph
 │   ├── compose/               # Compose app scaffolding, triggers, wallets
 │   ├── compose-compliance-oracle/  # Compliance-gated payments (worked example)
 │   ├── compose-doctor/        # Diagnose and fix Compose apps
 │   ├── compose-reference/     # compose.yaml fields, CLI flags, TaskContext API
+│   ├── compose-bitcoin-oracle/     # BTC/USD price oracle (worked example)
+│   ├── compose-vrf/           # Onchain verifiable randomness (worked example)
+│   ├── compose-dividend-distribution/  # Pro-rata dividend payout (worked example)
+│   ├── onchain-automation/    # Cross-product router: detect → decide → execute
 │   ├── edge/                  # Managed RPC capabilities, error codes, pricing
 │   ├── boost/                 # Free CDN in front of your existing RPC provider
 │   ├── datasets/              # Chain prefixes, dataset types
 │   ├── secrets/               # Credential management
 │   └── auth-setup/            # CLI installation, login
+├── agents/              # `goldsky` subagent definition
 ├── hooks/               # Pre/post deploy automation
+│   ├── hooks.json             # Claude Code hook config
+│   ├── cursor-hooks.json      # Cursor hook config (different event names)
 │   └── scripts/               # Validation, secret checking
-└── .claude-plugin/      # Plugin manifest
+├── .claude-plugin/      # Claude Code plugin manifest + self-hosted marketplace
+└── .cursor-plugin/      # Cursor plugin manifest + logo
 ```
 
 ## How It Works
@@ -285,6 +293,9 @@ Add to `.cursor/mcp.json` or `.vscode/mcp.json`:
 - [Turbo Pipelines Guide](https://docs.goldsky.com/turbo-pipelines/introduction)
 - [CLI Reference](https://docs.goldsky.com/turbo-pipelines/cli)
 
-## License
+## Policies
 
-MIT
+- [License](./LICENSE) — MIT
+- [Terms of Use](./TERMS.md)
+- [Privacy Policy](./PRIVACY.md) — the plugin collects no data
+- [Security Policy](./SECURITY.md) — report issues to security@goldsky.com
