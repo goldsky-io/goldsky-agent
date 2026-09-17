@@ -163,6 +163,57 @@ jobs:
           done
           exit $fail
 
+  restricted-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Every skill is explicitly in or out of the goldsky-data build
+        run: |
+          # The `goldsky-data` marketplace entry is the restricted build we submit
+          # to the Claude directory, whose policy bars plugins that handle
+          # cryptocurrency or execute financial transactions. It carries an
+          # explicit skills list, so a NEW skill is silently excluded unless
+          # someone remembers to add it — which is exactly how `boost` (read-only
+          # RPC caching, clearly in scope) ended up grouped with the Compose
+          # transaction skills. Force the decision instead of defaulting to "out".
+          python3 - <<'PY'
+          import json, pathlib, sys
+
+          # Skills deliberately kept OUT of the Claude directory submission:
+          # they manage wallets, sponsor gas, or send onchain transactions.
+          EXCLUDED = {
+              "compose", "compose-doctor", "compose-reference",
+              "compose-bitcoin-oracle", "compose-vrf",
+              "compose-compliance-oracle", "compose-dividend-distribution",
+              "onchain-automation",
+          }
+
+          mkt = json.load(open(".claude-plugin/marketplace.json"))
+          entry = next((p for p in mkt["plugins"] if p["name"] == "goldsky-data"), None)
+          if entry is None:
+              sys.exit("::error::no 'goldsky-data' entry in marketplace.json")
+
+          included = {s.rsplit("/", 1)[-1] for s in entry["skills"]}
+          on_disk = {p.name for p in pathlib.Path("skills").iterdir() if p.is_dir()}
+
+          fail = False
+          for name in sorted(on_disk - included - EXCLUDED):
+              print(f"::error::skill '{name}' is neither in the goldsky-data build nor on the "
+                    f"documented exclusion list. Add it to .claude-plugin/marketplace.json, or "
+                    f"add it to EXCLUDED in this workflow with a reason.")
+              fail = True
+          for name in sorted(included & EXCLUDED):
+              print(f"::error::skill '{name}' is both in goldsky-data and on the exclusion list")
+              fail = True
+          for name in sorted(included - on_disk):
+              print(f"::error::goldsky-data lists '{name}', which does not exist under skills/")
+              fail = True
+          if fail:
+              sys.exit(1)
+          print(f"{len(included)} skills in the restricted build, "
+                f"{len(EXCLUDED)} deliberately excluded, {len(on_disk)} total")
+          PY
+
   shellcheck:
     runs-on: ubuntu-latest
     steps:
