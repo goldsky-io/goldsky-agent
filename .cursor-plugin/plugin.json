@@ -18,7 +18,7 @@
     "data",
     "cursor"
   ],
-  "logo": "assets/logo.png",
+  "logo": "assets/logo.svg",
   "skills": "./skills/",
   "mcpServers": {
     "goldsky-docs": {
