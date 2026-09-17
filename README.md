@@ -1,7 +1,7 @@
 # Goldsky Agent
 
 [![Install with npx](https://img.shields.io/badge/install-npx%20skills%20add-blue)](https://github.com/goldsky-io/goldsky-agent#installation)
-[![Skills](https://img.shields.io/badge/skills-22-green)](#skills)
+[![Skills](https://img.shields.io/badge/skills-23-green)](#skills)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 AI-powered tools for the full Goldsky product surface. Build, deploy, and debug Turbo pipelines, Mirror pipelines, Subgraphs, Compose apps, and Edge RPC — from natural-language prompts.
@@ -23,6 +23,7 @@ AI-powered tools for the full Goldsky product surface. Build, deploy, and debug 
 | Distribute a dividend / corporate action pro-rata     | `/compose-dividend-distribution` |
 | Build a compliance-gated payment system (worked example) | `/compose-compliance-oracle` |
 | Get a fast, reliable RPC endpoint                     | `/edge`              |
+| Cut the bill from your existing RPC provider          | `/boost`             |
 | Find the right dataset name                           | `/datasets`          |
 | Look up Turbo YAML syntax                             | `/turbo-pipelines`   |
 | Look up Compose manifest, CLI flags, or TaskContext   | `/compose-reference` |
@@ -130,6 +131,7 @@ goldsky-agent/
 │   ├── compose-dividend-distribution/  # Pro-rata dividend payout (worked example)
 │   ├── onchain-automation/    # Cross-product router: detect → decide → execute
 │   ├── edge/                  # Managed RPC capabilities, error codes, pricing
+│   ├── boost/                 # Free CDN in front of your existing RPC provider
 │   ├── datasets/              # Chain prefixes, dataset types
 │   ├── secrets/               # Credential management
 │   └── auth-setup/            # CLI installation, login
@@ -219,6 +221,7 @@ Globally distributed, low-latency JSON-RPC for EVM chains, built on eRPC — a d
 | Skill | When to use | What's inside |
 | ----- | ----------- | ------------- |
 | `edge` | "RPC rate limits, hedged requests, flashblocks, x402, error code -32005" | Capabilities, supported chains, pricing, dashboard, error code reference |
+| `boost` | "cut my Alchemy bill", "why is my cache hit rate low", "x-cache MISS" | Free CDN over your own provider: setup, what the CDN serves, headers, metrics, troubleshooting |
 
 ### Cross-cutting
 
@@ -249,6 +252,7 @@ The skills cover the full Goldsky product surface:
 - **Subgraphs** — Author/build/deploy (`subgraph-builder`: schema design, AssemblyScript mappings, manifest, instant subgraphs, performance, testing, endpoints/tags/webhooks); interactive diagnosis (`subgraph-doctor`); guided migration from The Graph (`subgraph-migrate`)
 - **Compose** — `compose.yaml` manifest, cron / HTTP / onchain triggers, smart wallets, gas sponsorship, `TaskContext` API, codegen, pricing
 - **Edge RPC** — Capabilities, supported chains, hedged requests, flashblocks, x402, error code lookups
+- **Boost** — Free CDN in front of the RPC provider you already pay for; cacheable reads served from Goldsky, everything else forwarded free
 - **Cross-cutting** — Authentication, secrets, dataset naming, full CLI reference
 
 ## MCP Server
