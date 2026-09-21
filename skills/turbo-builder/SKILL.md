@@ -64,7 +64,7 @@ sources:
 If the user has not stated a start position, ask before writing YAML — offer exactly three options:
 
 1. **From now** (`start_at: latest`) — no backfill, live data only.
-2. **From a specific point in history** — `start_at: earliest` plus a `block_number` predicate in the source `filter` (pre-applied at the source, so the excluded range never reaches the sink). On Solana use the numeric `start_block` instead, and on Stellar a ledger sequence number is also accepted (`start_at: 60000000`). A block number is **not** a valid `start_at` value on the other chains: `start_at` takes `earliest`, `latest`, or a 13-digit millisecond timestamp — nothing else validates there.
+2. **From a specific point in history** — `start_at: earliest` plus a `block_number` predicate in the source `filter` (pre-applied at the source, so the excluded range never reaches the sink). On Solana use the numeric `start_block` instead, and on Stellar a ledger sequence number is also accepted (`start_at: 60000000`). A block number is **not** a valid `start_at` value on the other chains: EVM, NEAR, and Bitcoin take `earliest` or `latest` and nothing else.
 3. **Full history** (`start_at: earliest`) — state plainly that this replays the entire chain history: days of backfill and millions of rows before live data arrives, and the sink must have room for all of it.
 
 Also ask about:

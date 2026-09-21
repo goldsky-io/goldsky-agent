@@ -174,7 +174,7 @@ sources:
 | `type`         | Yes      | `dataset` for blockchain data                            |
 | `dataset_name` | Yes      | Format: `<chain>.<dataset_type>`                         |
 | `version`      | Yes      | Dataset version (e.g., `1.2.0`)                          |
-| `start_at`     | EVM-family | `latest`, `earliest`, or a 13-digit ms timestamp; on Stellar also a ledger sequence number. Used by EVM, NEAR, Bitcoin, Stellar. Omitted = `earliest` = full chain history |
+| `start_at`     | EVM-family | `latest` or `earliest`; on Stellar also a ledger sequence number. Used by EVM, NEAR, Bitcoin, Stellar. Omitted = `earliest` = full chain history |
 | `start_block`  | No       | Solana only: starting slot. Omitted = latest slot, i.e. no backfill      |
 | `end_block`    | No       | Solana only: stop at this slot. Silently ignored on EVM                  |
 | `filter`       | No       | SQL WHERE clause — pre-filters at ingestion (efficient)  |
