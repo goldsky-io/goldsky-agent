@@ -56,11 +56,18 @@ sources:
     type: dataset
     dataset_name: <chain>.<dataset>
     version: 1.0.0
-    start_at: earliest  # or a specific block number
+    start_at: latest  # REQUIRED — see below. Or `earliest`, or a specific block/date
 ```
 
-Ask about:
-- **Start block:** `earliest` (from genesis), `latest` (from now), or a specific block number
+**A start position is required, not optional.** Never emit a dataset source without an explicit `start_at` (or `start_block` on Solana/Near). Omitting the field does not mean "start now" — the backend starts from the earliest available data, so the pipeline silently backfills the entire chain history. That is how a pipeline ends up running for days, writing millions of rows, and filling its sink before it ever reaches live data.
+
+If the user has not stated a start position, ask before writing YAML — offer exactly three options:
+
+1. **From now** (`start_at: latest`) — no backfill, live data only.
+2. **From a specific date or block** — the usual choice when they want recent history.
+3. **Full history** (`start_at: earliest`) — state plainly that this replays the entire chain history: days of backfill and millions of rows before live data arrives, and the sink must have room for all of it.
+
+Also ask about:
 - **End block:** Only for job-mode/backfill pipelines. Omit for streaming.
 - **Source-level filter:** Optional filter to reduce data at the source (e.g., specific contract address)
 
@@ -118,6 +125,8 @@ goldsky hosted-sink create --type postgres
 ```
 
 This prints the created secret's **name**, **ID**, and **type** (the connection string is never printed). Use the printed **name** as the sink `secret_name`. If the account lacks access, the command returns a Scale-plan upgrade message with the team's billing URL — fall back to bringing an external Postgres via the `/secrets` skill.
+
+**Size the sink against the backfill before recommending it.** If the start position from Step 4 is `earliest` or the user described a multi-month or full-history range, say so explicitly before pointing them at a free-tier database — their own or a newly provisioned one. A 512 MB free tier cannot hold a multi-month backfill of a high-volume dataset, and the failure mode is silent: the pipeline validates, deploys, reports `Running`, and then errors `could not extend file because project size limit (512 MB) has been exceeded` with checkpoints timing out while writing nothing. Recommend a paid/sized database, or narrow the start position, before deploying. See the storage-exceeded row in `/turbo-operations` for the post-hoc diagnosis.
 
 ### Step 7: Choose Mode
 
@@ -194,7 +203,8 @@ Present a summary:
 - For job-mode pipelines, remind the user they auto-cleanup ~1hr after completion.
 - Use `blackhole` sink for testing pipelines without writing to a real destination.
 - If the user wants to modify an existing pipeline, check if it's streaming (update in place) or job-mode (must delete first).
-- Default to `start_at: earliest` unless the user specifies otherwise.
+- Never emit a dataset source without an explicit start position. Never default to `start_at: earliest` — ask (from now / from a specific date or block / full history), and when the answer is full history, warn that it replays the entire chain history before live data and check the sink has room for it.
+- Never recommend a free-tier database (512 MB) as the sink for a multi-month or full-history backfill.
 - Always include `version: 1.0.0` on dataset sources.
 
 ## Related

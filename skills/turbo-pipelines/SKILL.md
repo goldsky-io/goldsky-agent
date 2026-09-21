@@ -82,6 +82,8 @@ For detailed pattern diagrams, YAML examples, and multi-chain deployment guidanc
 
 Start small and scale up — defensive sizing avoids wasted resources.
 
+**`resource_size` sizes the pipeline, not the sink — they are independent.** An `l`/`xl` pipeline pointed at an undersized destination produces the "deployed but writing nothing" shape: it validates, deploys, reports `Running`, and then fails every write. A Neon free tier (512 MB) will not hold a multi-month backfill of a high-volume chain — it errors `could not extend file because project size limit (512 MB) has been exceeded` and checkpoints time out. Check the destination's storage ceiling against the backfill scope (`start_at` plus any `end_block`) before deploying, not after.
+
 ### Sink Selection
 
 | Destination          | Sink Type            | Best For                                       |
@@ -172,12 +174,14 @@ sources:
 | `type`         | Yes      | `dataset` for blockchain data                            |
 | `dataset_name` | Yes      | Format: `<chain>.<dataset_type>`                         |
 | `version`      | Yes      | Dataset version (e.g., `1.2.0`)                          |
-| `start_at`     | EVM      | `latest` or `earliest`                                   |
-| `start_block`  | Solana   | Specific slot number (omit for latest)                   |
+| `start_at`     | EVM      | `latest`, `earliest`, or a specific block. `earliest` = full chain history |
+| `start_block`  | Solana   | Specific slot number                                     |
 | `end_block`    | No       | Stop at this block (for bounded backfills)               |
 | `filter`       | No       | SQL WHERE clause — pre-filters at ingestion (efficient)  |
 
 Use `filter` for contract addresses and block ranges (coarse pre-filtering). Use transform `WHERE` for fine-grained filtering.
+
+Set `start_at` explicitly on every dataset source. Omitting it does not mean "start now": the backend starts from the earliest available data, so the pipeline backfills the full chain history — days of replay and millions of rows before it reaches live data, and the sink has to hold all of it. Bound a historical range with `end_block` (plus `job: true` for a one-shot backfill) or a `block_number` predicate in `filter`.
 
 For chain prefixes and dataset types, see `/datasets`.
 
