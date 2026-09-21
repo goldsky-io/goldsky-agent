@@ -76,7 +76,7 @@ fi
 #      output doesn't parse, we must not block the deploy — an unparseable
 #      list previously looked identical to "you have zero secrets", which
 #      blocked every apply with a bogus "missing secret" message.
-SECRET_LIST_RAW=$(goldsky secret list --color false 2>/dev/null) || SECRET_LIST_RAW=""
+SECRET_LIST_RAW=$(goldsky secret list --no-color 2>/dev/null) || SECRET_LIST_RAW=""
 
 if [[ -z "$SECRET_LIST_RAW" ]]; then
   # Could not reach the CLI or got nothing back — allow and let the CLI decide.
