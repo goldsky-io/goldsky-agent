@@ -1,7 +1,7 @@
 {
   "name": "goldsky",
   "displayName": "Goldsky",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "Index and stream onchain data for the questions finance teams actually ask: proof-of-reserves and circulating supply, stablecoin transfer and sanctions monitoring, deposit detection, cross-chain settlement tracking (CCTP), payment reconciliation, wallet balances and transaction history, tokenized assets and RWA holder registries, and prediction-market data including Polymarket fills, positions and PnL. Real-time pipelines, hosted subgraphs, and managed RPC across 150+ chains.",
   "author": {
     "name": "Goldsky"

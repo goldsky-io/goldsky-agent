@@ -273,7 +273,7 @@ Only activate when Bash is available.
 
 ### Step 1 — Verify auth
 
-`goldsky project list 2>&1` proves auth for the full `goldsky` CLI. With the **standalone Compose CLI**, auth is proven by any authenticated call — e.g. `goldsky compose list -t "$GOLDSKY_API_KEY"` (`-t`/`--token` passes a project API key). No key yet? Make one in the dashboard at **Settings → API Keys**, then pass it with `-t`. If login itself is the problem, use `/auth-setup`.
+`goldsky project list 2>&1` proves auth for the full `goldsky` CLI. With the **standalone Compose CLI**, auth is proven by any authenticated call — e.g. `goldsky compose list -t "$GOLDSKY_API_TOKEN"` (`-t`/`--token` passes a project API key). No key yet? Make one in the dashboard at **Settings → API Keys**, then pass it with `-t`. If login itself is the problem, use `/auth-setup`.
 Or export `GOLDSKY_API_TOKEN=<project token>` once and drop `-t` entirely. Precedence is `--token` > `GOLDSKY_API_TOKEN` > the token `goldsky login` wrote to `~/.goldsky/auth_token`.
 
 ### Step 2 — Derive first, ask only the ambiguous
