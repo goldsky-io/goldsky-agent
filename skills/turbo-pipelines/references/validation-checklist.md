@@ -8,7 +8,7 @@ Use this checklist when `goldsky turbo validate` is not available (no Bash tool)
 - [ ] `resource_size` exists and is one of: `s`, `m`, `l`
 - [ ] `sources` section exists and has at least one entry
 - [ ] `sinks` section exists and has at least one entry
-- [ ] If `job: true`, at least one source has `end_block` (or user explicitly wants processing to chain tip)
+- [ ] If `job: true`, every source is bounded: EVM needs a `block_number` upper bound in `filter` (`end_block` is ignored there), Solana needs `end_block` or `block_ranges`
 
 ## Sources
 
@@ -20,8 +20,8 @@ For each source entry:
   - [ ] Chain prefix is valid (`matic` not `polygon`, `bsc` not `binance`, `ethereum` not `eth`)
   - [ ] Dataset type is valid (`raw_transactions` not `transactions`, `raw_logs` not `logs`)
   - [ ] `version` is specified (e.g., `1.0.0`, `1.2.0`)
-  - [ ] EVM chains: `start_at` is `earliest` or `latest`
-  - [ ] Solana: uses `start_block`, NOT `start_at`
+  - [ ] EVM, NEAR, Bitcoin, Stellar: `start_at` is set explicitly (`earliest` or `latest`, or on Stellar a ledger sequence number) — omitting it backfills the full chain history
+  - [ ] Solana: uses `start_block` (a slot), NOT `start_at` — omitting it starts at the latest slot
 
 ## Transforms
 
