@@ -1,0 +1,236 @@
+# Guards the things marketplace review checks, so they can't rot between releases.
+#
+# `claude plugin validate --strict` is the same check Anthropic's submission
+# pipeline runs. The catalog-drift job enforces the rule in AGENTS.md that a new
+# skill must also land in SKILLS.md and the routing table — previously a comment
+# nothing verified, which is how four skills went missing.
+name: validate-plugin
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  manifests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Manifest versions agree
+        run: |
+          pkg=$(jq -r .version package.json)
+          for f in .claude-plugin/plugin.json .cursor-plugin/plugin.json; do
+            v=$(jq -r .version "$f")
+            [ "$v" = "$pkg" ] || { echo "::error::$f is $v, package.json is $pkg"; exit 1; }
+          done
+          jq -e --arg pkg "$pkg" 'all(.plugins[]; .version == $pkg)' .claude-plugin/marketplace.json >/dev/null \
+            || { echo "::error::marketplace.json has a plugin whose version is not $pkg"; exit 1; }
+          echo "All manifests agree at $pkg"
+
+      - name: Cursor manifest has no unknown keys
+        run: |
+          # Cursor's plugin schema is additionalProperties:false — an unknown key
+          # fails their validation, and author accepts only name/email.
+          jq -e '
+            (keys - ["name","displayName","description","version","minClientVersions",
+                     "author","publisher","homepage","repository","license","logo",
+                     "keywords","category","tags","commands","agents","skills",
+                     "rules","hooks","variables","mcpServers"]) as $bad
+            | if ($bad | length) > 0 then error("unknown keys: \($bad)") else true end
+          ' .cursor-plugin/plugin.json
+          jq -e '(.author | keys - ["name","email"]) as $b
+                 | if ($b|length) > 0 then error("author has unknown keys: \($b)") else true end
+          ' .cursor-plugin/plugin.json
+          echo "Cursor manifest conforms"
+
+      - name: Declared component paths exist
+        run: |
+          fail=0
+          for f in .claude-plugin/plugin.json .cursor-plugin/plugin.json; do
+            for key in skills agents hooks commands rules; do
+              cpath=$(jq -r --arg k "$key" '.[$k] // empty | if type=="string" then . else empty end' "$f")
+              [ -n "$cpath" ] || continue
+              case "$cpath" in /*|*..*) echo "::error::$f: $key path must be relative with no '..': $cpath"; fail=1; continue;; esac
+              [ -e "${cpath%/}" ] || { echo "::error::$f: $key -> $cpath does not exist"; fail=1; }
+            done
+          done
+          exit $fail
+
+      - name: Cursor logo exists, is square, and is safe
+        run: |
+          # Cursor resolves a relative `logo` against the PLUGIN ROOT (the repo
+          # root here), not against .cursor-plugin/. Getting this wrong ships a
+          # listing with a broken image and nothing else catches it.
+          logo=$(jq -r '.logo // empty' .cursor-plugin/plugin.json)
+          [ -n "$logo" ] || { echo "::error::.cursor-plugin/plugin.json has no logo"; exit 1; }
+          case "$logo" in http://*|https://*) echo "Remote logo: $logo"; exit 0;; esac
+          [ -f "$logo" ] || { echo "::error::logo '$logo' does not exist at the repo root"; exit 1; }
+          python3 - "$logo" <<'PY'
+          import re, struct, sys, xml.etree.ElementTree as ET
+
+          path = sys.argv[1]
+          raw = open(path, "rb").read()
+
+          def die(msg):
+              raise SystemExit(f"::error::{msg}")
+
+          if raw[:8] == b"\x89PNG\r\n\x1a\n":
+              w, h = struct.unpack(">II", raw[16:24])
+              kind = "PNG"
+          elif path.endswith(".svg"):
+              kind = "SVG"
+              text = raw.decode("utf-8", "replace")
+              try:
+                  root = ET.fromstring(text)
+              except ET.ParseError as e:
+                  die(f"{path} is not well-formed XML: {e}")
+              # Cursor re-hosts the file, so anything it pulls at render time must
+              # be self-contained. Reject active or remote content outright.
+              for pattern, label in [
+                  (r"<script", "a <script> tag"),
+                  (r"\bon[a-z]+\s*=", "an inline event handler"),
+                  (r"(?:xlink:)?href\s*=\s*[\"']\s*https?:", "a remote href"),
+                  (r"@import", "a CSS @import"),
+                  (r"<foreignObject", "a <foreignObject>"),
+              ]:
+                  if re.search(pattern, text, re.I):
+                      die(f"{path} contains {label}; the logo must be static and self-contained")
+
+              def px(v):
+                  if not v:
+                      return None
+                  m = re.match(r"^\s*([0-9.]+)\s*(px)?\s*$", v)
+                  return float(m.group(1)) if m else None
+
+              w = px(root.get("width"))
+              h = px(root.get("height"))
+              if w is None or h is None:
+                  vb = (root.get("viewBox") or "").replace(",", " ").split()
+                  if len(vb) == 4:
+                      w, h = float(vb[2]), float(vb[3])
+                  else:
+                      die(f"{path} needs square width/height or a viewBox so it renders at a fixed aspect")
+          else:
+              die(f"{path} must be a PNG or SVG")
+
+          print(f"logo: {kind} {w:g}x{h:g}")
+          if abs(w - h) > 0.5:
+              die(f"logo must be square, got {w:g}x{h:g}")
+          if kind == "PNG" and w < 256:
+              die(f"logo is {w:g}px; use at least 256 (512 recommended)")
+          PY
+
+      - name: Hook configs are valid JSON and reference real scripts
+        run: |
+          fail=0
+          for f in hooks/hooks.json hooks/cursor-hooks.json; do
+            jq -e . "$f" >/dev/null || { echo "::error::$f is not valid JSON"; exit 1; }
+            for s in $(grep -oE '\$\{[A-Z_]+\}/hooks/scripts/[a-z-]+\.sh' "$f" | sed 's|.*}/||' | sort -u); do
+              [ -x "$s" ] || { echo "::error::$f references $s which is missing or not executable"; fail=1; }
+            done
+          done
+          exit $fail
+
+  plugin-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: claude plugin validate --strict
+        run: |
+          # `plugin validate .` only checks the marketplace manifest and never
+          # touches .claude-plugin/plugin.json. Name every target explicitly.
+          npx -y @anthropic-ai/claude-code plugin validate .claude-plugin/plugin.json --strict
+          npx -y @anthropic-ai/claude-code plugin validate .claude-plugin/marketplace.json --strict
+          npx -y @anthropic-ai/claude-code plugin validate skills/ --strict
+
+  catalog-drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Every skill is listed in SKILLS.md and the AGENTS.md routing table
+        run: |
+          fail=0
+          for d in skills/*/; do
+            n=$(basename "$d")
+            [ -f "$d/SKILL.md" ] || { echo "::error::$d has no SKILL.md"; fail=1; continue; }
+            grep -q "$n" SKILLS.md || { echo "::error::$n missing from SKILLS.md"; fail=1; }
+            grep -q "$n" AGENTS.md || { echo "::error::$n missing from the AGENTS.md routing table"; fail=1; }
+          done
+          count=$(find skills -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')
+          grep -q "badge/skills-$count-" README.md || { echo "::error::README badge does not say $count skills"; fail=1; }
+          exit $fail
+
+      - name: Every SKILL.md has name and description frontmatter
+        run: |
+          # Required by both Claude Code and Cursor; a missing one fails review.
+          fail=0
+          for f in skills/*/SKILL.md; do
+            head -1 "$f" | grep -q '^---$' || { echo "::error::$f has no frontmatter"; fail=1; continue; }
+            awk 'NR>1 && /^---$/{exit} NR>1' "$f" | grep -q '^name:' || { echo "::error::$f frontmatter has no name:"; fail=1; }
+            awk 'NR>1 && /^---$/{exit} NR>1' "$f" | grep -q '^description:' || { echo "::error::$f frontmatter has no description:"; fail=1; }
+          done
+          exit $fail
+
+  restricted-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Every skill is explicitly in or out of the goldsky-data build
+        run: |
+          # The `goldsky-data` marketplace entry is the restricted build we submit
+          # to the Claude directory, whose policy bars plugins that handle
+          # cryptocurrency or execute financial transactions. It carries an
+          # explicit skills list, so a NEW skill is silently excluded unless
+          # someone remembers to add it. Force the decision instead of
+          # defaulting to "out".
+          python3 - <<'PY'
+          import json, pathlib, sys
+
+          # Skills deliberately kept OUT of the Claude directory submission:
+          # they manage wallets, sponsor gas, or send onchain transactions.
+          EXCLUDED = {
+              "compose", "compose-doctor", "compose-reference",
+              "compose-bitcoin-oracle", "compose-vrf",
+              "compose-compliance-oracle", "compose-dividend-distribution",
+              "onchain-automation",
+          }
+
+          mkt = json.load(open(".claude-plugin/marketplace.json"))
+          entry = next((p for p in mkt["plugins"] if p["name"] == "goldsky-data"), None)
+          if entry is None:
+              sys.exit("::error::no 'goldsky-data' entry in marketplace.json")
+
+          included = {s.rsplit("/", 1)[-1] for s in entry["skills"]}
+          on_disk = {p.name for p in pathlib.Path("skills").iterdir() if p.is_dir()}
+
+          fail = False
+          for name in sorted(on_disk - included - EXCLUDED):
+              print(f"::error::skill '{name}' is neither in the goldsky-data build nor on the "
+                    f"documented exclusion list. Add it to .claude-plugin/marketplace.json, or "
+                    f"add it to EXCLUDED in this workflow with a reason.")
+              fail = True
+          for name in sorted(included & EXCLUDED):
+              print(f"::error::skill '{name}' is both in goldsky-data and on the exclusion list")
+              fail = True
+          for name in sorted(included - on_disk):
+              print(f"::error::goldsky-data lists '{name}', which does not exist under skills/")
+              fail = True
+          if fail:
+              sys.exit(1)
+          print(f"{len(included)} skills in the restricted build, "
+                f"{len(EXCLUDED)} deliberately excluded, {len(on_disk)} total")
+          PY
+
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y shellcheck
+      - run: shellcheck --severity=warning $(find . -name '*.sh' -not -path './node_modules/*')

@@ -14,7 +14,14 @@ set -euo pipefail
 INPUT=$(cat)
 
 # Extract command and output
-COMMAND=$(echo "$INPUT" | sed -n 's/.*"command"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+# shellcheck source=hooks/scripts/lib/extract-command.sh
+source "$(dirname "${BASH_SOURCE[0]}")/lib/extract-command.sh"
+COMMAND=$(extract_command "$INPUT")
+
+# No command in the payload (or no jq available) — nothing to inspect.
+if [[ -z "$COMMAND" ]]; then
+  exit 0
+fi
 OUTPUT=$(echo "$INPUT" | sed -n 's/.*"tool_output"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
 
 # Only fire after `goldsky turbo apply` commands
