@@ -33,8 +33,9 @@ End-to-end worked examples — each carries the full app source and walks build 
 - **compose-dividend-distribution** - Pays token holders pro-rata for a corporate action; Compose orchestrates a Turbo job-mode pipeline to snapshot holders, then pays each onchain
 - **compose-compliance-oracle** - Compliance-gated payments: escrow contract + compliance screening (Webacy/mock/BYO) + oracle approve/reject callback; single-payee or P2P; any EVM chain; plus a reconcile cron
 
-### Edge (managed RPC)
+### RPC (Edge and Boost)
 - **edge** - Managed RPC endpoints, capabilities, supported chains, error code lookups
+- **boost** - Free CDN in front of an RPC provider you already pay for; cacheable reads served from Goldsky's data, everything else forwarded free
 
 ### Cross-cutting
 - **datasets** - Chain prefixes, dataset types, 130+ chains
