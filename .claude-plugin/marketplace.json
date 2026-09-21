@@ -11,14 +11,14 @@
       "name": "goldsky",
       "source": "./",
       "description": "Index and stream onchain data for the questions finance teams actually ask: proof-of-reserves and circulating supply, stablecoin transfer and sanctions monitoring, deposit detection, cross-chain settlement tracking (CCTP), payment reconciliation, wallet balances and transaction history, tokenized assets and RWA holder registries, and prediction-market data including Polymarket fills, positions and PnL. Real-time pipelines, hosted subgraphs, and managed RPC across 150+ chains.",
-      "version": "1.6.0"
+      "version": "1.7.0"
     },
     {
       "name": "goldsky-data",
       "displayName": "Goldsky (data)",
       "source": "./",
       "description": "Index, query and monitor onchain data across 150+ chains. Real-time pipelines into PostgreSQL, ClickHouse, Kafka and more, hosted subgraphs, and managed RPC \u2014 for reserve and circulating-supply reporting, transfer and sanctions monitoring, deposit detection, cross-chain transfer tracking, reconciliation, wallet balance and history APIs, tokenized-asset holder registries, and prediction-market datasets such as Polymarket.",
-      "version": "1.6.0",
+      "version": "1.7.0",
       "category": "data-and-analytics",
       "keywords": [
         "goldsky",

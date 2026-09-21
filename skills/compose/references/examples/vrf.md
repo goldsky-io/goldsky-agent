@@ -1,7 +1,3 @@
----
-name: compose-vrf
-description: "Build and deploy the Goldsky Compose VRF (verifiable random function) example under the user's own account — a Compose app that listens for a `RandomnessRequested` event on an EVM contract, fetches verifiable randomness from the drand beacon, and writes it back on-chain via `fulfillRandomness` with the drand round + BLS signature so anyone can verify it. Triggers on: 'build a VRF', 'verifiable random function', 'onchain randomness', 'provably fair random numbers', 'drand oracle', 'random number generator onchain', 'set up / deploy the VRF example', 'compose vrf'. Recommends the shared, fully-unpermissioned RandomnessConsumer on Base Sepolia so there's nothing to deploy. This skill carries the complete app source (manifest, contract, ABI, tasks, drand lib) so the assistant can deploy it off the shelf or customize it. For a custom/novel Compose app that isn't this VRF, use /compose. For debugging an already-deployed app, use /compose-doctor. For manifest/CLI/API field lookups, use /compose-reference."
----
 
 # Build: Compose VRF
 
@@ -14,7 +10,7 @@ This template supplies only what's specific to the VRF app — how it works and 
 **Before anything else — before you answer, ask a question, scaffold a file, or call `deployComposeApp` — load the two base skills this template depends on:**
 
 1. **`Skill(compose)`** — the always-on Compose guide: the golden rules (never assume anything about the app on the user's behalf; ask when unsure) and general build guidance.
-2. **`Skill(compose-reference)`** — the manifest / field / API reference; consult before writing any `compose.yaml` or task file.
+2. **Read `skills/compose/references/manifest.md`** (then `cli.md`, `task-context.md`, `wallets-and-gas.md` as needed) — the manifest / field / API reference; consult before writing any `compose.yaml` or task file.
 
 This template deliberately omits those rules and that reference — they are **required** to build correctly and are not repeated here. Do not proceed until both are loaded.
 
@@ -26,7 +22,7 @@ Pick the mode from the tools available to you:
   - **App name** — ask first, before anything else: *"What should the app be called? (suggest `vrf-app`)"*. The name is hard to change later — it scopes named wallets and participates in the CREATE2 salt for every `deployContract` — so it must be settled before any wallet or contract step. Accept the default `vrf-app` on a shrug, and set the chosen name as the top-level `name:` in the scaffolded `compose.yaml`.
   - **Contract** — ask this explicitly, do not assume: *"Do you have your own `RandomnessConsumer`-style contract, or should we use a shared demo contract on Base Sepolia to get running quickly?"* Options: **"Use the shared demo contract on Base Sepolia (recommended — nothing to deploy)"** and **"I'll use my own contract."** On the shared path, `CONTRACT_ADDRESS` is the **HARDCODED** address `0x6273AB73C95Ba2233281F1eb8aa3b21D9352AD6d` on `baseSepolia` — copy it character-for-character, do NOT alter or retype it from memory; mention in prose that it's demos-only, not production. On the own path, ask the user to paste their contract address and chain (their contract must emit `RandomnessRequested(uint256,address)` and accept `fulfillRandomness`), and use exactly what they paste.
 
-  The Compose smart wallet is auto-created at runtime and gas-sponsored on Base Sepolia — never tell the user to create or fund a wallet. On the shared path there is **no fulfiller to set** (the contract is permissionless), so the wallet just works. After the questions, scaffold these files in-memory from **The app (full source)** below and pass them to `deployComposeApp` (do NOT degit): `compose.yaml`, `src/contracts/RandomnessConsumer.json` (verbatim ABI, required for codegen), `src/lib/drand.ts`, and the three task files. Set the top-level `name:` to the chosen app name (default `vrf-app`); set `CONTRACT_ADDRESS` in both task files and the `contract:` field in `compose.yaml` to the shared address (or the user's, on the own path), and the `evm.chains.*` reference + trigger `network:` to the chosen chain. Follow `/compose-reference` for the manifest shape and the sandbox import rule before emitting the files (per the golden rules in `/compose` — don't synthesize the manifest from memory). Then **call `deployComposeApp` in the SAME turn**; don't ask the user to confirm first or emit any `goldsky` command. **In this mode, ignore Steps 0–8 below** — they are the CLI/local procedure.
+  The Compose smart wallet is auto-created at runtime and gas-sponsored on Base Sepolia — never tell the user to create or fund a wallet. On the shared path there is **no fulfiller to set** (the contract is permissionless), so the wallet just works. After the questions, scaffold these files in-memory from **The app (full source)** below and pass them to `deployComposeApp` (do NOT degit): `compose.yaml`, `src/contracts/RandomnessConsumer.json` (verbatim ABI, required for codegen), `src/lib/drand.ts`, and the three task files. Set the top-level `name:` to the chosen app name (default `vrf-app`); set `CONTRACT_ADDRESS` in both task files and the `contract:` field in `compose.yaml` to the shared address (or the user's, on the own path), and the `evm.chains.*` reference + trigger `network:` to the chosen chain. Follow `skills/compose/references/` for the manifest shape and the sandbox import rule before emitting the files (per the golden rules in `/compose` — don't synthesize the manifest from memory). Then **call `deployComposeApp` in the SAME turn**; don't ask the user to confirm first or emit any `goldsky` command. **In this mode, ignore Steps 0–8 below** — they are the CLI/local procedure.
 - **`Bash` is available (local CLI / coding agent):** execute the steps below directly, parsing output into later commands.
 - **Neither (pure reference Q&A):** explain what the app does; for step-by-step help point them at `npx skills add goldsky-io/goldsky-agent` to run it locally with Bash.
 
@@ -716,6 +712,6 @@ cast call $CONTRACT_ADDRESS "isFulfilled(uint256)(bool)" <requestId> --rpc-url <
 ## Related
 
 - **`/compose`** — Build a new/custom Compose app from scratch, or explain what Compose is.
-- **`/compose-reference`** — Manifest, CLI, TaskContext API, wallets, gas sponsorship, codegen.
+- **`skills/compose/references/`** — Manifest, CLI, TaskContext API, wallets, gas sponsorship, codegen.
 - **`/compose-doctor`** — Diagnose and fix a broken Compose app.
 - **`/auth-setup`** — `goldsky login` walkthrough.

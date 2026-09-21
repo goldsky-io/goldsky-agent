@@ -1,23 +1,23 @@
 ---
 name: compose
-description: "Always load this skill whenever the conversation is about Goldsky Compose (the offchain-to-onchain TypeScript framework for oracles, keepers, circuit breakers, and cross-chain automation) — no matter what the user wants to do with it. That includes: asking what Compose is, its docs, pricing, functionality, or limits; building, deploying, or iterating on an app; wiring cron / HTTP / onchain-event triggers, smart wallets, gas sponsorship, secrets, or collections; deploying a worked example; or debugging an existing app. This is the entry point for the Compose skill family — load it FIRST, then pull in the others it points to: /compose-reference for concrete manifest/CLI/API rules, a worked-example template (compose-bitcoin-oracle, compose-vrf, compose-dividend-distribution, compose-compliance-oracle) when the user wants that specific app, and /compose-doctor for hands-on debugging. Do NOT load for Goldsky Turbo, Mirror, Subgraphs, Edge, Boost, or Datasets — those have their own skills."
+description: "Always load this skill whenever the conversation is about Goldsky Compose (the offchain-to-onchain TypeScript framework for oracles, keepers, circuit breakers, and cross-chain automation) — no matter what the user wants to do with it. That includes: asking what Compose is, its docs, pricing, functionality, or limits; building, deploying, or iterating on an app; wiring cron / HTTP / onchain-event triggers, smart wallets, gas sponsorship, secrets, or collections; deploying a worked example (bitcoin price oracle, VRF/drand, compliance-gated payments, dividend distribution); or debugging an existing app. This is the entry point — load it FIRST. Before writing any compose.yaml or task file, read skills/compose/references/manifest.md (then cli.md, task-context.md, wallets-and-gas.md as needed). For a worked example, read skills/compose/references/examples/. For a broken app, use /compose-doctor. Do NOT load for Goldsky Turbo, Mirror, Subgraphs, Edge, Boost, or Datasets — those have their own skills."
 ---
 
 # Goldsky Compose
 
 Goldsky Compose is the offchain-to-onchain framework for high-stakes systems. Write TypeScript **tasks** that run in verifiable sandboxes — triggered by cron, HTTP, or onchain events — with smart wallets, gas sponsorship, and durable collections. Typical use cases: custom price oracles, keepers, circuit breakers, prediction-market resolvers, cross-chain automation, identity/attestation flows, and notifications.
 
-## Step 0 — Load the reference first
+## Step 0 — Read the reference first
 
-**Before anything else — before you write any `compose.yaml` or task file, quote a field / flag / API shape, or scaffold or deploy an app — load `Skill(compose-reference)`.** It's the full manifest / CLI / `TaskContext` / wallet / gas-sponsorship reference. This skill gives the rules and the shape of a build; `compose-reference` gives the exact fields and signatures — and per the Golden rules below, the manifest / CLI / API must never be synthesized from memory. Do not emit a manifest or task without it loaded.
+**Before anything else — before you write any `compose.yaml` or task file, quote a field / flag / API shape, or scaffold or deploy an app — read `skills/compose/references/manifest.md`.** Then `cli.md`, `task-context.md`, and `wallets-and-gas.md` as needed. This skill gives the rules and the shape of a build; those files give the exact fields and signatures. The manifest / CLI / API must never be synthesized from memory. Do not emit a manifest or task without the reference loaded.
 
 ## Skill family — load `compose` first
 
 `compose` is the entry point for anything Goldsky Compose: **load it first, then pull in the others as needed.**
 
 - **General build rules and concepts** — this skill. It governs every Compose conversation, in-app or local.
-- **A specific example** (bitcoin oracle, VRF, dividend distribution, compliance-gated payments) — also load the matching template (`/compose-bitcoin-oracle`, `/compose-vrf`, `/compose-dividend-distribution`, `/compose-compliance-oracle`). Each carries that app's source and specifics and relies on the rules here; it does not repeat them.
-- **Any field, flag, manifest shape, or API signature** — load `/compose-reference`. It's the full reference docs. Consult it before writing any `compose.yaml` or task file.
+- **A specific example** (bitcoin oracle, VRF, dividend distribution, compliance-gated payments) — read the matching file under `skills/compose/references/examples/`. Each carries that app's source and specifics and relies on the rules here; it does not repeat them.
+- **Any field, flag, manifest shape, or API signature** — `skills/compose/references/`. Consult it before writing any `compose.yaml` or task file.
 - **A broken app** — `/compose-doctor`.
 
 ## Template catalog
@@ -26,25 +26,25 @@ The worked-example templates are starting points for whole classes of app, not j
 
 | Template | Scope / pattern | Start here when the app is… |
 | --- | --- | --- |
-| `/compose-bitcoin-oracle` | cron → fetch offchain data → `writeContract` | a keeper or oracle that periodically pushes a value onchain |
-| `/compose-vrf` | `onchain_event` → fetch → write back with proof | event-driven request/response, verifiable callbacks |
-| `/compose-dividend-distribution` | CLI-driven; spawns a Turbo pipeline; gas-sponsored pro-rata payouts | batch payouts, snapshot-then-distribute, cap-table style |
-| `/compose-compliance-oracle` | `onchain_event` → screen via external API → `writeContract` approve/reject callback | a payment or action held in escrow that an offchain check (AML/KYC, risk, allowlist) must approve or reject before it settles |
+| `references/examples/bitcoin-oracle.md` | cron → fetch offchain data → `writeContract` | a keeper or oracle that periodically pushes a value onchain |
+| `references/examples/vrf.md` | `onchain_event` → fetch → write back with proof | event-driven request/response, verifiable callbacks |
+| `references/examples/dividend-distribution.md` | CLI-driven; spawns a Turbo pipeline; gas-sponsored pro-rata payouts | batch payouts, snapshot-then-distribute, cap-table style |
+| `references/examples/compliance-oracle.md` | `onchain_event` → screen via external API → `writeContract` approve/reject callback | a payment or action held in escrow that an offchain check (AML/KYC, risk, allowlist) must approve or reject before it settles |
 
 The survey against this catalog is a required build step — see **Step 3** below.
 
 ## Golden rules (all modes, including the in-app deploy card)
 
 - **Never assume anything about the app on the user's behalf.** Derive what you can from what the user actually said; for anything material to how the app is built or behaves that you cannot derive — contract address/ABI (when the target contract *already exists*), chain, trigger cadence, wallet choice, secret values — **ask the user**. Do not invent it, guess it, or carry a value over from an example. When the user has no target contract, don't ask for an address — offer to author one (below).
-- **Never synthesize the manifest, CLI, or API shape from memory.** Load `/compose-reference` and follow it before emitting `compose.yaml` or a task file. This applies equally to the in-app `deployComposeApp` flow.
+- **Never synthesize the manifest, CLI, or API shape from memory.** Read `skills/compose/references/manifest.md` (and `cli.md` / `task-context.md` as needed) before emitting `compose.yaml` or a task file. This applies equally to the in-app `deployComposeApp` flow.
 - **When unsure about anything that affects how the app works, ask rather than proceed.**
-- **Offer to author a contract when none exists.** If the app must write onchain but the user has no contract, OFFER to write a minimal purpose-built Solidity contract and deploy it via `goldsky compose deployContract <file.sol>`. Interview them first for exactly what the contract must store/do, then show the source and the exact deploy command as the approval ask — this IS the show-command-and-confirm safety rule, so don't double-ask. On Base / Base Sepolia the deploy is gas-sponsored: free, no wallet and no tooling on the user's side. On any other chain the cloud deploy path isn't available today — say so honestly: the deploy needs their funded key via `forge create` (the ABI still lands in `src/contracts/` either way; the constructor args are unchanged).
+- **Offer to author a contract when none exists.** If the app must write onchain but the user has no contract, OFFER to write a minimal purpose-built Solidity contract and deploy it via `goldsky compose deployContract <file.sol>`. Interview them first for exactly what the contract must store/do, then show the source and the exact deploy command as the approval ask — this IS the show-command-and-confirm safety rule, so don't double-ask. The cloud `deployContract` path is gas-sponsored on the 10-chain Alchemy set (Ethereum, Sepolia, Polygon, Polygon Amoy, Arbitrum, Arbitrum Sepolia, Optimism, Optimism Sepolia, Base, Base Sepolia — chain IDs 1, 11155111, 137, 80002, 42161, 421614, 10, 11155420, 8453, 84532). On a chain outside that set it fails with `No Alchemy bundler URL for chain <id>` — say so honestly and use `forge create` with a funded key (the ABI still lands in `src/contracts/` either way; the constructor args are unchanged). Runtime task-gas sponsorship is a different, broader set — see `references/wallets-and-gas.md`. Do not tell the user that only Base / Base Sepolia can be sponsored.
 - **Version-check before `deployContract` / `writeContract`.** Run `goldsky compose --version` (prints `goldsky compose <version>`, e.g. `goldsky compose 0.8.1`) before any flow that deploys or writes a contract. If the version is below 0.8.1, or the command/flag is unrecognized, tell the user and OFFER to run `goldsky compose update` for them — never just instruct — then re-check before continuing.
 
 ## Boundaries
 
 - Build new Compose apps or explain what Compose is. For debugging a broken app, use `/compose-doctor`.
-- Do not serve as a manifest / CLI / API reference. For field syntax, flag lookups, or TaskContext shapes, use `/compose-reference`.
+- Do not serve as a manifest / CLI / API reference. For field syntax, flag lookups, or TaskContext shapes, read `skills/compose/references/`.
 - For `goldsky login`, use `/auth-setup`. For generic secret management, use `/secrets`.
 
 ## Mode Detection
@@ -62,7 +62,7 @@ Before running commands, check if the `Bash` tool is available:
 - Built-in secrets, collections (durable storage), contract deployment (`deployContract`), and typed contract bindings via codegen.
 - `compose start` for hot-reload local dev; `compose deploy` to ship; `compose logs -f` to tail. `compose runs`, `collections query`, `source`, `download`, and `history` to inspect what the deployed app actually did and what code it is actually running.
 
-**Deploying a contract** is a built-in capability: `goldsky compose deployContract <file.sol>` compiles in-CLI and CREATE2-deploys through the gas-sponsored Compose wallet, auto-saves the ABI to `src/contracts/`, and prints the address + deploy block. It needs compose CLI ≥ 0.8.1 (`goldsky compose update`). See `/compose-reference` (Contracts) for the flags.
+**Deploying a contract** is a built-in capability: `goldsky compose deployContract <file.sol>` compiles in-CLI and CREATE2-deploys through the gas-sponsored Compose wallet, auto-saves the ABI to `src/contracts/`, and prints the address + deploy block. It needs compose CLI ≥ 0.8.1 (`goldsky compose update`). See `references/cli.md` (Contracts) for the flags. The cloud deploy path covers the 10-chain Alchemy set listed in the Golden rules; runtime sponsorship is broader.
 
 ## Out of Scope (for this skill)
 
@@ -139,11 +139,11 @@ A task is a TypeScript file exporting `async function main(context, params?)`. E
 
 ### TaskContext
 
-Every task receives `{ env, logger, fetch, callTask, logEvent, evm, collection, sideEffect }`. Secrets flatten into `context.env`, there is no separate `secrets` namespace. `logger.info/warn/error` is the structured, run-correlated logger. `sideEffect(fn)` wraps a non-deterministic value (timestamp, UUID, random) so it stays stable across retries and durable replay. See `/compose-reference` for the full API.
+Every task receives `{ env, logger, fetch, callTask, logEvent, evm, collection, sideEffect }`. Secrets flatten into `context.env`, there is no separate `secrets` namespace. `logger.info/warn/error` is the structured, run-correlated logger. `sideEffect(fn)` wraps a non-deterministic value (timestamp, UUID, random) so it stays stable across retries and durable replay. See `references/task-context.md` for the full API.
 
 `logEvent` is deprecated in the current runtime and will be removed in a future major version. Prefer `console.log` for free-form output and `logger.info/warn/error` for structured, run-correlated events. Existing `logEvent` calls still work.
 
-> **Import rule (or the deploy fails to bundle / crashes at runtime):** never `import` the Compose capabilities or an EVM SDK for them — `evm`, `fetch`, `collection`, etc. come from the `context` argument (there is no `@goldsky/compose-evm` package). Beyond that it depends on the app: a **Deno-style app (no `package.json`)** may import only `compose` + sibling files; an **esbuild app (has a `package.json`)** may import the npm deps it declares for pure/local use (e.g. `viem`/`@ethersproject/wallet` for signing), but must route all network I/O through `context.fetch` — packages that do their own HTTP (`axios`, `node-fetch`) fail. **Before generating `compose.yaml` and task files to deploy (especially an in-app `deployComposeApp` deploy), load `/compose-reference`** and follow its manifest schema + sandbox import rule — don't synthesize the manifest shape or imports from memory.
+> **Import rule (or the deploy fails to bundle / crashes at runtime):** never `import` the Compose capabilities or an EVM SDK for them — `evm`, `fetch`, `collection`, etc. come from the `context` argument (there is no `@goldsky/compose-evm` package). Beyond that it depends on the app: a **Deno-style app (no `package.json`)** may import only `compose` + sibling files; an **esbuild app (has a `package.json`)** may import the npm deps it declares for pure/local use (e.g. `viem`/`@ethersproject/wallet` for signing), but must route all network I/O through `context.fetch` — packages that do their own HTTP (`axios`, `node-fetch`) fail. **Before generating `compose.yaml` and task files to deploy (especially an in-app `deployComposeApp` deploy), read `references/manifest.md`** and follow its manifest schema + sandbox import rule — don't synthesize the manifest shape or imports from memory.
 
 ### Wallets
 
@@ -158,7 +158,12 @@ List names in the manifest's `secrets:` array, set values with `goldsky compose 
 
 ### Gas sponsorship
 
-Bundler fallback: Alchemy → Pimlico → Gelato. Broad EVM coverage (mainnet + testnet); see `/compose-reference` for the chain list and caveats.
+Two different sets — do not conflate them:
+
+- **Runtime task gas** (smart-wallet `writeContract` / `sendTransaction` while the app runs): bundler fallback Alchemy → Pimlico → Gelato. A chain is sponsorable if *any* of the three covers it (~112 chains in the 0.8.1 source). **Don't hardcode the list**; confirm on the Goldsky docs chains page. See `references/wallets-and-gas.md`.
+- **Cloud `deployContract` / `writeContract` CLI path**: the 10-chain Alchemy set only (1, 11155111, 137, 80002, 42161, 421614, 10, 11155420, 8453, 84532). Outside that set: `No Alchemy bundler URL for chain <id>` → `forge create` / `cast send` with a funded key.
+
+Base / Base Sepolia are sponsored on *both* paths, which is why examples recommend them. They are not the only sponsored chains.
 
 ### Dashboard
 
@@ -265,7 +270,7 @@ The callback runs once. On replay the host returns the cached value and the call
 
 ### Typed contracts via codegen
 
-Drop an ABI into `src/contracts/Oracle.json`. After `goldsky compose codegen` (or any `init`/`dev`/`deploy`), the contract is available as `evm.contracts.Oracle`. Full workflow in `/compose-reference`.
+Drop an ABI into `src/contracts/Oracle.json`. After `goldsky compose codegen` (or any `init`/`start`/`deploy`), the contract is available as `evm.contracts.Oracle`. Full workflow in `references/manifest.md`.
 
 ## Walk Me Through It
 
@@ -296,7 +301,7 @@ Only ask the user for fields you couldn't derive.
 
 **Otherwise the survey is required before scaffolding.** Compare the derived trigger + behavior against the Template catalog above:
 
-- **A template matches in scope** → load it (`/compose-<name>`) and start from its source instead of a blank init.
+- **A template matches in scope** → read `references/examples/<name>.md` and start from its source instead of a blank init.
 - **None match** → say so in one line, then `goldsky compose init <app-name>` (pass the name; it is required in a non-TTY) and inspect the scaffold for the canonical file layout.
 
 Never build a custom app without doing this comparison first.
@@ -350,6 +355,7 @@ Share the dashboard URL: `https://app.goldsky.com/<project_id>/dashboard/compose
 ## Related
 
 - **`/compose-doctor`** — Diagnose and fix broken Compose apps.
-- **`/compose-reference`** — Manifest, CLI, TaskContext API, wallets, gas sponsorship, codegen.
+- **`skills/compose/references/`** — Manifest, CLI, TaskContext API, wallets, gas sponsorship, codegen.
+- **`skills/compose/references/examples/`** — Worked examples (bitcoin oracle, VRF, compliance, dividend).
 - **`/auth-setup`** — `goldsky login` walkthrough.
 - **`/secrets`** — Generic secret management.

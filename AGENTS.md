@@ -35,11 +35,6 @@ Each `SKILL.md` opens with a `description:` in its frontmatter stating what it c
 | Migrate a subgraph off The Graph | `subgraph-migrate` |
 | Build a Compose app (oracle / keeper / automation) in TypeScript | `compose` |
 | A Compose app is crashlooping / not processing tasks | `compose-doctor` |
-| `compose.yaml` fields, `goldsky compose` flags, `TaskContext` API | `compose-reference` |
-| Worked example: onchain BTC/USD price oracle | `compose-bitcoin-oracle` |
-| Worked example: onchain verifiable randomness (VRF) | `compose-vrf` |
-| Worked example: pro-rata dividend / corporate-action distribution | `compose-dividend-distribution` |
-| Worked example: compliance-gated payments (escrow + screening) | `compose-compliance-oracle` |
 | React to an onchain event and send a transaction back onchain (detect → decide → execute) | `onchain-automation` |
 | Get a fast, reliable managed RPC endpoint; RPC error codes | `edge` |
 | Cut the bill from an RPC provider you already pay for; cache hit rates, `x-cache` | `boost` |

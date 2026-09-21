@@ -1,7 +1,3 @@
----
-name: compose-compliance-oracle
-description: "Build and deploy the Goldsky Compose compliance-oracle example under the user's own account — a compliance-gated payment system where a smart contract holds funds in escrow, Compose screens the sender wallet via a compliance API (Webacy recommended, or bring-your-own / mock), then calls back to approve or reject. Supports two payment models: single-payee (payment gateway — funds go to a configurable recipient) and multi-payee (P2P — sender specifies recipient per transfer). Ships a second cron task that reconciles stuck transfers. Triggers on: 'build a compliance oracle', 'compliance-gated payments', 'AML screening onchain', 'KYC payment gateway', 'escrow with compliance check', 'wallet screening oracle', 'gated transfers', 'Webacy oracle', 'P2P compliance', 'payment gateway with screening'. The escrow contract's approve/reject are oracle-permissioned, so there is no shared no-deploy contract — each user deploys their own instance bound to their oracle wallet (recommended path: Base Sepolia + a MockUSDC). The oracle is a named Compose smart wallet (`compliance-oracle-wallet`, gas-sponsored) with no private key to manage on the default path. For a custom/novel Compose app, use /compose. For debugging a deployed app, use /compose-doctor. For manifest/CLI/API field lookups, use /compose-reference."
----
 
 # Build: Compose compliance-oracle
 
@@ -23,7 +19,7 @@ This template supplies only what's specific to the compliance app — how it wor
 **Before anything else — before you answer, ask a question, scaffold a file, or run any command — load the two base skills this template depends on:**
 
 1. **`Skill(compose)`** — the always-on Compose guide: the golden rules (never assume anything about the app on the user's behalf; ask when unsure) and general build guidance.
-2. **`Skill(compose-reference)`** — the manifest / field / API reference; consult before writing any `compose.yaml` or task file.
+2. **Read `skills/compose/references/manifest.md`** (then `cli.md`, `task-context.md`, `wallets-and-gas.md` as needed) — the manifest / field / API reference; consult before writing any `compose.yaml` or task file.
 
 This template deliberately omits those rules and that reference — they are **required** to build correctly and are not repeated here. Do not proceed until both are loaded.
 
@@ -1077,6 +1073,6 @@ Generate `$SENDER_KEY` without printing it (a separate funded EOA, not the oracl
 ## Related
 
 - **`/compose`** — Build a new/custom Compose app from scratch, or explain what Compose is.
-- **`/compose-reference`** — Manifest, CLI, TaskContext API, wallets, gas sponsorship, codegen.
+- **`skills/compose/references/`** — Manifest, CLI, TaskContext API, wallets, gas sponsorship, codegen.
 - **`/compose-doctor`** — Diagnose and fix a broken Compose app.
 - **`/auth-setup`** — `goldsky login` walkthrough.
