@@ -27,8 +27,8 @@ jobs:
             v=$(jq -r .version "$f")
             [ "$v" = "$pkg" ] || { echo "::error::$f is $v, package.json is $pkg"; exit 1; }
           done
-          mkt=$(jq -r '.plugins[0].version' .claude-plugin/marketplace.json)
-          [ "$mkt" = "$pkg" ] || { echo "::error::marketplace.json plugins[0] is $mkt, package.json is $pkg"; exit 1; }
+          jq -e --arg pkg "$pkg" 'all(.plugins[]; .version == $pkg)' .claude-plugin/marketplace.json >/dev/null \
+            || { echo "::error::marketplace.json has a plugin whose version is not $pkg"; exit 1; }
           echo "All manifests agree at $pkg"
 
       - name: Cursor manifest has no unknown keys
@@ -135,6 +135,21 @@ jobs:
           done
           exit $fail
 
+  plugin-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: claude plugin validate --strict
+        run: |
+          # `plugin validate .` only checks the marketplace manifest and never
+          # touches .claude-plugin/plugin.json. Name every target explicitly.
+          npx -y @anthropic-ai/claude-code plugin validate .claude-plugin/plugin.json --strict
+          npx -y @anthropic-ai/claude-code plugin validate .claude-plugin/marketplace.json --strict
+          npx -y @anthropic-ai/claude-code plugin validate skills/ --strict
+
   catalog-drift:
     runs-on: ubuntu-latest
     steps:
@@ -173,9 +188,8 @@ jobs:
           # to the Claude directory, whose policy bars plugins that handle
           # cryptocurrency or execute financial transactions. It carries an
           # explicit skills list, so a NEW skill is silently excluded unless
-          # someone remembers to add it — which is exactly how `boost` (read-only
-          # RPC caching, clearly in scope) ended up grouped with the Compose
-          # transaction skills. Force the decision instead of defaulting to "out".
+          # someone remembers to add it. Force the decision instead of
+          # defaulting to "out".
           python3 - <<'PY'
           import json, pathlib, sys
 
