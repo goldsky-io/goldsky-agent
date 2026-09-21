@@ -17,6 +17,7 @@
     "pipelines",
     "subgraphs",
     "rpc",
+    "boost",
     "proof-of-reserves",
     "stablecoins",
     "compliance",

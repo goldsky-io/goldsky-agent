@@ -28,6 +28,7 @@
         "pipelines",
         "subgraphs",
         "rpc",
+        "boost",
         "analytics",
         "compliance-monitoring",
         "prediction-markets",
