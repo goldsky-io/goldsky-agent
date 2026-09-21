@@ -1,6 +1,6 @@
 ---
 name: edge
-description: "Use this skill when the user asks about Goldsky Edge — the managed RPC endpoint service for EVM chains. Triggers on: 'Edge RPC', 'Goldsky RPC endpoint', 'edge.goldsky.com', 'eth_getLogs is slow', 'RPC rate limit', 'hedged requests', 'flashblocks', 'HyperEVM system transactions', 'x402 pay-per-request RPC', 'Goldsky Edge pricing', 'Edge dashboard', 'gs_edge_ API key', 'rpc-edge'. Also use this skill when the user wants a resilient, low-latency JSON-RPC endpoint for EVM chains (Ethereum, Base, Arbitrum, Optimism, Polygon zkEVM, BSC, Avalanche, Berachain, HyperEVM, Monad, Sei, Sonic, Unichain, zkSync, etc.), is debugging RPC errors like -32005/-32012/-32014/-32015/-32016, or is comparing providers (Alchemy, Infura, QuickNode, Ankr) against Edge. For questions about self-hosting eRPC or custom eRPC configuration beyond what Edge exposes, point them at https://docs.erpc.cloud/llms.txt. Do NOT trigger on Goldsky Mirror, Turbo, or Subgraph pipeline questions — those belong to their respective skills."
+description: "Use this skill when the user asks about Goldsky Edge — the managed RPC endpoint service for EVM chains. Triggers on: 'Edge RPC', 'Goldsky RPC endpoint', 'edge.goldsky.com', 'eth_getLogs is slow', 'RPC rate limit', 'hedged requests', 'flashblocks', 'HyperEVM system transactions', 'x402 pay-per-request RPC', 'Goldsky Edge pricing', 'Edge dashboard', 'gs_edge_ API key', 'rpc-edge'. Also use this skill when the user wants a resilient, low-latency JSON-RPC endpoint for EVM chains (Ethereum, Base, Arbitrum, Optimism, Polygon zkEVM, BSC, Avalanche, Berachain, HyperEVM, Monad, Sei, Sonic, Unichain, zkSync, etc.), is debugging RPC errors like -32005/-32012/-32014/-32015/-32016, or is comparing providers (Alchemy, Infura, QuickNode, Ankr) against Edge. For questions about self-hosting eRPC or custom eRPC configuration beyond what Edge exposes, point them at https://docs.erpc.cloud/llms.txt. Edge and Boost are different products on the same host: Edge is Goldsky's own managed RPC that replaces a provider, while Boost (/boost) is a free CDN that sits in front of the provider the user ALREADY pays for. If the user wants to keep their existing provider and just spend less with them, or mentions x-cache / x-edge-billable / `goldsky boost`, use /boost instead. Do NOT trigger on Goldsky Mirror, Turbo, or Subgraph pipeline questions — those belong to their respective skills."
 ---
 
 # Goldsky Edge (RPC Endpoints)
@@ -236,6 +236,15 @@ Before using trace methods (`debug_trace*`, `trace_*`), check the per-method pag
 Edge is built on **eRPC**, an open-source fault-tolerant EVM RPC proxy. For capabilities beyond what Goldsky Edge exposes (self-hosting, custom cache drivers, custom selection policies, multi-provider failover, etc.), users may want to run eRPC directly.
 
 For full eRPC reference (features, config, APIs), fetch the LLM-optimized docs bundle: **https://docs.erpc.cloud/llms.txt**
+
+## Edge or Boost?
+
+They share the `edge.goldsky.com` host and get confused constantly:
+
+- **Edge** (this skill) is Goldsky's own managed RPC. The user buys it *instead of* a provider. Many chains, configurable rate-limit budgets, hedging, failover, x402.
+- **Boost** (`/boost`) is a free CDN in front of the provider the user **already has**. Cacheable reads come from Goldsky's indexed data; everything else forwards to their endpoint unchanged. Only genesis-covered chains, HTTP only, Goldsky-managed rate limits.
+
+"I want to spend less with Alchemy" is Boost. "I want to stop using Alchemy" is Edge. A user can also point Boost's upstream at an Edge endpoint.
 
 ## Goldsky Documentation Links
 
