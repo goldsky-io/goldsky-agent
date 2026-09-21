@@ -56,19 +56,19 @@ sources:
     type: dataset
     dataset_name: <chain>.<dataset>
     version: 1.0.0
-    start_at: latest  # REQUIRED — see below. `latest` or `earliest` (or `start_block` on Solana/Near)
+    start_at: latest  # REQUIRED — see below. `latest` or `earliest` (Solana uses `start_block` instead)
 ```
 
-**A start position is required, not optional.** Never emit a dataset source without an explicit `start_at` (or `start_block` on Solana/Near). Omitting the field does not mean "start now" — the backend starts from the earliest available data, so the pipeline silently backfills the entire chain history. That is how a pipeline ends up running for days, writing millions of rows, and filling its sink before it ever reaches live data.
+**A start position is required, not optional.** Never emit a dataset source without an explicit `start_at` — that is the field on EVM, NEAR, Bitcoin, and Stellar. Omitting it does not mean "start now": the backend starts from the earliest available data, so the pipeline silently backfills the entire chain history. That is how a pipeline ends up running for days, writing millions of rows, and filling its sink before it ever reaches live data. Solana is the exception — it uses the numeric `start_block`, and omitting that starts at the latest slot, so state which you did rather than leaving the user to guess.
 
 If the user has not stated a start position, ask before writing YAML — offer exactly three options:
 
 1. **From now** (`start_at: latest`) — no backfill, live data only.
-2. **From a specific point in history** — `start_at: earliest` plus a `block_number` predicate in the source `filter` (pre-applied at the source, so the excluded range never reaches the sink). On Solana/Near use the numeric `start_block` instead. A block number is **not** a valid `start_at` value: `start_at` takes `earliest`, `latest`, or a 13-digit millisecond timestamp — nothing else validates.
+2. **From a specific point in history** — `start_at: earliest` plus a `block_number` predicate in the source `filter` (pre-applied at the source, so the excluded range never reaches the sink). On Solana use the numeric `start_block` instead, and on Stellar a ledger sequence number is also accepted (`start_at: 60000000`). A block number is **not** a valid `start_at` value on the other chains: `start_at` takes `earliest`, `latest`, or a 13-digit millisecond timestamp — nothing else validates there.
 3. **Full history** (`start_at: earliest`) — state plainly that this replays the entire chain history: days of backfill and millions of rows before live data arrives, and the sink must have room for all of it.
 
 Also ask about:
-- **End block:** Only for job-mode/backfill pipelines. Omit for streaming.
+- **End block:** Solana job-mode backfills only — `end_block` is silently ignored on EVM dataset sources, so bound an EVM range with a `block_number` predicate in `filter`. Omit for streaming.
 - **Source-level filter:** Optional filter to reduce data at the source (e.g., specific contract address)
 
 ### Step 5: Configure Transforms (if needed)
@@ -133,7 +133,7 @@ This prints the created secret's **name**, **ID**, and **type** (the connection 
 Use the `/turbo-pipelines` skill for guidance:
 
 - **Streaming** (default) — continuous processing, no `end_block`, runs indefinitely
-- **Job mode** — one-time backfill, set `job: true` and `end_block`
+- **Job mode** — one-time backfill, set `job: true` plus a bound: a `block_number` upper bound in the source `filter` on EVM (which also makes the source bounded), `end_block` on Solana
 
 ### Step 8: Generate, Validate, and Present
 

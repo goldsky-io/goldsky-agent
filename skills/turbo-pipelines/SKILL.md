@@ -82,7 +82,7 @@ For detailed pattern diagrams, YAML examples, and multi-chain deployment guidanc
 
 Start small and scale up — defensive sizing avoids wasted resources.
 
-**`resource_size` sizes the pipeline, not the sink — they are independent.** An `l`/`xl` pipeline pointed at an undersized destination produces the "deployed but writing nothing" shape: it validates, deploys, reports `Running`, and then fails every write. A Neon free tier (512 MB) will not hold a multi-month backfill of a high-volume chain — it errors `could not extend file because project size limit (512 MB) has been exceeded` and checkpoints time out. Check the destination's storage ceiling against the backfill scope (`start_at` plus any `end_block`) before deploying, not after.
+**`resource_size` sizes the pipeline, not the sink — they are independent.** An `l`/`xl` pipeline pointed at an undersized destination produces the "deployed but writing nothing" shape: it validates, deploys, reports `Running`, and then fails every write. A Neon free tier (512 MB) will not hold a multi-month backfill of a high-volume chain — it errors `could not extend file because project size limit (512 MB) has been exceeded` and checkpoints time out. Check the destination's storage ceiling against the backfill scope (the start position plus any end bound) before deploying, not after.
 
 ### Sink Selection
 
@@ -162,9 +162,9 @@ sources:
     type: dataset
     dataset_name: <chain>.<dataset_type>
     version: <version>
-    start_at: latest | earliest    # EVM chains
-    # start_block: <slot_number>   # Solana only
-    # end_block: <block_number>    # Optional: for bounded backfills
+    start_at: latest | earliest    # EVM, NEAR, Bitcoin, Stellar
+    # start_block: <slot_number>   # Solana only — omit to start at the latest slot
+    # end_block: <block_number>    # Solana only: bounded backfill (ignored on EVM)
     # filter: >-                   # Optional: SQL WHERE for source-level pre-filtering
     #   address = '0x...' AND block_number >= 10000000
 ```
@@ -174,14 +174,14 @@ sources:
 | `type`         | Yes      | `dataset` for blockchain data                            |
 | `dataset_name` | Yes      | Format: `<chain>.<dataset_type>`                         |
 | `version`      | Yes      | Dataset version (e.g., `1.2.0`)                          |
-| `start_at`     | EVM      | `latest`, `earliest`, or a 13-digit ms timestamp. `earliest` = full chain history |
-| `start_block`  | Solana   | Specific slot number (Solana/Near; not a substitute for `start_at` elsewhere) |
-| `end_block`    | No       | Stop at this block (for bounded backfills)               |
+| `start_at`     | EVM-family | `latest`, `earliest`, or a 13-digit ms timestamp; on Stellar also a ledger sequence number. Used by EVM, NEAR, Bitcoin, Stellar. Omitted = `earliest` = full chain history |
+| `start_block`  | No       | Solana only: starting slot. Omitted = latest slot, i.e. no backfill      |
+| `end_block`    | No       | Solana only: stop at this slot. Silently ignored on EVM                  |
 | `filter`       | No       | SQL WHERE clause — pre-filters at ingestion (efficient)  |
 
 Use `filter` for contract addresses and block ranges (coarse pre-filtering). Use transform `WHERE` for fine-grained filtering.
 
-Set `start_at` explicitly on every dataset source. Omitting it does not mean "start now": the backend starts from the earliest available data, so the pipeline backfills the full chain history — days of replay and millions of rows before it reaches live data, and the sink has to hold all of it. A block number is not a valid `start_at` value; bound a historical range with `end_block` (plus `job: true` for a one-shot backfill) or a `block_number` predicate in `filter`, which is pre-applied at the source.
+Set the start position explicitly on every dataset source, and say which one you chose. On the `start_at` chains (EVM, NEAR, Bitcoin, Stellar) omitting it does not mean "start now": the backend starts from the earliest available data, so the pipeline backfills the full chain history — days of replay and millions of rows before it reaches live data, and the sink has to hold all of it. A block number is not a valid `start_at` value; bound an EVM range with a `block_number` predicate in `filter` (pre-applied at the source), plus `job: true` for a one-shot backfill — `end_block` is silently ignored on EVM. Solana is the opposite default: it uses the numeric `start_block`, and omitting that starts at the latest slot, so a Solana backfill is always something you asked for — bound it with `end_block` or `block_ranges`.
 
 For chain prefixes and dataset types, see `/datasets`.
 
