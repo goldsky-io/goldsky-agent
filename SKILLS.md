@@ -22,16 +22,8 @@ _Legacy streaming product — prefer Turbo for new pipelines unless you need a s
 - **subgraph-migrate** - Guided migration of a subgraph from The Graph
 
 ### Compose
-- **compose** - Build offchain-to-onchain TypeScript tasks (oracles, keepers, automation)
+- **compose** - Build offchain-to-onchain TypeScript tasks (oracles, keepers, automation). Manifest/CLI/API live in `skills/compose/references/`; worked examples in `skills/compose/references/examples/`
 - **compose-doctor** - Diagnose and fix broken Compose apps interactively
-- **compose-reference** - `compose.yaml` fields, every `goldsky compose` flag, `TaskContext` / wallet / Collection APIs
-
-#### Compose examples
-End-to-end worked examples — each carries the full app source and walks build → deploy → smoke test, off the shelf or customized. For a custom app that isn't one of these, use **compose**.
-- **compose-bitcoin-oracle** - Cron task writing BTC/USD from CoinGecko to an onchain `PriceOracle` contract
-- **compose-vrf** - Fetches verifiable randomness from drand and fulfills onchain `RandomnessRequested` events
-- **compose-dividend-distribution** - Pays token holders pro-rata for a corporate action; Compose orchestrates a Turbo job-mode pipeline to snapshot holders, then pays each onchain
-- **compose-compliance-oracle** - Compliance-gated payments: escrow contract + compliance screening (Webacy/mock/BYO) + oracle approve/reject callback; single-payee or P2P; any EVM chain; plus a reconcile cron
 
 ### RPC (Edge and Boost)
 - **edge** - Managed RPC endpoints, capabilities, supported chains, error code lookups
@@ -64,7 +56,7 @@ npx skills add goldsky-io/goldsky-agent
 → Uses: turbo-doctor, turbo-operations
 
 **"My Compose app is crashlooping"**
-→ Uses: compose-doctor, compose-reference
+→ Uses: compose-doctor
 
 **"Sync my subgraph entities into PostgreSQL"**
 → Uses: mirror, secrets
@@ -79,13 +71,13 @@ npx skills add goldsky-io/goldsky-agent
 → Uses: subgraph-migrate, subgraph-builder
 
 **"Build a compliance-gated payment system" / "wallet screening oracle" / "AML-gated transfers"**
-→ Uses: compose-compliance-oracle, compose-reference
+→ Uses: compose (then `references/examples/compliance-oracle.md`)
 
 **"Build a price oracle that writes onchain"**
-→ Uses: compose-bitcoin-oracle, compose-reference
+→ Uses: compose (then `references/examples/bitcoin-oracle.md`)
 
 **"Build a custom Compose app that isn't the example"**
-→ Uses: compose, compose-reference
+→ Uses: compose
 
 **"I need a fast, reliable RPC endpoint with hedged requests"**
 → Uses: edge

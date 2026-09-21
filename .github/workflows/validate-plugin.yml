@@ -196,9 +196,7 @@ jobs:
           # Skills deliberately kept OUT of the Claude directory submission:
           # they manage wallets, sponsor gas, or send onchain transactions.
           EXCLUDED = {
-              "compose", "compose-doctor", "compose-reference",
-              "compose-bitcoin-oracle", "compose-vrf",
-              "compose-compliance-oracle", "compose-dividend-distribution",
+              "compose", "compose-doctor",
               "onchain-automation",
           }
 

@@ -1,0 +1,20 @@
+[
+  {"query": "build a compose app that writes a price onchain every minute", "should_trigger": true},
+  {"query": "what is goldsky compose and when would I use it instead of turbo", "should_trigger": true},
+  {"query": "scaffold a keeper that calls harvest() on a cron with a gas sponsored wallet", "should_trigger": true},
+  {"query": "I need an HTTP-triggered compose task that screens a wallet then writeContract approve", "should_trigger": true},
+  {"query": "set up an onchain_event trigger on Transfer and write a callback", "should_trigger": true},
+  {"query": "how do I deploy a compose app and what's in compose.yaml", "should_trigger": true},
+  {"query": "build the bitcoin price oracle example that writes BTC/USD onchain", "should_trigger": true},
+  {"query": "stand up the VRF / drand randomness example on Base Sepolia", "should_trigger": true},
+  {"query": "build a compliance-gated payment system with escrow and wallet screening", "should_trigger": true},
+  {"query": "distribute a dividend pro-rata to token holders with compose", "should_trigger": true},
+  {"query": "my compose app is crashlooping and tasks aren't firing", "should_trigger": false},
+  {"query": "goldsky compose logs show No bundler provider available, help me debug", "should_trigger": false},
+  {"query": "index USDC transfers on base into postgres", "should_trigger": false},
+  {"query": "my turbo pipeline is stuck in error state", "should_trigger": false},
+  {"query": "what's the dataset name for polygon erc20 transfers", "should_trigger": false},
+  {"query": "cut my alchemy bill with a CDN in front of the provider I already pay for", "should_trigger": false},
+  {"query": "I need a fast hedged RPC endpoint, not an oracle", "should_trigger": false},
+  {"query": "how do I goldsky login and create an API key", "should_trigger": false}
+]
