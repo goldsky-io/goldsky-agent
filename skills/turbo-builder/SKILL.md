@@ -56,7 +56,7 @@ sources:
     type: dataset
     dataset_name: <chain>.<dataset>
     version: 1.0.0
-    start_at: latest  # REQUIRED — see below. Or `earliest`, or a specific block/date
+    start_at: latest  # REQUIRED — see below. `latest` or `earliest` (or `start_block` on Solana/Near)
 ```
 
 **A start position is required, not optional.** Never emit a dataset source without an explicit `start_at` (or `start_block` on Solana/Near). Omitting the field does not mean "start now" — the backend starts from the earliest available data, so the pipeline silently backfills the entire chain history. That is how a pipeline ends up running for days, writing millions of rows, and filling its sink before it ever reaches live data.
@@ -64,7 +64,7 @@ sources:
 If the user has not stated a start position, ask before writing YAML — offer exactly three options:
 
 1. **From now** (`start_at: latest`) — no backfill, live data only.
-2. **From a specific date or block** — the usual choice when they want recent history.
+2. **From a specific point in history** — `start_at: earliest` plus a `block_number` predicate in the source `filter` (pre-applied at the source, so the excluded range never reaches the sink). On Solana/Near use the numeric `start_block` instead. A block number is **not** a valid `start_at` value: `start_at` takes `earliest`, `latest`, or a 13-digit millisecond timestamp — nothing else validates.
 3. **Full history** (`start_at: earliest`) — state plainly that this replays the entire chain history: days of backfill and millions of rows before live data arrives, and the sink must have room for all of it.
 
 Also ask about:
@@ -203,7 +203,7 @@ Present a summary:
 - For job-mode pipelines, remind the user they auto-cleanup ~1hr after completion.
 - Use `blackhole` sink for testing pipelines without writing to a real destination.
 - If the user wants to modify an existing pipeline, check if it's streaming (update in place) or job-mode (must delete first).
-- Never emit a dataset source without an explicit start position. Never default to `start_at: earliest` — ask (from now / from a specific date or block / full history), and when the answer is full history, warn that it replays the entire chain history before live data and check the sink has room for it.
+- Never emit a dataset source without an explicit start position. Never default to `start_at: earliest` — ask (from now / from a specific point in history / full history), and when the answer is full history, warn that it replays the entire chain history before live data and check the sink has room for it.
 - Never recommend a free-tier database (512 MB) as the sink for a multi-month or full-history backfill.
 - Always include `version: 1.0.0` on dataset sources.
 

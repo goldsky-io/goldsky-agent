@@ -174,14 +174,14 @@ sources:
 | `type`         | Yes      | `dataset` for blockchain data                            |
 | `dataset_name` | Yes      | Format: `<chain>.<dataset_type>`                         |
 | `version`      | Yes      | Dataset version (e.g., `1.2.0`)                          |
-| `start_at`     | EVM      | `latest`, `earliest`, or a specific block. `earliest` = full chain history |
-| `start_block`  | Solana   | Specific slot number                                     |
+| `start_at`     | EVM      | `latest`, `earliest`, or a 13-digit ms timestamp. `earliest` = full chain history |
+| `start_block`  | Solana   | Specific slot number (Solana/Near; not a substitute for `start_at` elsewhere) |
 | `end_block`    | No       | Stop at this block (for bounded backfills)               |
 | `filter`       | No       | SQL WHERE clause — pre-filters at ingestion (efficient)  |
 
 Use `filter` for contract addresses and block ranges (coarse pre-filtering). Use transform `WHERE` for fine-grained filtering.
 
-Set `start_at` explicitly on every dataset source. Omitting it does not mean "start now": the backend starts from the earliest available data, so the pipeline backfills the full chain history — days of replay and millions of rows before it reaches live data, and the sink has to hold all of it. Bound a historical range with `end_block` (plus `job: true` for a one-shot backfill) or a `block_number` predicate in `filter`.
+Set `start_at` explicitly on every dataset source. Omitting it does not mean "start now": the backend starts from the earliest available data, so the pipeline backfills the full chain history — days of replay and millions of rows before it reaches live data, and the sink has to hold all of it. A block number is not a valid `start_at` value; bound a historical range with `end_block` (plus `job: true` for a one-shot backfill) or a `block_number` predicate in `filter`, which is pre-applied at the source.
 
 For chain prefixes and dataset types, see `/datasets`.
 
