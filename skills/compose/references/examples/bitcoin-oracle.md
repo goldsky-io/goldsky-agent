@@ -1,7 +1,3 @@
----
-name: compose-bitcoin-oracle
-description: "Build and deploy the Goldsky Compose bitcoin-oracle example under the user's own account — a cron task that fetches BTC/USD from CoinGecko and writes `(timestamp, price)` as `bytes32` values to an on-chain `PriceOracle` contract via a Compose-managed wallet, appending each price to a durable collection. Triggers on: 'build a bitcoin price oracle', 'BTC/USD oracle onchain', 'push a price feed onchain', 'cron price oracle', 'set up / deploy the bitcoin-oracle example', 'compose price oracle'. Recommends the shared fully-unpermissioned oracle on Base Sepolia so there's nothing to deploy. Scaffolds the example from goldsky-io/documentation-examples, walks CLI install, contract choice (reuse shared / deploy own), wiring, optional GitHub publish, and a log-tailing smoke test. For a custom/novel Compose app that isn't this oracle, use /compose. For debugging an already-deployed app, use /compose-doctor. For manifest/CLI/API field lookups, use /compose-reference."
----
 
 # Build: Compose bitcoin-oracle
 
@@ -14,7 +10,7 @@ This template supplies only what's specific to the bitcoin-oracle app — how it
 **Before anything else — before you answer, ask a question, scaffold a file, or call `deployComposeApp` — load the two base skills this template depends on:**
 
 1. **`Skill(compose)`** — the always-on Compose guide: the golden rules (never assume anything about the app on the user's behalf; ask when unsure) and general build guidance.
-2. **`Skill(compose-reference)`** — the manifest / field / API reference; consult before writing any `compose.yaml` or task file.
+2. **Read `skills/compose/references/manifest.md`** (then `cli.md`, `task-context.md`, `wallets-and-gas.md` as needed) — the manifest / field / API reference; consult before writing any `compose.yaml` or task file.
 
 This template deliberately omits those rules and that reference — they are **required** to build correctly and are not repeated here. Do not proceed until both are loaded.
 
@@ -27,7 +23,7 @@ Pick the mode from the tools available to you:
   2. **Contract** — ask this explicitly, do not assume: *"Do you have your own `PriceOracle` contract, or should we use a shared demo oracle on Base Sepolia to get running quickly?"* Options: **"Use the shared demo oracle on Base Sepolia (recommended — nothing to deploy)"** and **"I'll use my own contract."** On the shared path, `ORACLE_CONTRACT` is the **HARDCODED** address `0x53deB3fF6E6e82A3b5E96f14E185e3Fe66BF5113` on `baseSepolia` — copy it character-for-character; mention in prose it's demos-only, not production. On the own path, ask the user to paste their contract address and chain and use exactly what they paste (their `PriceOracle` must let the Compose wallet write).
   3. **Update frequency** (recommend every minute, `* * * * *`).
 
-  The Compose smart wallet is auto-created at runtime and gas-sponsored — never tell the user to create or fund a wallet. After the questions, scaffold the files in-memory (do NOT degit): `compose.yaml` (a single cron task on the chosen schedule), `src/contracts/PriceOracle.json` (the verbatim ABI in Step 3), and `src/tasks/bitcoin-oracle.ts` (fetch BTC/USD from CoinGecko, then `evm.contracts.PriceOracle.write(toBytes32(timestamp), toBytes32(Math.round(price*100)))` via the gas-sponsored smart wallet, appending each price to a `bitcoin_prices` collection). `ORACLE_CONTRACT` is a **hardcoded `const` at the top of the task file, not an env var** (for this example we keep it inline; `/compose` permits manifest `env:` instead — either is fine, just don't put a plain address in `secrets:`). Follow `/compose-reference` for the manifest shape and the sandbox import rule before emitting the files (per the golden rules in `/compose` — don't synthesize the manifest from memory). Then **call `deployComposeApp` in the SAME turn**; don't ask the user to confirm first or emit any `goldsky` command. **In this mode, ignore Steps 0–8 below** — they are the CLI/local procedure.
+  The Compose smart wallet is auto-created at runtime and gas-sponsored — never tell the user to create or fund a wallet. After the questions, scaffold the files in-memory (do NOT degit): `compose.yaml` (a single cron task on the chosen schedule), `src/contracts/PriceOracle.json` (the verbatim ABI in Step 3), and `src/tasks/bitcoin-oracle.ts` (fetch BTC/USD from CoinGecko, then `evm.contracts.PriceOracle.write(toBytes32(timestamp), toBytes32(Math.round(price*100)))` via the gas-sponsored smart wallet, appending each price to a `bitcoin_prices` collection). `ORACLE_CONTRACT` is a **hardcoded `const` at the top of the task file, not an env var** (for this example we keep it inline; `/compose` permits manifest `env:` instead — either is fine, just don't put a plain address in `secrets:`). Follow `skills/compose/references/` for the manifest shape and the sandbox import rule before emitting the files (per the golden rules in `/compose` — don't synthesize the manifest from memory). Then **call `deployComposeApp` in the SAME turn**; don't ask the user to confirm first or emit any `goldsky` command. **In this mode, ignore Steps 0–8 below** — they are the CLI/local procedure.
 - **`Bash` is available (local CLI / coding agent):** execute the steps below directly, parsing output into later commands.
 - **Neither (pure reference Q&A):** explain what the app does; for step-by-step help point them at `npx skills add goldsky-io/goldsky-agent` to run it locally with Bash.
 
@@ -253,6 +249,6 @@ Verify on-chain (Base Sepolia explorer: `https://sepolia.basescan.org/address/$C
 ## Related
 
 - **`/compose`** — Build a new/custom Compose app from scratch, or explain what Compose is.
-- **`/compose-reference`** — Manifest, CLI, TaskContext API, wallets, gas sponsorship, codegen.
+- **`skills/compose/references/`** — Manifest, CLI, TaskContext API, wallets, gas sponsorship, codegen.
 - **`/compose-doctor`** — Diagnose and fix a broken Compose app.
 - **`/auth-setup`** — `goldsky login` walkthrough.

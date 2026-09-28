@@ -5,7 +5,8 @@
 # pipeline YAML for `secret_name` references, and verifies each one exists via
 # `goldsky secret list`. Blocks the deploy if any secrets are missing.
 #
-# Input: JSON on stdin with { "tool_name": "Bash", "tool_input": { "command": "..." } }
+# Input: JSON on stdin. Claude Code sends { "tool_input": { "command": "..." } };
+#        Cursor sends { "command": "..." }. Both are handled by extract_command.
 # Exit 0: Allow the command to proceed
 # Exit 2: Block the command (stderr is shown as the reason)
 
@@ -15,7 +16,14 @@ set -euo pipefail
 INPUT=$(cat)
 
 # Extract the command from tool input
-COMMAND=$(echo "$INPUT" | sed -n 's/.*"command"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+# shellcheck source=hooks/scripts/lib/extract-command.sh
+source "$(dirname "${BASH_SOURCE[0]}")/lib/extract-command.sh"
+COMMAND=$(extract_command "$INPUT")
+
+# No command in the payload (or no jq available) — nothing to inspect.
+if [[ -z "$COMMAND" ]]; then
+  exit 0
+fi
 
 # Only intercept `goldsky turbo apply` commands
 if ! echo "$COMMAND" | grep -qE 'goldsky[[:space:]]+turbo[[:space:]]+apply'; then
@@ -57,11 +65,44 @@ if [[ -z "$SECRET_NAMES" ]]; then
   exit 0
 fi
 
-# Get the list of existing secrets
-EXISTING_SECRETS=$(goldsky secret list 2>/dev/null \
-  | sed -n 's/^│[[:space:]]*\([A-Za-z0-9_-][A-Za-z0-9_-]*\)[[:space:]]*│.*/\1/p' \
-  | grep -v '^Name$' \
+# Get the list of existing secrets.
+#
+# The CLI has no JSON output for this (checked against 13.x), so we parse the
+# table. Two rules matter here:
+#   1. Be tolerant of formatting — disable colour, strip any ANSI that leaks
+#      through, and accept any vertical-bar separator rather than hard-coding
+#      the U+2502 box-drawing character, which changes between CLI versions.
+#   2. FAIL OPEN. If the command errors (not logged in, network down) or the
+#      output doesn't parse, we must not block the deploy — an unparseable
+#      list previously looked identical to "you have zero secrets", which
+#      blocked every apply with a bogus "missing secret" message.
+SECRET_LIST_RAW=$(goldsky secret list --no-color 2>/dev/null) || SECRET_LIST_RAW=""
+
+if [[ -z "$SECRET_LIST_RAW" ]]; then
+  # Could not reach the CLI or got nothing back — allow and let the CLI decide.
+  exit 0
+fi
+
+#
+# Parse byte-safely: strip ANSI, drop every leading character that cannot start
+# a secret name, then truncate at the first character that cannot appear in one.
+# That handles any separator — U+2502, ASCII '|', or plain whitespace columns —
+# without matching multibyte characters, which a sed bracket expression cannot
+# do reliably. Border rows reduce to empty and are filtered out.
+EXISTING_SECRETS=$(printf '%s\n' "$SECRET_LIST_RAW" \
+  | sed -E $'s/\033\\[[0-9;]*[a-zA-Z]//g' \
+  | sed -E 's/^[^A-Za-z0-9]*//' \
+  | sed -E 's/[^A-Za-z0-9._-].*$//' \
+  | grep -E '^[A-Za-z0-9._-]+$' \
+  | grep -vxiE 'name|type|secret' \
   || true)
+
+if [[ -z "$EXISTING_SECRETS" ]]; then
+  # Table present but nothing parsed out of it: the format changed. Warn on
+  # stderr so it gets noticed and fixed, but do not block the deploy.
+  echo "Hook: secret-check — could not parse 'goldsky secret list' output; skipping the check." >&2
+  exit 0
+fi
 
 # Check each referenced secret
 MISSING_SECRETS=()

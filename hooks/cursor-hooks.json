@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeShellExecution": [
+      {
+        "command": "${CURSOR_PLUGIN_ROOT}/hooks/scripts/pre-deploy-validate.sh",
+        "matcher": "goldsky\\s+turbo\\s+apply"
+      },
+      {
+        "command": "${CURSOR_PLUGIN_ROOT}/hooks/scripts/secret-check.sh",
+        "matcher": "goldsky\\s+turbo\\s+apply"
+      }
+    ],
+    "afterShellExecution": [
+      {
+        "command": "${CURSOR_PLUGIN_ROOT}/hooks/scripts/post-deploy-inspect.sh",
+        "matcher": "goldsky\\s+turbo\\s+apply"
+      }
+    ]
+  }
+}

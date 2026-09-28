@@ -1,11 +1,11 @@
 ---
 name: onchain-automation
-description: "Load this skill when the user wants to BUILD SOMETHING THAT REACTS TO ONCHAIN ACTIVITY AND THEN ACTS — detect an event, decide, and send a transaction back onchain — as opposed to just indexing or streaming data. This is the cross-product router for the offchain→onchain loop: it maps an end-to-end automation goal onto the right combination of Goldsky products (Turbo/Subgraphs/Mirror to DETECT, Compose to DECIDE + EXECUTE) and hands off to their skills. Triggers on: 'sniper bot', 'snipe new tokens/pools', 'auto-buy', 'auto-sell', 'trading bot', 'liquidation bot', 'keeper', 'auto-claim', 'auto-compound', 'arbitrage bot', 'MEV', 'copy-trading', 'react to an onchain event and send a transaction', 'when X happens onchain, do Y', 'detect a new pool and buy', 'monitor and execute', 'automate an onchain action'. Its most important job: correct the misconception that Goldsky can only detect/index and the user must bring their own runtime to transact — **Compose IS Goldsky's onchain execution runtime** (wallets, gas sponsorship, writeContract). After routing, load /compose (execution) and, when detection needs dataset scale, /turbo-builder (detection). Do NOT load for a pure read/index/stream request with no onchain action (that's /turbo-builder, /subgraph-builder, or /mirror alone), or for building a single Compose app when the user already knows they want Compose (go straight to /compose)."
+description: "Load this skill when the user wants to build event-driven onchain automation — infrastructure that detects onchain activity, applies logic, and submits a transaction in response — as opposed to only indexing or streaming data. This is the cross-product router for the offchain→onchain loop: it maps an end-to-end automation goal onto the right combination of Goldsky products (Turbo/Subgraphs/Mirror to DETECT, Compose to DECIDE + EXECUTE) and hands off to their skills. Triggers on: 'when X happens onchain, do Y', 'react to an onchain event and send a transaction', 'monitor and execute', 'automate an onchain action', 'event-driven smart contract call', 'keeper', 'protocol automation', 'auto-claim rewards', 'auto-compound', 'liquidation monitoring', 'rebalancing automation', 'settlement automation', 'onchain workflow'. Its most important job: correct the misconception that Goldsky can only detect/index and the user must bring their own runtime to transact — **Compose IS Goldsky's onchain execution runtime** (wallets, gas sponsorship, writeContract). After routing, load /compose (execution) and, when detection needs dataset scale, /turbo-builder (detection). Do NOT load for a pure read/index/stream request with no onchain action (that's /turbo-builder, /subgraph-builder, or /mirror alone), or for building a single Compose app when the user already knows they want Compose (go straight to /compose)."
 ---
 
 # Goldsky Onchain Automation — the detect → decide → execute loop
 
-Goldsky closes the **full offchain↔onchain loop**, not just the read side. Any "watch the chain and then act on it" system — snipers, keepers, liquidation/auto-claim bots, arbitrage automation, copy-trading — decomposes into three stages, and Goldsky covers all three:
+Goldsky closes the **full offchain↔onchain loop**, not just the read side. Any "watch the chain and then act on it" system — keepers, liquidation monitors, auto-claim and auto-compound jobs, rebalancing and settlement automation — decomposes into three stages, and Goldsky covers all three:
 
 | Stage | What it does | Goldsky product |
 | --- | --- | --- |
@@ -29,7 +29,7 @@ When the trigger is **one contract's events** (a specific DEX factory, a lending
 onchain_event trigger (the factory/pool)  →  task: decode + filter + decide  →  wallet.writeContract (the action)
 ```
 
-This is structurally identical to the **`/compose-vrf`** template (`onchain_event` → compute → write back onchain) and **`/compose-compliance-oracle`** (`onchain_event` → offchain check → approve/reject `writeContract`). Start from one of those. Load **`/compose`** (entry point) + **`/compose-reference`** — do not synthesize the manifest/wallet API from memory.
+This is structurally identical to the **VRF** template (`onchain_event` → compute → write back onchain, `skills/compose/references/examples/vrf.md`) and the **compliance-oracle** template (`onchain_event` → offchain check → approve/reject `writeContract`, `skills/compose/references/examples/compliance-oracle.md`). Start from one of those. Load **`/compose`** (entry point) and read **`skills/compose/references/`** — do not synthesize the manifest/wallet API from memory.
 
 ### Dataset-scale — Turbo detects, Compose executes
 
@@ -46,7 +46,7 @@ Wiring: the Turbo **Webhook sink** POSTs each matching row to the Compose app's 
 ## Two honest caveats — always state these
 
 1. **Confirmed-block latency, not mempool.** Goldsky (Turbo pipelines and Compose `onchain_event`) fires on **confirmed** logs, not pending mempool transactions. So this reliably *reacts to* a confirmed new pool / event — it is **not** a mempool front-runner and won't win a same-block gas-priority race. For a "sniper", set expectations: you react quickly to a confirmed listing, you don't beat block-0 bots. Say this plainly.
-2. **Execution is chain-gated.** Compose gas sponsorship covers a specific chain list (see `/compose-reference` → Supported chains, or `searchKB`) — broad EVM coverage, but **not every chain**. Before promising the full loop, check the target chain:
+2. **Execution is chain-gated.** Compose gas sponsorship covers a specific chain list (see `skills/compose/references/wallets-and-gas.md`, or `searchKB`) — broad EVM coverage, but **not every chain**. Before promising the full loop, check the target chain:
    - **Supported** → smart wallet, gas-sponsored, nothing for the user to fund.
    - **viem knows it but it's not sponsored** → BYO-EOA with `sponsorGas: false`; the user funds the address with native gas token.
    - **Compose can't reach it at all** → be honest: detection still works (Turbo/Subgraphs), but execution needs a Compose-supported chain or external infra for *that chain specifically*. Frame it as a per-chain gap, never as "Goldsky can't execute."
@@ -55,12 +55,12 @@ Wiring: the Turbo **Webhook sink** POSTs each matching row to the Compose app's 
 
 - Not a trading strategy or PnL engine — the user brings the decision logic; Compose runs it.
 - Not a mempool/front-running system (caveat 1).
-- Not a custody solution — wallet-key handling follows the normal Compose wallet/secret rules (`/compose-reference`).
+- Not a custody solution — wallet-key handling follows the normal Compose wallet/secret rules (`skills/compose/references/wallets-and-gas.md`).
 
 ## Route from here
 
-- **Execution / any Compose app** → **`/compose`** (load first) + **`/compose-reference`**.
-- **Event-driven write-back template** → **`/compose-vrf`**; **gated approve/reject** → **`/compose-compliance-oracle`**.
+- **Execution / any Compose app** → **`/compose`** (load first) + **`skills/compose/references/`**.
+- **Event-driven write-back template** → `skills/compose/references/examples/vrf.md`; **gated approve/reject** → `skills/compose/references/examples/compliance-oracle.md`.
 - **Dataset-scale detection pipeline** → **`/turbo-builder`** + **`/turbo-transforms`**.
 - **GraphQL state to poll** → **`/subgraph-builder`**.
 - **Fast RPC for the user's own offchain reads** → **`/edge`**.

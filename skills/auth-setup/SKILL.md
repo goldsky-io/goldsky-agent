@@ -69,7 +69,7 @@ goldsky login                       # opens a browser to authenticate (simplest)
 goldsky login --token <YOUR_TOKEN>  # they type this themselves — do not ask them to paste the token to you
 ```
 
-Need a token? Go to https://app.goldsky.com → Settings → API Tokens → Create Token (it won't be shown again).
+Need a token? Go to **Settings → API Keys** in the dashboard (https://app.goldsky.com/dashboard/settings/project) and create one — it won't be shown again. Keys are scoped to the project they were created in.
 
 Use AskUserQuestion to confirm — do NOT collect the token yourself:
 

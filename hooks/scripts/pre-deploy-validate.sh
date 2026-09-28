@@ -4,7 +4,8 @@
 # PreToolUse hook for Bash commands. Intercepts `goldsky turbo apply` and runs
 # `goldsky turbo validate` first. Blocks the deploy if validation fails.
 #
-# Input: JSON on stdin with { "tool_name": "Bash", "tool_input": { "command": "..." } }
+# Input: JSON on stdin. Claude Code sends { "tool_input": { "command": "..." } };
+#        Cursor sends { "command": "..." }. Both are handled by extract_command.
 # Exit 0: Allow the command to proceed
 # Exit 2: Block the command (stderr is shown as the reason)
 
@@ -14,7 +15,14 @@ set -euo pipefail
 INPUT=$(cat)
 
 # Extract the command from tool input
-COMMAND=$(echo "$INPUT" | sed -n 's/.*"command"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+# shellcheck source=hooks/scripts/lib/extract-command.sh
+source "$(dirname "${BASH_SOURCE[0]}")/lib/extract-command.sh"
+COMMAND=$(extract_command "$INPUT")
+
+# No command in the payload (or no jq available) — nothing to inspect.
+if [[ -z "$COMMAND" ]]; then
+  exit 0
+fi
 
 # Only intercept `goldsky turbo apply` commands
 if ! echo "$COMMAND" | grep -qE 'goldsky[[:space:]]+turbo[[:space:]]+apply'; then
@@ -55,7 +63,6 @@ fi
 
 # Run validation
 VALIDATE_OUTPUT=$(goldsky turbo validate "$YAML_FILE" 2>&1) || {
-  EXIT_CODE=$?
   echo "Hook: pre-deploy-validate" >&2
   echo "Pipeline validation failed. Fix these issues before deploying:" >&2
   echo "" >&2

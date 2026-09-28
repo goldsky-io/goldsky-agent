@@ -1,7 +1,3 @@
----
-name: compose-dividend-distribution
-description: "Build and deploy the Goldsky Compose corporate-actions / dividend-distribution example under the user's own account — a durable, idempotent distributor that pays N token holders pro-rata for a tokenized corporate action (dividend, coupon, rebate, airdrop) with an on-chain audit trail. The interesting bit: Compose orchestrates a Goldsky Turbo job-mode pipeline as an ephemeral subroutine — declaring a campaign spawns a one-shot pipeline that snapshots share-token holders at a record block, waits for it, pays each holder via a gas-sponsored wallet, then deletes the pipeline. Triggers on: 'dividend distribution', 'pay dividends onchain', 'distribute dividends to shareholders', 'corporate actions distributor', 'pro-rata payout to token holders', 'airdrop pro-rata by balance', 'cap table distribution', 'set up / deploy the dividend / corporate-actions example'. Ships pointed at shared permissionless demo contracts on Base Sepolia so there's nothing to deploy. Deploys fully in-app or via the CLI; the only runtime requirement is a `GOLDSKY_PROJECT_KEY` secret, set as the last step. For a custom/novel Compose app, use /compose. For debugging a deployed app, use /compose-doctor. For manifest/CLI/API field lookups, use /compose-reference."
----
 
 # Build: Compose dividend distribution (corporate-actions)
 
@@ -16,7 +12,7 @@ This template supplies only what's specific to the dividend/corporate-actions ap
 **Before anything else — before you answer, ask a question, scaffold a file, or run any command — load the two base skills this template depends on:**
 
 1. **`Skill(compose)`** — the always-on Compose guide: the golden rules (never assume anything about the app on the user's behalf; ask when unsure) and general build guidance.
-2. **`Skill(compose-reference)`** — the manifest / field / API reference; consult before writing any `compose.yaml` or task file.
+2. **Read `skills/compose/references/manifest.md`** (then `cli.md`, `task-context.md`, `wallets-and-gas.md` as needed) — the manifest / field / API reference; consult before writing any `compose.yaml` or task file.
 
 This template deliberately omits those rules and that reference — they are **required** to build correctly and are not repeated here. Do not proceed until both are loaded.
 
@@ -1698,7 +1694,7 @@ The app is deployed but won't run until the `GOLDSKY_PROJECT_KEY` secret is set 
 ## Related
 
 - **`/compose`** — Build a new/custom Compose app from scratch, or explain what Compose is.
-- **`/compose-reference`** — Manifest, CLI, TaskContext API, wallets, gas sponsorship, codegen.
+- **`skills/compose/references/`** — Manifest, CLI, TaskContext API, wallets, gas sponsorship, codegen.
 - **`/compose-doctor`** — Diagnose and fix a broken Compose app.
 - **`/turbo-pipelines`** / **`/turbo-operations`** — Job-mode pipeline shape and lifecycle, if customizing the snapshot.
 - **`/auth-setup`** — `goldsky login` walkthrough.
