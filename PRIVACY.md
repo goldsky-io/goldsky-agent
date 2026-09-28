@@ -1,48 +1,55 @@
 # Privacy Policy — Goldsky Agent plugin
 
-_Last updated: 2026-09-16_
+_Last updated: 2026-09-28_
 
-This policy covers the **Goldsky Agent plugin** (this repository) as distributed
-through the Claude Code and Cursor plugin marketplaces. Goldsky's product-wide
-policy is at <https://goldsky.com/privacy>.
+This notice describes the data flows of the **Goldsky Agent plugin** in this
+repository. Use of Goldsky services is covered by the
+[Goldsky Privacy Policy](https://goldsky.com/privacy).
 
-## What the plugin is
+## Plugin components
 
-The plugin is a set of Markdown skill files, an agent definition, and three
-shell hooks. It contains no compiled code, no binaries, no telemetry, and no
-network client of its own.
+The plugin contains Markdown skills, an agent definition, optional shell hooks, and
+configuration for the remote Goldsky documentation MCP server. The bundled
+hooks contain no analytics or crash-reporting instrumentation. Installing the
+plugin does not eliminate the network requests made by its configured MCP
+server, the Goldsky CLI, or your agent host.
 
-## What we collect
+Deployment hooks are disabled by default. Their data flows below apply only
+when you explicitly enable them using the [README instructions](./README.md#optional-deployment-hooks).
 
-**Nothing.** The plugin collects, stores, and transmits no data. It has no
-analytics, no crash reporting, and no phone-home. We receive nothing when you
-install or use it.
-
-## What the plugin causes to happen on your machine
-
-Being honest about the parts that do touch the network or your filesystem:
+## Data flows
 
 | Component | Behavior |
 | --- | --- |
-| `goldsky-docs` MCP server | The manifests declare an HTTP MCP server at `https://docs.goldsky.com/mcp`. Your agent sends documentation queries there. It is unauthenticated and serves public documentation only. |
-| Skill instructions | Skills instruct your agent to run `goldsky` CLI commands locally. Those commands talk to the Goldsky API using credentials already on your machine, exactly as if you had typed them. |
-| Hooks | `pre-deploy-validate`, `secret-check`, and `post-deploy-inspect` run locally when your agent runs a `goldsky turbo apply`. They read the pipeline YAML you are deploying and run `goldsky turbo validate` / `goldsky secret list`. They transmit nothing and write nothing to disk. |
+| Documentation MCP | The host connects to `https://docs.goldsky.com/mcp` and sends documentation queries. This is a remote, unauthenticated service for public documentation. Requests disclose the query and connection metadata such as IP address to the service. Do not include credentials or confidential project data in documentation queries. |
+| Skill instructions | Your agent may read and write local project files and run the Goldsky CLI or other tools as described by a skill. CLI operations can send pipeline configuration, project identifiers, uploaded files, or secret values to Goldsky services, depending on the command. RPC and Compose workflows may also contact configured third-party providers or blockchain networks. |
+| Pre-deploy hooks | Hooks read the shell command and working directory supplied by the host, inspect a local pipeline YAML file, and may invoke `goldsky turbo validate` and `goldsky secret list`. The secret-list command makes an authenticated Goldsky API request and returns secret metadata. The scripts do not directly read the CLI credential file or fetch secret values. They do not explicitly write files, though the CLI has its own behavior. |
+| Post-deploy hook | The hook reads the command output supplied by the host and may emit an inspection reminder. It does not run `goldsky turbo inspect` itself. |
+| Hook messages and tool output | Validation decisions can expose a file path or missing secret names to the host. CLI output and files read by your agent can become part of the host's conversation or logs. Treat secret names and project configuration as potentially visible to your agent provider. |
 
-## Credentials
+## Credentials and control
 
-The plugin never reads, stores, transmits, or logs your Goldsky API token.
-Authentication is handled entirely by the `goldsky` CLI, which persists
-credentials to `~/.goldsky/auth_token` under your control.
+Authentication is handled by the Goldsky CLI. Commands invoked by the agent or
+hooks use the CLI's authenticated session; authenticated requests send
+credentials to the relevant service. The bundled hooks do not themselves
+print authentication tokens.
 
-The skills are written to instruct agents **never to ask you to paste a token
-into a chat transcript** — see `skills/auth-setup/SKILL.md`. If any skill in
-this repository ever does ask for a token in chat, that is a bug; please report
-it.
+The authentication skill tells agents not to request API tokens in chat. Use
+the CLI's login flow and review commands that create secrets or change
+resources. Your host's permissions and plugin settings control tool execution;
+disable the plugin/MCP configuration or remove separately registered hook
+settings there to stop those integrations. Disabling the plugin alone does not
+remove hooks you registered separately.
 
-## Third parties
+## Service and host policies
 
-We share nothing, because we collect nothing. We do not sell data and we do not
-use anything from your use of this plugin to train models.
+Goldsky service collection, use, sharing, and privacy choices are described in
+[Goldsky's Privacy Policy](https://goldsky.com/privacy). The plugin does not
+set separate service retention periods or model-training policies.
+
+Your agent host, model provider, marketplace, and any third-party services you
+configure have their own policies and settings for conversations, tool output,
+logs, retention, and training. This notice does not override those policies.
 
 ## Contact
 

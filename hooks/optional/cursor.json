@@ -3,17 +3,17 @@
   "hooks": {
     "beforeShellExecution": [
       {
-        "command": "${CURSOR_PLUGIN_ROOT}/hooks/scripts/pre-deploy-validate.sh",
+        "command": "bash \"${CURSOR_PLUGIN_ROOT}/hooks/scripts/pre-deploy-validate.sh\" cursor",
         "matcher": "goldsky\\s+turbo\\s+apply"
       },
       {
-        "command": "${CURSOR_PLUGIN_ROOT}/hooks/scripts/secret-check.sh",
+        "command": "bash \"${CURSOR_PLUGIN_ROOT}/hooks/scripts/secret-check.sh\" cursor",
         "matcher": "goldsky\\s+turbo\\s+apply"
       }
     ],
     "afterShellExecution": [
       {
-        "command": "${CURSOR_PLUGIN_ROOT}/hooks/scripts/post-deploy-inspect.sh",
+        "command": "bash \"${CURSOR_PLUGIN_ROOT}/hooks/scripts/post-deploy-inspect.sh\" cursor",
         "matcher": "goldsky\\s+turbo\\s+apply"
       }
     ]

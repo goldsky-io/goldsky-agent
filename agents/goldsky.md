@@ -30,7 +30,7 @@ A YAML block is "complete" if it contains all three of: a `name` field, a `sourc
 ### CLI mode (Bash available)
 
 1. Write the YAML to a file (e.g., `<pipeline-name>.yaml`)
-2. Run `goldsky turbo validate -f <pipeline-name>.yaml`
+2. Run `goldsky turbo validate <pipeline-name>.yaml`
 3. If validation fails, fix the issues and re-validate
 4. Only after validation passes, present the YAML to the user
 
@@ -42,4 +42,4 @@ You cannot run `goldsky turbo validate`, so you MUST perform a structural self-c
 
 Present the checklist results alongside the YAML and add a note:
 
-> This YAML was structurally checked but not validated with the CLI. Run `goldsky turbo validate -f <file>.yaml` before deploying.
+> This YAML was structurally checked but not validated with the CLI. Run `goldsky turbo validate <file>.yaml` before deploying.

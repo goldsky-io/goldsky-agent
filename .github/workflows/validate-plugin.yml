@@ -127,7 +127,7 @@ jobs:
       - name: Hook configs are valid JSON and reference real scripts
         run: |
           fail=0
-          for f in hooks/hooks.json hooks/cursor-hooks.json; do
+          for f in hooks/optional/claude.json hooks/optional/cursor.json; do
             jq -e . "$f" >/dev/null || { echo "::error::$f is not valid JSON"; exit 1; }
             for s in $(grep -oE '\$\{[A-Z_]+\}/hooks/scripts/[a-z-]+\.sh' "$f" | sed 's|.*}/||' | sort -u); do
               [ -x "$s" ] || { echo "::error::$f references $s which is missing or not executable"; fail=1; }
@@ -167,16 +167,13 @@ jobs:
           grep -q "badge/skills-$count-" README.md || { echo "::error::README badge does not say $count skills"; fail=1; }
           exit $fail
 
-      - name: Every SKILL.md has name and description frontmatter
-        run: |
-          # Required by both Claude Code and Cursor; a missing one fails review.
-          fail=0
-          for f in skills/*/SKILL.md; do
-            head -1 "$f" | grep -q '^---$' || { echo "::error::$f has no frontmatter"; fail=1; continue; }
-            awk 'NR>1 && /^---$/{exit} NR>1' "$f" | grep -q '^name:' || { echo "::error::$f frontmatter has no name:"; fail=1; }
-            awk 'NR>1 && /^---$/{exit} NR>1' "$f" | grep -q '^description:' || { echo "::error::$f frontmatter has no description:"; fail=1; }
-          done
-          exit $fail
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --global npm@11.10.0
+      - run: npm ci
+      - run: npm run validate:skills
+      - run: npm test
 
   restricted-build:
     runs-on: ubuntu-latest

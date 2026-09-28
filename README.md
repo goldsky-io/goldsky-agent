@@ -126,9 +126,8 @@ goldsky-agent/
 │   ├── secrets/               # Credential management
 │   └── auth-setup/            # CLI installation, login
 ├── agents/              # `goldsky` subagent definition
-├── hooks/               # Pre/post deploy automation
-│   ├── hooks.json             # Claude Code hook config
-│   ├── cursor-hooks.json      # Cursor hook config (different event names)
+├── hooks/               # Optional pre/post deploy automation
+│   ├── optional/              # Opt-in Claude Code and Cursor configs
 │   └── scripts/               # Validation, secret checking
 ├── .claude-plugin/      # Claude Code plugin manifest + self-hosted marketplace
 └── .cursor-plugin/      # Cursor plugin manifest + logo
@@ -211,15 +210,84 @@ Used across multiple products.
 | `secrets` | "Create credentials for PostgreSQL / ClickHouse / Kafka / webhook sinks" | Guides credential creation and secret management |
 | `datasets` | "What's the dataset name for Polygon NFTs? What prefix does Solana use?" | Chain prefixes, dataset types, naming conventions |
 
-## Pre-Deploy Hooks
+## Optional deployment hooks
 
-The plugin runs hooks automatically on `goldsky turbo apply` commands:
+Deployment hooks are **off by default**. The CLI already validates during
+`goldsky turbo apply`, and the skills guide secret setup and post-deploy
+verification. Enable these extra checks only if you want automatic reminders
+and an additional pre-deploy check. The validation hook runs even when the
+command contains `--skip-validation`.
+
+When enabled, these hooks run on supported `goldsky turbo apply` commands:
 
 | Hook | What it does |
 | ---- | ------------ |
 | `pre-deploy-validate` | Runs `goldsky turbo validate`, blocks on failure |
-| `secret-check` | Verifies all `secret_name` references exist |
-| `post-deploy-inspect` | Suggests `goldsky turbo inspect` after deploy |
+| `secret-check` | Checks literal `secret_name` fields against project secrets |
+| `post-deploy-inspect` | Adds an inspect reminder to Claude context; emits a diagnostic reminder in Cursor |
+
+Hooks require Bash, `jq`, and the Goldsky CLI. They inspect simple literal
+`goldsky turbo apply` commands, including quoted YAML paths, in the host's
+reported working directory. Compound commands, shell expansions, missing
+prerequisites, and unrecognized secret-list output skip the checks. These hooks
+are best-effort assistance, not an enforcement boundary. Cursor's post-shell
+hook has no documented way to add agent context; its reminder may only appear
+in hook diagnostics. See [PRIVACY.md](./PRIVACY.md) for network and data flows.
+
+### Enable for one Claude Code session
+
+From a stable checkout of this repository:
+
+```bash
+claude --plugin-dir "$PWD" --settings "$(jq --arg root "$PWD" '
+  walk(if type == "string"
+    then split("${CLAUDE_PLUGIN_ROOT}") | join($root)
+    else . end)
+' hooks/optional/claude.json)"
+```
+
+This supplies the hook settings for that session without editing your saved
+settings. Start Claude without `--settings` to return to the default behavior.
+The settings resolve script paths to this checkout, so keep it available.
+
+### Enable for a Cursor project
+
+From a stable checkout, print the configuration with absolute script paths:
+
+```bash
+jq --arg root "$PWD" '
+  walk(if type == "string"
+    then split("${CURSOR_PLUGIN_ROOT}") | join($root)
+    else . end)
+' hooks/optional/cursor.json
+```
+
+Add the resulting entries to the target project's `.cursor/hooks.json`, keeping
+`"version": 1` and preserving any existing hooks. Reload Cursor. Remove the
+Goldsky entries and reload to disable them. These are project hook settings;
+they do not depend on plugin-root environment variables at runtime.
+
+See the [Claude settings reference](https://code.claude.com/docs/en/settings)
+and [Cursor hooks reference](https://cursor.com/docs/hooks) for host settings.
+After upgrading from a version with automatic hooks, restart your host and
+remove any manually registered Goldsky hooks if you want the new default.
+
+### Local validation
+
+With Node 22, npm 11.10 or newer, Python 3, Bash, and `jq` installed:
+
+```bash
+npm ci
+npm run validate:skills
+npm test
+```
+
+`scripts/validate-skills.mjs` checks skill metadata during development and CI;
+it is not a runtime hook and remains mandatory in CI.
+
+Tests use a stub CLI and temporary files; they do not deploy resources or use
+Goldsky credentials. Real-host installation and authentication smoke tests are
+still required before marketplace submission.
 
 ## Coverage
 

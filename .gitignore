@@ -9,3 +9,6 @@ node_modules/
 # OS files
 .DS_Store
 boost-workspace/
+
+# Python test artifacts
+__pycache__/
