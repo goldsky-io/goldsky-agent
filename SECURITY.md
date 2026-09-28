@@ -30,6 +30,7 @@ Out of scope here: the Goldsky platform, CLI, and APIs. Report those through
 
 - The plugin ships **no binaries** and no compiled code.
 - It collects **no telemetry** — see [PRIVACY.md](./PRIVACY.md).
-- Hooks **fail open**: if a hook cannot parse its input or reach the CLI, it
-  allows the command through rather than blocking on a bad parse.
+- Hooks **fail open**: unrecognized commands, missing prerequisites, and failed
+  secret-list requests skip checks. An invoked validation command that fails
+  blocks deployment. Hooks are best-effort helpers, not a security boundary.
 - Skills instruct agents never to request an API token in chat.

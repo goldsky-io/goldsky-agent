@@ -218,8 +218,30 @@ The plugin runs hooks automatically on `goldsky turbo apply` commands:
 | Hook | What it does |
 | ---- | ------------ |
 | `pre-deploy-validate` | Runs `goldsky turbo validate`, blocks on failure |
-| `secret-check` | Verifies all `secret_name` references exist |
-| `post-deploy-inspect` | Suggests `goldsky turbo inspect` after deploy |
+| `secret-check` | Checks literal `secret_name` fields against project secrets |
+| `post-deploy-inspect` | Adds an inspect reminder to Claude context; emits a diagnostic reminder in Cursor |
+
+Hooks require Bash, `jq`, and the Goldsky CLI. They inspect simple literal
+`goldsky turbo apply` commands, including quoted YAML paths, in the host's
+reported working directory. Compound commands, shell expansions, missing
+prerequisites, and unrecognized secret-list output skip the checks. These hooks
+are best-effort assistance, not an enforcement boundary. Cursor's post-shell
+hook has no documented way to add agent context; its reminder may only appear
+in hook diagnostics. See [PRIVACY.md](./PRIVACY.md) for network and data flows.
+
+### Local validation
+
+With Node 22, npm 11.10 or newer, Python 3, Bash, and `jq` installed:
+
+```bash
+npm ci
+npm run validate:skills
+npm test
+```
+
+Tests use a stub CLI and temporary files; they do not deploy resources or use
+Goldsky credentials. Real-host installation and authentication smoke tests are
+still required before marketplace submission.
 
 ## Coverage
 
