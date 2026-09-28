@@ -132,12 +132,20 @@ exit 99
                 for script in ['pre-deploy-validate', 'secret-check']:
                     self.assert_allowed(self.run_hook(script, host, raw=raw), host)
 
-    def test_hook_manifest_commands_work_with_spaces_in_plugin_path(self):
+    def test_hooks_are_not_registered_by_default(self):
+        for config in ['.claude-plugin/plugin.json', '.cursor-plugin/plugin.json']:
+            self.assertNotIn('hooks', json.loads((ROOT / config).read_text()))
+        for plugin in json.loads((ROOT / '.claude-plugin/marketplace.json').read_text())['plugins']:
+            self.assertNotIn('hooks', plugin)
+        for config in ['hooks/hooks.json', '.cursor/hooks.json']:
+            self.assertFalse((ROOT / config).exists(), config)
+
+    def test_opt_in_configs_work_without_plugin_environment_variables(self):
         plugin = self.cwd / 'plugin folder'
         plugin.symlink_to(ROOT, target_is_directory=True)
         for host, config, event, variable in [
-            ('cursor', 'cursor-hooks.json', 'beforeShellExecution', 'CURSOR_PLUGIN_ROOT'),
-            ('claude', 'hooks.json', 'PreToolUse', 'CLAUDE_PLUGIN_ROOT')
+            ('cursor', 'optional/cursor.json', 'beforeShellExecution', 'CURSOR_PLUGIN_ROOT'),
+            ('claude', 'optional/claude.json', 'PreToolUse', 'CLAUDE_PLUGIN_ROOT')
         ]:
             entries = json.loads((ROOT / 'hooks' / config).read_text())['hooks'][event]
             hooks = entries if host == 'cursor' else entries[0]['hooks']
@@ -145,9 +153,10 @@ exit 99
             payload = {'cwd': str(self.cwd)}
             payload.update({'command': command} if host == 'cursor' else {'tool_input': {'command': command}})
             for hook in hooks:
-                result = subprocess.run(hook['command'], shell=True, input=json.dumps(payload),
+                command_text = hook['command'].replace('${' + variable + '}', str(plugin))
+                result = subprocess.run(command_text, shell=True, input=json.dumps(payload),
                                         capture_output=True, text=True, cwd=ROOT,
-                                        env={**self.env, variable: str(plugin)})
+                                        env=self.env)
                 self.assert_allowed(result, host)
         self.assertEqual(len((self.cwd / 'calls').read_text().splitlines()), 4)
 

@@ -8,11 +8,14 @@ repository. Use of Goldsky services is covered by the
 
 ## Plugin components
 
-The plugin contains Markdown skills, an agent definition, shell hooks, and
+The plugin contains Markdown skills, an agent definition, optional shell hooks, and
 configuration for the remote Goldsky documentation MCP server. The bundled
 hooks contain no analytics or crash-reporting instrumentation. Installing the
 plugin does not eliminate the network requests made by its configured MCP
 server, the Goldsky CLI, or your agent host.
+
+Deployment hooks are disabled by default. Their data flows below apply only
+when you explicitly enable them using the [README instructions](./README.md#optional-deployment-hooks).
 
 ## Data flows
 
@@ -34,7 +37,9 @@ print authentication tokens.
 The authentication skill tells agents not to request API tokens in chat. Use
 the CLI's login flow and review commands that create secrets or change
 resources. Your host's permissions and plugin settings control tool execution;
-disable the plugin or its hooks/MCP configuration there to stop those integrations.
+disable the plugin/MCP configuration or remove separately registered hook
+settings there to stop those integrations. Disabling the plugin alone does not
+remove hooks you registered separately.
 
 ## Service and host policies
 

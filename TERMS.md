@@ -31,8 +31,8 @@ deterministic and can be wrong.
 
 You are responsible for what runs on your machine and in your account. Review
 generated pipeline YAML, contract addresses, and transactions before applying
-them. The bundled pre-deploy hooks are a safety net, not a guarantee — a passing
-validation checks shape, not correctness.
+them. The optional pre-deploy hooks are disabled by default and are not a
+guarantee — a passing validation checks shape, not correctness.
 
 ## No warranty
 

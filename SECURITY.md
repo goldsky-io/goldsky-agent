@@ -28,6 +28,8 @@ Out of scope here: the Goldsky platform, CLI, and APIs. Report those through
 
 ## Design commitments
 
+- Deployment hooks are off by default; enabling them requires explicit host settings.
+
 - The plugin ships **no binaries** and no compiled code.
 - It collects **no telemetry** — see [PRIVACY.md](./PRIVACY.md).
 - Hooks **fail open**: unrecognized commands, missing prerequisites, and failed

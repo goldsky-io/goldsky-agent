@@ -127,7 +127,7 @@ jobs:
       - name: Hook configs are valid JSON and reference real scripts
         run: |
           fail=0
-          for f in hooks/hooks.json hooks/cursor-hooks.json; do
+          for f in hooks/optional/claude.json hooks/optional/cursor.json; do
             jq -e . "$f" >/dev/null || { echo "::error::$f is not valid JSON"; exit 1; }
             for s in $(grep -oE '\$\{[A-Z_]+\}/hooks/scripts/[a-z-]+\.sh' "$f" | sed 's|.*}/||' | sort -u); do
               [ -x "$s" ] || { echo "::error::$f references $s which is missing or not executable"; fail=1; }

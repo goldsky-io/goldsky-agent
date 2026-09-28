@@ -143,7 +143,7 @@ Assemble the complete pipeline YAML. Use a descriptive name following the conven
 2. Run validation BEFORE showing the YAML to the user:
 
 ```bash
-goldsky turbo validate -f <pipeline-name>.yaml
+goldsky turbo validate <pipeline-name>.yaml
 ```
 
 3. If validation fails, fix the issues and re-validate. Do NOT present the YAML until validation passes. Common fixes:
