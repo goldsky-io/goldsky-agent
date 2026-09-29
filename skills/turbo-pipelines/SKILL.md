@@ -37,7 +37,7 @@ goldsky turbo apply pipeline.yaml -i   # Deploy + inspect
 ## Prerequisites
 
 - **Goldsky CLI** — if `goldsky` is not on PATH, follow `/auth-setup`
-- **Turbo extension** (separate binary) — `curl https://install-turbo.goldsky.com | sh`
+- **Turbo extension** — if `~/.goldsky/bin/turbo` is missing, install it yourself with `curl https://install-turbo.goldsky.com | sh`. Do not ask the user, and do not run `goldsky turbo` to trigger its install prompt. `/auth-setup` does this already. On Linux ARM, do not install it: the published binary is x86-64 only. Say so instead.
 - **Logged in** — `goldsky login`
 - Secrets created for sinks if using PostgreSQL, ClickHouse, Kafka, etc. (see `/secrets`)
 
@@ -357,7 +357,7 @@ To reset checkpoints: rename the source or pipeline. Warning: this reprocesses a
 | Action                  | Command                                                |
 | ----------------------- | ------------------------------------------------------ |
 | Install Goldsky CLI     | Follow `/auth-setup` (`curl https://goldsky.com \| sh`) |
-| Install Turbo extension | `curl https://install-turbo.goldsky.com \| sh`         |
+| Install Turbo extension | Run `curl https://install-turbo.goldsky.com \| sh` yourself. Do not ask. Skip on Linux ARM (x86-64 binary only) |
 | **Validate (REQUIRED)** | `goldsky turbo validate pipeline.yaml`                 |
 | Deploy/Update           | `goldsky turbo apply pipeline.yaml`                    |
 | Deploy + Inspect        | `goldsky turbo apply pipeline.yaml -i`                 |

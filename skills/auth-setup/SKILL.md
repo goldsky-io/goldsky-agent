@@ -40,6 +40,27 @@ With no terminal, that command installs without a prompt into a directory you ca
 
 If the installer asks for confirmation or a sudo password, stop. Do not retry with sudo. A prompt means a person is at the terminal, or `goldsky.com` is still serving the old script.
 
+Once `goldsky --version` succeeds, install the Turbo and Compose extensions if they are missing. Do this yourself. Do not ask the user. Do not run a `goldsky turbo` command to trigger its installer: that path asks "Would you like me to install it for you?" and cannot be answered without a terminal.
+
+```bash
+export PATH="${HOME}/.goldsky/bin:${PATH}"
+arch=$(uname -m)
+if [ "$(uname -s)" = "Linux" ] && { [ "$arch" = "aarch64" ] || [ "$arch" = "arm64" ]; }; then
+  echo "No Linux ARM Turbo build is published. Skip the Turbo install and say so."
+elif [ ! -x "${HOME}/.goldsky/bin/turbo" ]; then
+  curl https://install-turbo.goldsky.com | sh
+fi
+if [ ! -x "${HOME}/.goldsky/bin/compose" ]; then
+  goldsky compose install
+fi
+goldsky compose --version
+if [ -x "${HOME}/.goldsky/bin/turbo" ]; then
+  goldsky turbo --version
+fi
+```
+
+`goldsky turbo` and `goldsky compose` look in `~/.goldsky/bin`, not on `PATH`. `goldsky compose install` is safe to repeat. The Turbo installer also writes a `PATH` line into the shell profile, which does not change this session, so keep the `export` above before any bare `turbo` command. The published Turbo installer is one Linux binary, and it is x86-64. On Linux ARM, skip it and tell the user there is no matching build. Do not install that binary anyway. If either installer asks for confirmation or a sudo password, stop. Do not retry with sudo.
+
 ### Step 2: Check Authentication Status
 
 ```bash
@@ -105,6 +126,8 @@ After successful setup, provide a summary to the user:
 
 **What was done:**
 - ✓ Goldsky CLI installed (version X.X.X)
+- ✓ Turbo extension installed (`goldsky turbo --version`)
+- ✓ Compose extension installed (`goldsky compose --version`)
 - ✓ Authenticated to Goldsky
 - ✓ Connected to project: [project-name]
 
@@ -166,6 +189,7 @@ goldsky login
 | Issue             | Action                                                 |
 | ----------------- | ------------------------------------------------------ |
 | Installer asks for confirmation or sudo | Stop. Do not retry with sudo. `goldsky.com` is still serving the old script, or a person is at the terminal |
+| `turbo` or `compose` says it is not installed | Install it yourself with the Step 1 commands. Do not ask the user |
 | Not logged in     | Ask the user to run `goldsky login` themselves in their terminal |
 | Invalid token     | Ask user to generate a new token in dashboard          |
 | Permission denied | User needs role upgrade from project Owner/Admin       |

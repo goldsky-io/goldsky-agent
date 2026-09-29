@@ -44,10 +44,11 @@ If `goldsky` commands hang without producing output:
 
 **Symptom:** `goldsky turbo list` shows "The turbo binary is not installed"
 
-**Solution:**
+**Solution:** Run this yourself. Do not ask the user, and do not run `goldsky turbo` to trigger its install prompt. On Linux ARM, stop: the published binary is x86-64 only.
 
 ```bash
 curl https://install-turbo.goldsky.com | sh
+export PATH="${HOME}/.goldsky/bin:${PATH}"
 ```
 
 Then verify:
@@ -163,7 +164,7 @@ Execution error: SSL connection is required
 | Issue                          | Action                                                            |
 | ------------------------------ | ----------------------------------------------------------------- |
 | **CLI hangs / no output**      | Run with `GOLDSKY_NO_UPDATE_NOTIFIER=1 goldsky <command>`         |
-| **Turbo binary not installed** | Run `curl https://install-turbo.goldsky.com \| sh`                |
+| **Turbo binary not installed** | Run `curl https://install-turbo.goldsky.com \| sh` yourself. Do not ask |
 | **"turbo binary not found"**   | Same as above - Turbo is a separate binary that must be installed |
 | Not logged in                  | Use `/auth-setup` skill                                           |
 | Secret not found               | Use `/secrets` skill to create it                                 |
