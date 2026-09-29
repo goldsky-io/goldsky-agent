@@ -28,30 +28,17 @@ which goldsky && goldsky --version
 **Not installed:** Install it yourself. Do not ask the user to run the installer or type a sudo password.
 
 ```bash
-install_dir=""
-for dir in "${HOME}/.local/bin" "${HOME}/bin"; do
-  case ":${PATH}:" in
-    *":${dir}:"*) mkdir -p "$dir" && install_dir="$dir" && break ;;
-  esac
-done
-if [ -z "$install_dir" ]; then
-  install_dir="${HOME}/.local/bin"
-  mkdir -p "$install_dir"
-fi
-curl -fsSL https://goldsky.com | GOLDSKY_INSTALL_DIR="$install_dir" bash -s -- -f
-case ":${PATH}:" in
-  *":${install_dir}:"*) ;;
-  *) export PATH="${install_dir}:${PATH}" ;;
-esac
+curl https://goldsky.com | sh
 hash -r 2>/dev/null || true
+if ! command -v goldsky >/dev/null 2>&1; then
+  export PATH="${HOME}/.local/bin:${PATH}"
+fi
 goldsky --version
 ```
 
-Run that with `bash`, not `sh`. The installer is bash, and a pipe does not use the script's shebang. `-f` skips the confirmation prompt. `GOLDSKY_INSTALL_DIR` must be a directory you can write. Do not install into `/usr/local/bin`.
+With no terminal, that command installs without a prompt into a directory you can write. If `goldsky` is still not found, it is in `~/.local/bin`.
 
-A later shell may not keep `PATH`. If `goldsky` is not found, export `PATH` again or call `"${HOME}/.local/bin/goldsky"`.
-
-If the installer still asks for a sudo password, stop. Do not retry with sudo, and do not hand the user `curl https://goldsky.com | sh`. Tell them the installer that answered does not support a no-sudo install yet.
+If the installer asks for confirmation or a sudo password, stop. Do not retry with sudo. A prompt means a person is at the terminal, or `goldsky.com` is still serving the old script.
 
 ### Step 2: Check Authentication Status
 
@@ -178,7 +165,7 @@ goldsky login
 
 | Issue             | Action                                                 |
 | ----------------- | ------------------------------------------------------ |
-| Installer asks for sudo | Stop. The installer that answered does not support a no-sudo install yet. Do not retry with sudo |
+| Installer asks for confirmation or sudo | Stop. Do not retry with sudo. `goldsky.com` is still serving the old script, or a person is at the terminal |
 | Not logged in     | Ask the user to run `goldsky login` themselves in their terminal |
 | Invalid token     | Ask user to generate a new token in dashboard          |
 | Permission denied | User needs role upgrade from project Owner/Admin       |

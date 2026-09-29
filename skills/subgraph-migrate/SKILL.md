@@ -52,7 +52,6 @@ CLI setup is the most common migration sticking point — confirm it before depl
 
 ```bash
 # macOS/Linux: if `goldsky` is not on PATH, follow /auth-setup.
-# Do not run `curl https://goldsky.com | sh`.
 # Windows, or if that install fails:
 npm i -g @goldskycom/cli
 

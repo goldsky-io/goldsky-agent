@@ -74,7 +74,7 @@ Before running commands, check if the `Bash` tool is available:
 ### Install
 
 ```bash
-# If `goldsky` is not on PATH, follow /auth-setup. Do not run `curl https://goldsky.com | sh`.
+# If `goldsky` is not on PATH, follow /auth-setup.
 goldsky login
 ```
 
