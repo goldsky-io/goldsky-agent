@@ -30,7 +30,9 @@ Pick the mode from the tools available to you:
 - **A `deployComposeApp` tool is available (Goldsky webapp chatbot).** Compliance now deploys fully in-app. In-app flow: run the Step 1 interview (app name first), `walletCreate({ appName: "<chosen app name>", walletName: "compliance-oracle-wallet" })` to get the oracle wallet address (pass `appName` as the chosen app name and `walletName` explicitly; passing the wallet name positionally as `appName` creates the wrong app scope, and the resulting address never matches the runtime `evm.wallet({ name: "compliance-oracle-wallet" })`), `deployContract` MockUSDC, then `deployContract` ComplianceGatedTransfer with `constructorArgs: ["<token_addr>", "<oracle-wallet-addr>", "<recipient_addr>"]` for single-payee or `["<token_addr>", "<oracle-wallet-addr>"]` for P2P (these are tool inputs: `sources` and `constructorArgs`, not CLI flags). Wire the deployed contract address and chain into the inlined source (Step 3), then `deployComposeApp`. The `WEBACY_API_KEY` secret is the user's LAST step: the in-app deploy skips secret validation, so `deployComposeApp` succeeds without it, but the app won't run until the user adds the secret in the Compose app's dashboard **and redeploys from the dashboard** so the pod picks it up (secrets are baked into the pod at deploy, not hot-reloaded). NEVER attempt to set a secret from chat; there is no tool, by design. Scaffold the inlined source from **The app (full source)** below in-memory.
   - **Testing in webapp mode:** After deploy succeeds, **always proactively walk the user through the smoke test** (Step 7). The smoke test requires `goldsky compose writeContract` (a CLI command). Before giving the commands, ask the user if they have the Goldsky CLI installed. If they don't, walk them through installing it first:
     ```
-    curl https://goldsky.com | sh
+    mkdir -p "$HOME/.local/bin"
+    curl -fsSL https://goldsky.com | GOLDSKY_INSTALL_DIR="$HOME/.local/bin" bash -s -- -f
+    export PATH="$HOME/.local/bin:$PATH"
     goldsky compose install
     goldsky login
     ```
@@ -958,7 +960,7 @@ goldsky compose deploy
 
 First deploy may take 1-2 minutes. Watch for `Deployed compose app: <the chosen app name>` (e.g. `compliance-oracle`). The `on_transfer_requested` event listener and the `reconcile` cron both go live.
 
-**⚠ MANDATORY: After deploy succeeds, always proceed directly to Step 7 (smoke test).** Do not stop at "deployed" or only mention secrets — the user needs to see their oracle actually process a transfer end-to-end. If the user is in the webapp (no Bash tool), check whether they have the Goldsky CLI installed and walk them through installing it (`curl https://goldsky.com | sh && goldsky compose install && goldsky login`) before giving the smoke test commands.
+**⚠ MANDATORY: After deploy succeeds, always proceed directly to Step 7 (smoke test).** Do not stop at "deployed" or only mention secrets — the user needs to see their oracle actually process a transfer end-to-end. If the user is in the webapp (no Bash tool), check whether they have the Goldsky CLI installed and walk them through installing it (`mkdir -p "$HOME/.local/bin" && curl -fsSL https://goldsky.com | GOLDSKY_INSTALL_DIR="$HOME/.local/bin" bash -s -- -f && export PATH="$HOME/.local/bin:$PATH" && goldsky compose install && goldsky login`) before giving the smoke test commands.
 
 ## Step 7 — Smoke test
 

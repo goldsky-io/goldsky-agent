@@ -51,9 +51,9 @@ If the user can't produce either, fall back to deploying from source (`--path`) 
 CLI setup is the most common migration sticking point — confirm it before deploying.
 
 ```bash
-# Install (macOS/Linux)
-curl https://goldsky.com | sh
-# Install (Windows, or if the curl installer fails)
+# macOS/Linux: if `goldsky` is not on PATH, follow /auth-setup.
+# Do not run `curl https://goldsky.com | sh`.
+# Windows, or if that install fails:
 npm i -g @goldskycom/cli
 
 goldsky login

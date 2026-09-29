@@ -25,27 +25,33 @@ which goldsky && goldsky --version
 
 **Success:** Path and version displayed (e.g., `/usr/local/bin/goldsky` and `13.2.0`)
 
-**Not installed:** Tell the user to run this in their terminal:
+**Not installed:** Install it yourself. Do not ask the user to run the installer or type a sudo password.
 
 ```bash
-curl https://goldsky.com | sh
+install_dir=""
+for dir in "${HOME}/.local/bin" "${HOME}/bin"; do
+  case ":${PATH}:" in
+    *":${dir}:"*) mkdir -p "$dir" && install_dir="$dir" && break ;;
+  esac
+done
+if [ -z "$install_dir" ]; then
+  install_dir="${HOME}/.local/bin"
+  mkdir -p "$install_dir"
+fi
+curl -fsSL https://goldsky.com | GOLDSKY_INSTALL_DIR="$install_dir" bash -s -- -f
+case ":${PATH}:" in
+  *":${install_dir}:"*) ;;
+  *) export PATH="${install_dir}:${PATH}" ;;
+esac
+hash -r 2>/dev/null || true
+goldsky --version
 ```
 
-This requires sudo password entry. Use AskUserQuestion to confirm installation:
+Run that with `bash`, not `sh`. The installer is bash, and a pipe does not use the script's shebang. `-f` skips the confirmation prompt. `GOLDSKY_INSTALL_DIR` must be a directory you can write. Do not install into `/usr/local/bin`.
 
-```
-Question: "Please run this command in your terminal to install the Goldsky CLI:"
-Code block: curl https://goldsky.com | sh
+A later shell may not keep `PATH`. If `goldsky` is not found, export `PATH` again or call `"${HOME}/.local/bin/goldsky"`.
 
-Options:
-1. Label: "Done, it's installed"
-   Description: "I ran the command and the CLI is now installed"
-
-2. Label: "I need help"
-   Description: "I encountered an error during installation"
-```
-
-After confirmation, verify with `which goldsky && goldsky --version`.
+If the installer still asks for a sudo password, stop. Do not retry with sudo, and do not hand the user `curl https://goldsky.com | sh`. Tell them the installer that answered does not support a no-sudo install yet.
 
 ### Step 2: Check Authentication Status
 
@@ -172,6 +178,7 @@ goldsky login
 
 | Issue             | Action                                                 |
 | ----------------- | ------------------------------------------------------ |
+| Installer asks for sudo | Stop. The installer that answered does not support a no-sudo install yet. Do not retry with sudo |
 | Not logged in     | Ask the user to run `goldsky login` themselves in their terminal |
 | Invalid token     | Ask user to generate a new token in dashboard          |
 | Permission denied | User needs role upgrade from project Owner/Admin       |
