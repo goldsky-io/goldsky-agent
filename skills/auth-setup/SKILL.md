@@ -1,6 +1,6 @@
 ---
 name: auth-setup
-description: "Set up Goldsky CLI authentication and project configuration. Use this skill when the user needs to: install the goldsky CLI (what's the official install command?), run goldsky login (including when the browser opens but 'authentication failed'), run goldsky project list and see 'not logged in' or 'unauthorized', switch between Goldsky projects, check which project they're currently authenticated to, or fix 'unauthorized' errors when running goldsky turbo commands. Also use for 'walk me through setting up goldsky CLI from scratch for the first time'. If any other Goldsky skill hits an auth error, redirect here first."
+description: "Set up Goldsky CLI authentication and project configuration. Use this skill when the user needs to: install the goldsky CLI (what's the official install command?), run goldsky login (including when the browser opens but 'authentication failed'), run goldsky project list and see 'not logged in' or 'unauthorized', switch between Goldsky projects, check which project they're currently authenticated to, or fix 'unauthorized' errors when running goldsky turbo commands. Also use for 'walk me through setting up goldsky CLI from scratch for the first time', and when they just installed Goldsky and say 'Set it up and help me get started'. If any other Goldsky skill hits an auth error, redirect here first."
 ---
 
 # Goldsky Authentication & Project Setup
@@ -60,30 +60,13 @@ goldsky project list 2>&1
 
 **Never handle the user's API token in the chat.** A token pasted into the conversation ends up in the transcript and is sent to the model — treat it like a password you must never see. Have the user authenticate themselves in their own terminal instead. The CLI persists credentials to disk, so the `goldsky` commands you run afterward will pick up their session automatically.
 
-Ask the user to run login themselves:
+Tell the user to run this one command in their own terminal, then say when the browser tab says they are logged in:
 
 ```bash
-goldsky login                       # opens a browser to authenticate (simplest)
-# or, if they prefer a token or have no browser available:
-goldsky login --token <YOUR_TOKEN>  # they type this themselves — do not ask them to paste the token to you
+goldsky login
 ```
 
-Need a token? Go to **Settings → API Keys** in the dashboard (https://app.goldsky.com/dashboard/settings/project) and create one — it won't be shown again. Keys are scoped to the project they were created in.
-
-Use AskUserQuestion to confirm — do NOT collect the token yourself:
-
-```
-Question: "Run `goldsky login` in your terminal to authenticate, then let me know:"
-
-Options:
-1. Label: "Done, I'm logged in"
-   Description: "I ran login and it succeeded"
-
-2. Label: "I need help"
-   Description: "I hit an error during login"
-```
-
-Then verify (Step 4). If verification shows you're still not logged in, ask the user to re-run login — never ask them to hand you the token.
+The browser has to be on the same machine as that command. Do not ask for an API token, do not pass `--token`, and do not use a host-specific question tool. Then verify (Step 4). If verification shows they are still not logged in, ask them to run `goldsky login` again.
 
 ### Step 4: Verify Login
 
@@ -100,7 +83,7 @@ goldsky project list
 - `Make sure to run 'goldsky login'` still appears
 - `invalid token` or `unauthorized`
 
-If verification fails, ask user to generate a new token and repeat Step 3.
+If verification fails, ask the user to run `goldsky login` again.
 
 ## Completion Summary
 

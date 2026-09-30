@@ -10,6 +10,7 @@ AI-powered tools for the full Goldsky product surface. Build, deploy, and debug 
 
 | I want to...                                          | Use                  |
 | ----------------------------------------------------- | -------------------- |
+| I just installed Goldsky                              | `/get-started`       |
 | Build a new Turbo pipeline                            | `/turbo-builder`     |
 | Fix a broken Turbo pipeline                           | `/turbo-doctor`      |
 | Fix a broken Mirror pipeline                          | `/mirror-doctor`     |
@@ -24,7 +25,11 @@ AI-powered tools for the full Goldsky product surface. Build, deploy, and debug 
 | Look up Turbo YAML syntax                             | `/turbo-pipelines`   |
 | Set up the CLI and log in                             | `/auth-setup`        |
 
-Just describe what you need in natural language — the right skill is selected automatically.
+Just describe what you need in natural language — the right skill is selected automatically. On a fresh install, paste:
+
+```text
+I just installed Goldsky. Set it up and help me get started.
+```
 
 ## Installation
 

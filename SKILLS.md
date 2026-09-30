@@ -49,6 +49,9 @@ npx skills add goldsky-io/goldsky-agent
 
 ## Examples
 
+**"I just installed Goldsky. Set it up and help me get started."**
+→ Uses: auth-setup (`/get-started`)
+
 **"Build me a pipeline for USDC transfers on Base"**
 → Uses: turbo-builder, turbo-pipelines, datasets, secrets
 
