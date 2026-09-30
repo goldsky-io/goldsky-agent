@@ -66,6 +66,7 @@ class InstallerTests(unittest.TestCase):
         for name, source in {
             'curl': CURL,
             'uname': '#!/bin/sh\ncase "$1" in -s) echo "${TEST_OS:-Linux}";; -m) echo "${TEST_ARCH:-x86_64}";; esac\n',
+            'sysctl': '#!/bin/sh\necho "${TEST_MAC_ARM64:-0}"\n',
             'getconf': '#!/bin/sh\necho "${TEST_LIBC:-glibc 2.39}"\n',
         }.items():
             path = self.bin / name
@@ -140,6 +141,14 @@ class InstallerTests(unittest.TestCase):
 
     def test_mac_platform_branch(self):
         self.assert_success(self.run_setup(TEST_OS='Darwin', TEST_ARCH='arm64', TEST_LIBC=''))
+
+    def test_intel_mac_incomplete(self):
+        result = self.run_setup(TEST_OS='Darwin', TEST_ARCH='x86_64')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('no published Intel Mac binary', result.stderr)
+
+    def test_rosetta_uses_apple_silicon(self):
+        self.assert_success(self.run_setup(TEST_OS='Darwin', TEST_ARCH='x86_64', TEST_MAC_ARM64='1'))
 
     def test_invalid_component(self):
         self.assertEqual(self.run_setup('unknown').returncode, 2)

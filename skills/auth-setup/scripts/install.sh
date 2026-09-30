@@ -51,6 +51,10 @@ fi
 if [ "$component" = all ] || [ "$component" = turbo ]; then
   turbo_bin="$HOME/.goldsky/bin/turbo"
   if [ ! -x "$turbo_bin" ] || ! "$turbo_bin" --version >/dev/null 2>&1; then
+    if [ "$(uname -s)" = Darwin ] && [ "$(uname -m)" != arm64 ] && [ "$(sysctl -n hw.optional.arm64 2>/dev/null || true)" != 1 ]; then
+      echo 'Turbo has no published Intel Mac binary. Full installation is incomplete. Use Apple Silicon or an x64 Ubuntu 24.04+ environment, or request only Compose.' >&2
+      exit 1
+    fi
     if [ "$(uname -s)" = Linux ]; then
       case "$(uname -m)" in
         x86_64|amd64) ;;

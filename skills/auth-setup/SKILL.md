@@ -40,7 +40,7 @@ goldsky turbo --version
 
 Check only the components requested. Do not trigger Turbo's interactive auto-installer when its binary is absent. Do not report setup complete if the installer or a required version check fails.
 
-**Platform limits:** Goldsky and Compose publish macOS Intel/Apple Silicon and Linux x64/ARM64 binaries. The current Linux Turbo binary requires x64 and glibc 2.39+ (for example Ubuntu 24.04). A full install on Linux ARM64, older glibc, or musl must report incomplete; `compose` can still be installed separately. These are upstream binary limits, not reasons to ask for sudo or silently omit Turbo. macOS uses the published Mac installers.
+**Platform limits:** Goldsky and Compose publish macOS Intel/Apple Silicon and Linux x64/ARM64 binaries. The current Linux Turbo binary requires x64 and glibc 2.39+ (for example Ubuntu 24.04). A full install on Linux ARM64, older glibc, or musl must report incomplete; `compose` can still be installed separately. These are upstream binary limits, not reasons to ask for sudo or silently omit Turbo. The current Turbo Mac binary is Apple Silicon-only; Intel Macs can install Goldsky and Compose, but a full install must report incomplete.
 
 **Windows:** the complete toolset currently runs inside WSL, not native PowerShell or Git Bash: Compose has no published Windows binary. Use an existing x64 Ubuntu 24.04+ WSL distribution for all three tools. See [Windows setup](references/windows.md) for PowerShell invocation and prerequisites. Keep installation, subsequent CLI commands, project files, and manual login in the same WSL environment. Installing/enabling WSL itself may require administrator access and a reboot; do not claim that prerequisite can always be automated without intervention.
 
