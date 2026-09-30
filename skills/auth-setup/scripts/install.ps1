@@ -24,4 +24,4 @@ $LinuxInstaller = "$LinuxInstaller".Trim()
 if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
 }
-Write-Host "Run subsequent Goldsky commands and manual login inside WSL distribution '$Distribution'."
+Write-Host "Run subsequent Goldsky commands, including goldsky login, inside WSL distribution '$Distribution'."

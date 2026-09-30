@@ -11,7 +11,7 @@ Set up the Goldsky CLI, authenticate your account, and configure projects for yo
 
 - [ ] macOS, Linux, or Windows with WSL (see Step 1 for binary compatibility)
 - [ ] Internet connection
-- [ ] Goldsky account (sign up at https://app.goldsky.com)
+- [ ] A Goldsky account. Creating one happens in the browser during Step 3. Do not send the user to sign up as a separate step.
 
 ## Authentication Workflow
 
@@ -19,12 +19,12 @@ Set up the Goldsky CLI, authenticate your account, and configure projects for yo
 
 ### Step 1: Install and verify the CLI
 
-Install missing tools yourself. Authentication remains a separate, manual step; do not ask the user to install binaries or enter a sudo password.
+Install missing tools yourself. Do not ask the user to install binaries or enter a sudo password. You run login in Step 3. The user only approves it in the browser.
 
-On macOS and Linux (including WSL), run the bundled [installer](scripts/install.sh) using its actual path in this skill folder:
+On macOS and Linux (including WSL), run the bundled [installer](scripts/install.sh) from this skill's directory. Resolve that path yourself. Do not ask the user where it is.
 
 ```bash
-bash /path/to/auth-setup/scripts/install.sh
+bash scripts/install.sh
 ```
 
 The default installs Goldsky, Compose, and Turbo. Pass `cli` when only the base CLI is needed. For a Compose-only or Turbo-only task, pass `compose` or `turbo`; both include the base Goldsky CLI. The script uses user-writable directories, disables installation prompts even in a PTY, checks download failures and empty responses, and requires each requested binary to run successfully. It reuses working installations and repairs broken ones. No sudo or login is needed.
@@ -42,7 +42,7 @@ Check only the components requested. Do not trigger Turbo's interactive auto-ins
 
 **Platform limits:** Goldsky and Compose publish macOS Intel/Apple Silicon and Linux x64/ARM64 binaries. The current Linux Turbo binary requires x64 and glibc 2.39+ (for example Ubuntu 24.04). A full install on Linux ARM64, older glibc, or musl must report incomplete; `compose` can still be installed separately. These are upstream binary limits, not reasons to ask for sudo or silently omit Turbo. The current Turbo Mac binary is Apple Silicon-only; Intel Macs can install Goldsky and Compose, but a full install must report incomplete.
 
-**Windows:** the complete toolset currently runs inside WSL, not native PowerShell or Git Bash: Compose has no published Windows binary. Use an existing x64 Ubuntu 24.04+ WSL distribution for all three tools. See [Windows setup](references/windows.md) for PowerShell invocation and prerequisites. Keep installation, subsequent CLI commands, project files, and manual login in the same WSL environment. Installing/enabling WSL itself may require administrator access and a reboot; do not claim that prerequisite can always be automated without intervention.
+**Windows:** the complete toolset currently runs inside WSL, not native PowerShell or Git Bash: Compose has no published Windows binary. Use an existing x64 Ubuntu 24.04+ WSL distribution for all three tools. See [Windows setup](references/windows.md) for PowerShell invocation and prerequisites. Keep installation, subsequent CLI commands, project files, and `goldsky login` in the same WSL environment. Run login yourself there. Installing/enabling WSL itself may require administrator access and a reboot; do not claim that prerequisite can always be automated without intervention.
 
 Prerequisites inside the selected environment: Bash, curl, CA certificates, standard Unix utilities, internet access, and a writable home directory. If an environment lacks these, report the missing prerequisite instead of claiming installation succeeded.
 
@@ -56,17 +56,13 @@ goldsky project list 2>&1
 
 **Not logged in:** Output contains `Make sure to run 'goldsky login'`. Continue to Step 3.
 
-### Step 3: Have the User Log In
+### Step 3: Log in
 
-**Never handle the user's API token in the chat.** A token pasted into the conversation ends up in the transcript and is sent to the model — treat it like a password you must never see. Have the user authenticate themselves in their own terminal instead. The CLI persists credentials to disk, so the `goldsky` commands you run afterward will pick up their session automatically.
+**Never handle the user's API token in the chat.** A token pasted into the conversation ends up in the transcript and is sent to the model. Do not ask for one, and do not pass `--token`.
 
-Tell the user to run this one command in their own terminal, then say when the browser tab says they are logged in:
+Run `goldsky login` yourself, with PATH restored, and leave it running for up to 5 minutes. It prints a URL, opens the browser, and writes the token to disk. The token is not printed. The user only approves the login in that browser, on this same machine. Creating an account or choosing a project happens there too. If the browser does not open, open the printed URL yourself. Give the user that URL only when you cannot open a browser.
 
-```bash
-goldsky login
-```
-
-The browser has to be on the same machine as that command. Do not ask for an API token, do not pass `--token`, and do not use a host-specific question tool. Then verify (Step 4). If verification shows they are still not logged in, ask them to run `goldsky login` again.
+If this host kills the command before login finishes, run it again. Hand the user the command only when you have no shell. Then verify (Step 4).
 
 ### Step 4: Verify Login
 
@@ -83,7 +79,7 @@ goldsky project list
 - `Make sure to run 'goldsky login'` still appears
 - `invalid token` or `unauthorized`
 
-If verification fails, ask the user to run `goldsky login` again.
+If verification fails, run `goldsky login` again.
 
 ## Completion Summary
 
@@ -108,11 +104,13 @@ After successful setup, provide a summary to the user:
 - Ask "deploy a subgraph" to deploy a subgraph to Goldsky
 ```
 
+If they have not said what they are trying to do, ask, and suggest only jobs the installed skills can do. Do not create a secret, pipeline, subgraph, or deployment until they pick one and agree.
+
 ## Command Reference
 
 | Command                        | Purpose                         | Key Flags               |
 | ------------------------------ | ------------------------------- | ----------------------- |
-| `goldsky login`                | Authenticate with Goldsky       | `--token` for API token |
+| `goldsky login`                | Authenticate with Goldsky       | Opens the browser. Do not pass `--token` |
 | `goldsky logout`               | Remove local credentials        |                         |
 | `goldsky project list`         | List all projects you belong to |                         |
 | `goldsky project create`       | Create a new project            | `--name` (required)     |
@@ -158,10 +156,10 @@ goldsky login
 | ----------------- | ------------------------------------------------------ |
 | Installer asks for confirmation or sudo | Use the bundled installer, which creates a writable destination and passes `-f`. Do not retry with sudo |
 | `turbo` or `compose` is missing or cannot run | Re-run the bundled installer for that component; check its exit status and platform requirements |
-| Not logged in     | Ask the user to run `goldsky login` themselves in their terminal |
-| Invalid token     | Ask user to generate a new token in dashboard          |
+| Not logged in     | Run `goldsky login` yourself and leave it running until the browser login finishes |
+| Invalid token     | Run `goldsky login` again. Do not ask for a token      |
 | Permission denied | User needs role upgrade from project Owner/Admin       |
-| Session expired   | Ask the user to re-run `goldsky login` themselves      |
+| Session expired   | Run `goldsky login` again                                  |
 
 ## Related
 

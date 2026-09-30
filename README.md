@@ -25,10 +25,17 @@ AI-powered tools for the full Goldsky product surface. Build, deploy, and debug 
 | Look up Turbo YAML syntax                             | `/turbo-pipelines`   |
 | Set up the CLI and log in                             | `/auth-setup`        |
 
-Just describe what you need in natural language — the right skill is selected automatically. On a fresh install, paste:
+Just describe what you need in natural language — the right skill is selected automatically. With nothing installed yet, paste this. The agent installs the skills, the docs MCP, and the CLIs, runs login, and only stops for the browser approval and for what you want to do:
 
 ```text
-I just installed Goldsky. Set it up and help me get started.
+Set up Goldsky. Do every step yourself. Skip a step that is already done. I should only have to approve login in the browser, then tell you what I am trying to do. Do not ask me to run commands, edit config files, paste a token, or choose an agent.
+
+1. If you cannot already read a Goldsky auth-setup skill, run: npx skills add goldsky-io/goldsky-agent -y -g -a <agent> using claude-code, cursor, codex, or opencode. If you cannot tell which host you are, use -a '*'.
+2. If https://docs.goldsky.com/mcp is not connected, add it yourself. On Claude Code: claude mcp add --transport http goldsky-docs https://docs.goldsky.com/mcp. On Cursor, merge a goldsky-docs HTTP server at that URL into .cursor/mcp.json without removing other servers. On any other host, write that host's MCP config yourself.
+3. Resolve auth-setup/scripts/install.sh from the installed skill or this plugin and run it with bash. That installs the Goldsky, Compose, and Turbo CLIs. Do not curl an installer and do not ask for sudo. On Windows, run the skill's install.ps1 yourself inside WSL, and tell me only if WSL is not installed. On later commands, export PATH="$HOME/.local/bin:$HOME/.goldsky/bin:$PATH".
+4. Run goldsky project list. If I am not logged in, run goldsky login yourself and leave it running for up to 5 minutes. If the browser does not open, open the printed URL yourself. I will approve it in the browser on this machine, including creating an account. Do not ask me for an API token. If the command is killed, run it again.
+5. Run goldsky project list again and tell me the CLI version and active project.
+6. Ask what I am trying to accomplish. Suggest a few concrete jobs the installed skills can do, such as streaming USDC transfers on Base into a database, checking whether a dataset exists, building a subgraph, or getting an RPC endpoint. Mention a Compose app only if that skill is installed. Wait until I pick one and agree before you create anything.
 ```
 
 ## Installation
