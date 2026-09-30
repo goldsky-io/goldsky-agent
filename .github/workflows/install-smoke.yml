@@ -91,12 +91,17 @@ jobs:
         run: |
           $Image = 'ubuntu-24.04.5-wsl-amd64.wsl'
           $Rootfs = Join-Path $env:RUNNER_TEMP $Image
-          Invoke-WebRequest "https://releases.ubuntu.com/24.04/$Image" -OutFile $Rootfs
-          $Checksums = (Invoke-WebRequest 'https://releases.ubuntu.com/24.04/SHA256SUMS').Content
+          $ChecksumFile = Join-Path $env:RUNNER_TEMP 'ubuntu-SHA256SUMS'
+          Invoke-WebRequest 'https://releases.ubuntu.com/24.04/SHA256SUMS' -OutFile $ChecksumFile
+          $Checksums = Get-Content -Raw $ChecksumFile
           $Expected = (($Checksums -split "`n" | Where-Object { $_ -match [regex]::Escape($Image) }) -split '\s+')[0]
-          if ((Get-FileHash $Rootfs -Algorithm SHA256).Hash.ToLower() -ne $Expected) { throw 'WSL image checksum mismatch' }
+          if ($Expected -notmatch '^[a-f0-9]{64}$') { throw 'Could not parse WSL image checksum' }
+          Invoke-WebRequest "https://releases.ubuntu.com/24.04/$Image" -OutFile $Rootfs
+          $Actual = (Get-FileHash $Rootfs -Algorithm SHA256).Hash.ToLower()
+          if ($Actual -ne $Expected) { throw "WSL image checksum mismatch: expected $Expected, got $Actual" }
           wsl.exe --import GoldskyInstallTest "$env:RUNNER_TEMP\goldsky-wsl" $Rootfs --version 2
           if ($LASTEXITCODE -ne 0) { throw 'WSL import failed' }
+          'WSL_TEST_CREATED=true' >> $env:GITHUB_ENV
           wsl.exe --distribution GoldskyInstallTest --user root --exec bash -ec 'apt-get update -qq; apt-get install -y -qq curl ca-certificates; useradd -m agent'
           if ($LASTEXITCODE -ne 0) { throw 'WSL prerequisites failed' }
       - name: Install from PowerShell as an unprivileged Linux user
@@ -112,6 +117,6 @@ jobs:
           & ./skills/auth-setup/scripts/install.ps1 -Distribution GoldskyInstallTest -User agent
           if ($LASTEXITCODE -ne 0) { throw 'Repeat installation failed' }
       - name: Remove disposable WSL environment
-        if: always()
+        if: always() && env.WSL_TEST_CREATED == 'true'
         shell: pwsh
         run: wsl.exe --unregister GoldskyInstallTest
