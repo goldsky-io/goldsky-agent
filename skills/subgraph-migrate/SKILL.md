@@ -51,11 +51,9 @@ If the user can't produce either, fall back to deploying from source (`--path`) 
 CLI setup is the most common migration sticking point — confirm it before deploying.
 
 ```bash
-# Install (macOS/Linux)
-curl https://goldsky.com | sh
-# Install (Windows, or if the curl installer fails)
-npm i -g @goldskycom/cli
-
+# Follow /auth-setup and run its installer with cli; Windows uses WSL.
+export PATH="$HOME/.local/bin:$HOME/.goldsky/bin:$PATH"
+# Have the user authenticate manually in this same environment.
 goldsky login
 ```
 

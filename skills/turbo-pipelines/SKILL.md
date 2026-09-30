@@ -36,9 +36,10 @@ goldsky turbo apply pipeline.yaml -i   # Deploy + inspect
 
 ## Prerequisites
 
-- **Goldsky CLI** — `curl https://goldsky.com | sh`
-- **Turbo extension** (separate binary) — `curl https://install-turbo.goldsky.com | sh`
-- **Logged in** — `goldsky login`
+- **Goldsky CLI** — if `goldsky` is not on PATH, follow `/auth-setup`
+- **Turbo extension** — follow `/auth-setup` and run its bundled installer with `turbo`. Do not trigger the interactive auto-installer. Verify `goldsky turbo --version` succeeds; the published Linux binary requires x64 and glibc 2.39+, and the Mac binary requires Apple Silicon. Windows uses the WSL entry point. An unsupported platform is not a successful installation.
+- **Shell PATH** — restore `export PATH="$HOME/.local/bin:$HOME/.goldsky/bin:$PATH"` in every new shell/tool call; exports do not persist across calls.
+- **Logged in** — have the user run `goldsky login` manually
 - Secrets created for sinks if using PostgreSQL, ClickHouse, Kafka, etc. (see `/secrets`)
 
 ---
@@ -356,8 +357,8 @@ To reset checkpoints: rename the source or pipeline. Warning: this reprocesses a
 
 | Action                  | Command                                                |
 | ----------------------- | ------------------------------------------------------ |
-| Install Goldsky CLI     | `curl https://goldsky.com \| sh`                       |
-| Install Turbo extension | `curl https://install-turbo.goldsky.com \| sh`         |
+| Install Goldsky CLI     | Follow `/auth-setup` and use its bundled installer |
+| Install Turbo extension | Follow `/auth-setup` and run its bundled installer with `turbo`; require a successful version check |
 | **Validate (REQUIRED)** | `goldsky turbo validate pipeline.yaml`                 |
 | Deploy/Update           | `goldsky turbo apply pipeline.yaml`                    |
 | Deploy + Inspect        | `goldsky turbo apply pipeline.yaml -i`                 |
