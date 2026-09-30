@@ -37,8 +37,9 @@ goldsky turbo apply pipeline.yaml -i   # Deploy + inspect
 ## Prerequisites
 
 - **Goldsky CLI** — if `goldsky` is not on PATH, follow `/auth-setup`
-- **Turbo extension** — if `~/.goldsky/bin/turbo` is missing, install it yourself with `curl https://install-turbo.goldsky.com | sh`. Do not ask the user, and do not run `goldsky turbo` to trigger its install prompt. `/auth-setup` does this already. On Linux ARM, do not install it: the published binary is x86-64 only. Say so instead.
-- **Logged in** — `goldsky login`
+- **Turbo extension** — follow `/auth-setup` and run its bundled installer with `turbo`. Do not trigger the interactive auto-installer. Verify `goldsky turbo --version` succeeds; the published Linux binary requires x64 and glibc 2.39+. Windows uses the WSL entry point. An unsupported platform is not a successful installation.
+- **Shell PATH** — restore `export PATH="$HOME/.local/bin:$HOME/.goldsky/bin:$PATH"` in every new shell/tool call; exports do not persist across calls.
+- **Logged in** — have the user run `goldsky login` manually
 - Secrets created for sinks if using PostgreSQL, ClickHouse, Kafka, etc. (see `/secrets`)
 
 ---
@@ -356,8 +357,8 @@ To reset checkpoints: rename the source or pipeline. Warning: this reprocesses a
 
 | Action                  | Command                                                |
 | ----------------------- | ------------------------------------------------------ |
-| Install Goldsky CLI     | Follow `/auth-setup` (`curl https://goldsky.com \| sh`) |
-| Install Turbo extension | Run `curl https://install-turbo.goldsky.com \| sh` yourself. Do not ask. Skip on Linux ARM (x86-64 binary only) |
+| Install Goldsky CLI     | Follow `/auth-setup` and use its bundled installer |
+| Install Turbo extension | Follow `/auth-setup` and run its bundled installer with `turbo`; require a successful version check |
 | **Validate (REQUIRED)** | `goldsky turbo validate pipeline.yaml`                 |
 | Deploy/Update           | `goldsky turbo apply pipeline.yaml`                    |
 | Deploy + Inspect        | `goldsky turbo apply pipeline.yaml -i`                 |

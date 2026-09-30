@@ -30,25 +30,16 @@ If `goldsky` commands hang without producing output:
 
 4. **If the goldsky CLI works but `turbo` commands hang:**
 
-   The `turbo` binary may need to be reinstalled:
-
-   ```bash
-   # Remove existing turbo binary
-   rm -f ~/.goldsky/bin/turbo
-
-   # Reinstall
-   curl https://install-turbo.goldsky.com | sh
-   ```
+   Follow `/auth-setup` and run its bundled installer with `turbo`. It checks whether the existing binary can run and repairs a broken installation. If it runs but still hangs on API commands, check network access and authentication instead of repeatedly reinstalling.
 
 ## Turbo Binary Not Found
 
 **Symptom:** `goldsky turbo list` shows "The turbo binary is not installed"
 
-**Solution:** Run this yourself. Do not ask the user, and do not run `goldsky turbo` to trigger its install prompt. On Linux ARM, stop: the published binary is x86-64 only.
+**Solution:** Follow `/auth-setup` and run its bundled installer with `turbo`. It repairs a missing or broken binary and reports unsupported platforms. Do not trigger the interactive auto-installer. Restore PATH in each new shell:
 
 ```bash
-curl https://install-turbo.goldsky.com | sh
-export PATH="${HOME}/.goldsky/bin:${PATH}"
+export PATH="$HOME/.local/bin:$HOME/.goldsky/bin:$PATH"
 ```
 
 Then verify:
@@ -164,7 +155,7 @@ Execution error: SSL connection is required
 | Issue                          | Action                                                            |
 | ------------------------------ | ----------------------------------------------------------------- |
 | **CLI hangs / no output**      | Run with `GOLDSKY_NO_UPDATE_NOTIFIER=1 goldsky <command>`         |
-| **Turbo binary not installed** | Run `curl https://install-turbo.goldsky.com \| sh` yourself. Do not ask |
+| **Turbo binary not installed** | Run the `/auth-setup` bundled installer with `turbo` and verify its exit status |
 | **"turbo binary not found"**   | Same as above - Turbo is a separate binary that must be installed |
 | Not logged in                  | Use `/auth-setup` skill                                           |
 | Secret not found               | Use `/secrets` skill to create it                                 |

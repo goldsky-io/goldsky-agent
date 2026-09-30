@@ -1,0 +1,101 @@
+name: CLI installation
+
+on:
+  pull_request:
+    paths:
+      - 'skills/auth-setup/**'
+      - 'tests/installer-sandbox.py'
+      - '.github/workflows/install-smoke.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'skills/auth-setup/**'
+      - 'tests/installer-sandbox.py'
+      - '.github/workflows/install-smoke.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  unix:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15, macos-15-intel]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install without a terminal or sudo
+        run: bash skills/auth-setup/scripts/install.sh
+      - name: Verify in a separate shell and repeat
+        run: |
+          export PATH="$HOME/.local/bin:$HOME/.goldsky/bin:$PATH"
+          goldsky --version
+          goldsky compose --version
+          goldsky turbo --version
+          bash skills/auth-setup/scripts/install.sh
+
+  linux-arm:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash skills/auth-setup/scripts/install.sh compose
+      - name: Full install must explicitly fail until Turbo supports ARM
+        run: |
+          if bash skills/auth-setup/scripts/install.sh > result.log 2>&1; then
+            cat result.log
+            echo 'Expected the current unsupported Turbo platform to fail.' >&2
+            exit 1
+          fi
+          cat result.log
+          grep -q 'no published Linux ARM binary' result.log
+
+  regressions:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Isolated users and simulated download failures
+        run: |
+          docker run --rm -v "$PWD:/work:ro" ubuntu:24.04 sh -ec '
+            apt-get update -qq
+            apt-get install -y -qq python3
+            python3 /work/tests/installer-sandbox.py
+          '
+
+  windows-wsl:
+    runs-on: windows-2025
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Provision disposable Ubuntu WSL test environment
+        shell: pwsh
+        run: |
+          $Image = 'ubuntu-24.04.5-wsl-amd64.wsl'
+          $Rootfs = Join-Path $env:RUNNER_TEMP $Image
+          Invoke-WebRequest "https://releases.ubuntu.com/24.04/$Image" -OutFile $Rootfs
+          $Checksums = (Invoke-WebRequest 'https://releases.ubuntu.com/24.04/SHA256SUMS').Content
+          $Expected = (($Checksums -split "`n" | Where-Object { $_ -match [regex]::Escape($Image) }) -split '\s+')[0]
+          if ((Get-FileHash $Rootfs -Algorithm SHA256).Hash.ToLower() -ne $Expected) { throw 'WSL image checksum mismatch' }
+          wsl.exe --import GoldskyInstallTest "$env:RUNNER_TEMP\goldsky-wsl" $Rootfs --version 2
+          if ($LASTEXITCODE -ne 0) { throw 'WSL import failed' }
+          wsl.exe --distribution GoldskyInstallTest --user root --exec bash -ec 'apt-get update -qq; apt-get install -y -qq curl ca-certificates; useradd -m agent'
+          if ($LASTEXITCODE -ne 0) { throw 'WSL prerequisites failed' }
+      - name: Install from PowerShell as an unprivileged Linux user
+        shell: pwsh
+        run: |
+          & ./skills/auth-setup/scripts/install.ps1 -Distribution GoldskyInstallTest -User agent
+          if ($LASTEXITCODE -ne 0) { throw 'Installation failed' }
+      - name: Verify in a separate shell and repeat
+        shell: pwsh
+        run: |
+          wsl.exe --distribution GoldskyInstallTest --user agent --exec bash -ec 'export PATH="$HOME/.local/bin:$HOME/.goldsky/bin:$PATH"; goldsky --version; goldsky compose --version; goldsky turbo --version'
+          if ($LASTEXITCODE -ne 0) { throw 'Verification failed' }
+          & ./skills/auth-setup/scripts/install.ps1 -Distribution GoldskyInstallTest -User agent
+          if ($LASTEXITCODE -ne 0) { throw 'Repeat installation failed' }
+      - name: Remove disposable WSL environment
+        if: always()
+        shell: pwsh
+        run: wsl.exe --unregister GoldskyInstallTest

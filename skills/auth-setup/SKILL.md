@@ -9,7 +9,7 @@ Set up the Goldsky CLI, authenticate your account, and configure projects for yo
 
 ## Prerequisites
 
-- [ ] macOS, Linux, or WSL (Windows Subsystem for Linux)
+- [ ] macOS, Linux, or Windows with WSL (see Step 1 for binary compatibility)
 - [ ] Internet connection
 - [ ] Goldsky account (sign up at https://app.goldsky.com)
 
@@ -17,49 +17,34 @@ Set up the Goldsky CLI, authenticate your account, and configure projects for yo
 
 **Follow this workflow and verify each step. Execute commands and check results.**
 
-### Step 1: Check CLI Installation
+### Step 1: Install and verify the CLI
+
+Install missing tools yourself. Authentication remains a separate, manual step; do not ask the user to install binaries or enter a sudo password.
+
+On macOS and Linux (including WSL), run the bundled [installer](scripts/install.sh) using its actual path in this skill folder:
 
 ```bash
-which goldsky && goldsky --version
+bash /path/to/auth-setup/scripts/install.sh
 ```
 
-**Success:** Path and version displayed (e.g., `/usr/local/bin/goldsky` and `13.2.0`)
+The default installs Goldsky, Compose, and Turbo. Pass `cli` when only the base CLI is needed. For a Compose-only or Turbo-only task, pass `compose` or `turbo`; both include the base Goldsky CLI. The script uses user-writable directories, disables installation prompts even in a PTY, checks download failures and empty responses, and requires each requested binary to run successfully. It reuses working installations and repairs broken ones. No sudo or login is needed.
 
-**Not installed:** Install it yourself. Do not ask the user to run the installer or type a sudo password.
+**Every new shell/tool call must restore PATH**, including authentication and project commands below. An export in a previous tool call does not persist:
 
 ```bash
-curl https://goldsky.com | sh
-hash -r 2>/dev/null || true
-if ! command -v goldsky >/dev/null 2>&1; then
-  export PATH="${HOME}/.local/bin:${PATH}"
-fi
+export PATH="$HOME/.local/bin:$HOME/.goldsky/bin:$PATH"
 goldsky --version
-```
-
-With no terminal, that command installs without a prompt into a directory you can write. If `goldsky` is still not found, it is in `~/.local/bin`.
-
-If the installer asks for confirmation or a sudo password, stop. Do not retry with sudo. A prompt means a person is at the terminal, or `goldsky.com` is still serving the old script.
-
-Once `goldsky --version` succeeds, install the Turbo and Compose extensions if they are missing. Do this yourself. Do not ask the user. Do not run a `goldsky turbo` command to trigger its installer: that path asks "Would you like me to install it for you?" and cannot be answered without a terminal.
-
-```bash
-export PATH="${HOME}/.goldsky/bin:${PATH}"
-arch=$(uname -m)
-if [ "$(uname -s)" = "Linux" ] && { [ "$arch" = "aarch64" ] || [ "$arch" = "arm64" ]; }; then
-  echo "No Linux ARM Turbo build is published. Skip the Turbo install and say so."
-elif [ ! -x "${HOME}/.goldsky/bin/turbo" ]; then
-  curl https://install-turbo.goldsky.com | sh
-fi
-if [ ! -x "${HOME}/.goldsky/bin/compose" ]; then
-  goldsky compose install
-fi
 goldsky compose --version
-if [ -x "${HOME}/.goldsky/bin/turbo" ]; then
-  goldsky turbo --version
-fi
+goldsky turbo --version
 ```
 
-`goldsky turbo` and `goldsky compose` look in `~/.goldsky/bin`, not on `PATH`. `goldsky compose install` is safe to repeat. The Turbo installer also writes a `PATH` line into the shell profile, which does not change this session, so keep the `export` above before any bare `turbo` command. The published Turbo installer is one Linux binary, and it is x86-64. On Linux ARM, skip it and tell the user there is no matching build. Do not install that binary anyway. If either installer asks for confirmation or a sudo password, stop. Do not retry with sudo.
+Check only the components requested. Do not trigger Turbo's interactive auto-installer when its binary is absent. Do not report setup complete if the installer or a required version check fails.
+
+**Platform limits:** Goldsky and Compose publish macOS Intel/Apple Silicon and Linux x64/ARM64 binaries. The current Linux Turbo binary requires x64 and glibc 2.39+ (for example Ubuntu 24.04). A full install on Linux ARM64, older glibc, or musl must report incomplete; `compose` can still be installed separately. These are upstream binary limits, not reasons to ask for sudo or silently omit Turbo. macOS uses the published Mac installers.
+
+**Windows:** the complete toolset currently runs inside WSL, not native PowerShell or Git Bash: Compose has no published Windows binary. Use an existing x64 Ubuntu 24.04+ WSL distribution for all three tools. See [Windows setup](references/windows.md) for PowerShell invocation and prerequisites. Keep installation, subsequent CLI commands, project files, and manual login in the same WSL environment. Installing/enabling WSL itself may require administrator access and a reboot; do not claim that prerequisite can always be automated without intervention.
+
+Prerequisites inside the selected environment: Bash, curl, CA certificates, standard Unix utilities, internet access, and a writable home directory. If an environment lacks these, report the missing prerequisite instead of claiming installation succeeded.
 
 ### Step 2: Check Authentication Status
 
@@ -126,8 +111,8 @@ After successful setup, provide a summary to the user:
 
 **What was done:**
 - ✓ Goldsky CLI installed (version X.X.X)
-- ✓ Turbo extension installed (`goldsky turbo --version`)
-- ✓ Compose extension installed (`goldsky compose --version`)
+- Turbo: verified version, not requested, or explicit installation failure
+- Compose: verified version, not requested, or explicit installation failure
 - ✓ Authenticated to Goldsky
 - ✓ Connected to project: [project-name]
 
@@ -188,8 +173,8 @@ goldsky login
 
 | Issue             | Action                                                 |
 | ----------------- | ------------------------------------------------------ |
-| Installer asks for confirmation or sudo | Stop. Do not retry with sudo. `goldsky.com` is still serving the old script, or a person is at the terminal |
-| `turbo` or `compose` says it is not installed | Install it yourself with the Step 1 commands. Do not ask the user |
+| Installer asks for confirmation or sudo | Use the bundled installer, which creates a writable destination and passes `-f`. Do not retry with sudo |
+| `turbo` or `compose` is missing or cannot run | Re-run the bundled installer for that component; check its exit status and platform requirements |
 | Not logged in     | Ask the user to run `goldsky login` themselves in their terminal |
 | Invalid token     | Ask user to generate a new token in dashboard          |
 | Permission denied | User needs role upgrade from project Owner/Admin       |
