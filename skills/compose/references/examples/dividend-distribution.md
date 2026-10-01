@@ -247,18 +247,21 @@ import type { Hex } from "./types";
  * campaign). To run on Base mainnet instead, swap in these values (real gas
  * applies):
  *   chain: "base", turboChain: "base",
- *   shareToken:        "0xE05Ceb3E269029E3bab46E35515e8987060D1027",
- *   payToken (MockUSDC): "0x02D9Df62B7AED15739D638B92BAcEA2ce4Cb3d70",
- *   campaignContract:  "0x81051f77ea167b631Dd7F40ac414A9F9344Fb162",
+ *   shareToken         0xE05Ceb3E269029E3bab46E35515e8987060D1027
+ *   payToken           0x02D9Df62B7AED15739D638B92BAcEA2ce4Cb3d70 (MockUSDC)
+ *   campaignContract   0x81051f77ea167b631Dd7F40ac414A9F9344Fb162
  *   shareTokenDeployBlock: 45654954,
  *
  * Update after running `scripts/deploy.sh`.
  */
+const BASE_SEPOLIA_SHARE = "0x713e0749a9Fe480322990913850e81b0F4F4dc0d" as Hex;
+const BASE_SEPOLIA_PAY = "0x8ec24F07F08745fc3D979336AA81d4Dc73f3D9DE" as Hex;
+
 export const CONFIG = {
   chain:      "baseSepolia" as const,   // evm.chains[chain] key (camelCase)
   turboChain: "base_sepolia",           // Turbo dataset prefix (snake_case network slug)
-  shareToken:       "0x713e0749a9Fe480322990913850e81b0F4F4dc0d" as Hex,
-  payToken:         "0x8ec24F07F08745fc3D979336AA81d4Dc73f3D9DE" as Hex,  // MockUSDC (permissionless mint)
+  shareToken:       BASE_SEPOLIA_SHARE,
+  payToken:         BASE_SEPOLIA_PAY,  // MockUSDC (permissionless mint)
   campaignContract: "0xA8e58573B1e10908b63d12B603aCF9C784BF904E" as Hex,  // permissionless: anyone can declare()
   // Block at which `shareToken` was deployed. Job-mode forces
   // `start_at: earliest`, so we can't anchor the source there directly;
@@ -1034,15 +1037,14 @@ import type { Hex } from "./types";
 const API_BASE = "https://api.goldsky.com/api/v1";
 
 function authHeaders(env: Record<string, string>): Record<string, string> {
-  const key = env.GOLDSKY_PROJECT_KEY;
-  if (!key) {
+  if (!env.GOLDSKY_PROJECT_KEY) {
     throw new Error(
       "GOLDSKY_PROJECT_KEY missing — declare it under `secrets:` in compose.yaml " +
         "and set its value with `goldsky compose secret set GOLDSKY_PROJECT_KEY`",
     );
   }
   return {
-    Authorization: `Bearer ${key}`,
+    Authorization: `Bearer ${env.GOLDSKY_PROJECT_KEY}`,
     "Content-Type": "application/json",
   };
 }
