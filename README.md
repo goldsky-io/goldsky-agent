@@ -6,11 +6,32 @@
 
 AI-powered tools for the full Goldsky product surface. Build, deploy, and debug Turbo pipelines, Mirror pipelines, Subgraphs, Compose apps, and Edge RPC — from natural-language prompts.
 
-Paste this to get started. The agent installs the CLI, then runs `/get-started`, which does the rest:
+## Quick Start
+
+| I want to...                                          | Use                  |
+| ----------------------------------------------------- | -------------------- |
+| I just installed Goldsky                              | `/get-started`       |
+| Build a new Turbo pipeline                            | `/turbo-builder`     |
+| Fix a broken Turbo pipeline                           | `/turbo-doctor`      |
+| Fix a broken Mirror pipeline                          | `/mirror-doctor`     |
+| Fix a broken Compose app                              | `/compose-doctor`    |
+| Build / deploy a subgraph                             | `/subgraph-builder`  |
+| Fix a broken / stalled subgraph                       | `/subgraph-doctor`   |
+| Migrate a subgraph from The Graph                     | `/subgraph-migrate`  |
+| Build a Compose app (oracle / keeper / automation)    | `/compose`           |
+| Get a fast, reliable RPC endpoint                     | `/edge`              |
+| Cut the bill from your existing RPC provider          | `/boost`             |
+| Find the right dataset name                           | `/datasets`          |
+| Look up Turbo YAML syntax                             | `/turbo-pipelines`   |
+| Set up the CLI and log in                             | `/auth-setup`        |
+
+Just describe what you need in natural language — the right skill is selected automatically. With nothing installed yet, paste this. It installs the CLI, then runs `/get-started`, which does the rest:
 
 ```text
 Set up Goldsky. Do this yourself. I only approve login in the browser and tell you what I am trying to do.
-Install the Goldsky CLI by running auth-setup/scripts/install.sh with bash. If you cannot read that skill yet, install it first with npx skills add goldsky-io/goldsky-agent -y -g -a <agent> (claude-code, cursor, codex, or opencode, or -a '*' if you cannot tell which host you are). Do not curl an installer and do not ask for sudo.
+
+Install the Goldsky CLI by running auth-setup/scripts/install.sh with bash. If you cannot read that skill yet, install it first with npx skills add goldsky-io/goldsky-agent -y -g -a <agent>, using claude-code, cursor, codex, or opencode, or -a '*' if you cannot tell which host you are. Do not curl an installer and do not ask for sudo.
+
 Then run /get-started and follow it.
 ```
 
@@ -72,27 +93,6 @@ cp -r goldsky-agent/skills/* .cursor/skills/    # Cursor
 ```
 
 </details>
-
-### Quick Start
-
-| I want to...                                       | Use                 |
-| -------------------------------------------------- | ------------------- |
-| I just installed Goldsky                           | `/get-started`      |
-| Build a new Turbo pipeline                         | `/turbo-builder`    |
-| Fix a broken Turbo pipeline                        | `/turbo-doctor`     |
-| Fix a broken Mirror pipeline                       | `/mirror-doctor`    |
-| Fix a broken Compose app                           | `/compose-doctor`   |
-| Build / deploy a subgraph                          | `/subgraph-builder` |
-| Fix a broken / stalled subgraph                    | `/subgraph-doctor`  |
-| Migrate a subgraph from The Graph                  | `/subgraph-migrate` |
-| Build a Compose app (oracle / keeper / automation) | `/compose`          |
-| Get a fast, reliable RPC endpoint                  | `/edge`             |
-| Cut the bill from your existing RPC provider       | `/boost`            |
-| Find the right dataset name                        | `/datasets`         |
-| Look up Turbo YAML syntax                          | `/turbo-pipelines`  |
-| Set up the CLI and log in                          | `/auth-setup`       |
-
-Just describe what you need in natural language — the right skill is selected automatically.
 
 ## Use with autonomous or BYO agents
 
