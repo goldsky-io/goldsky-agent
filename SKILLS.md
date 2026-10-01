@@ -49,7 +49,7 @@ npx skills add goldsky-io/goldsky-agent
 
 ## Examples
 
-**"Set up Goldsky. Install the skills, the docs MCP, and the CLIs, log me in, and ask what I am trying to do."**
+**"Install the Goldsky CLI, then run /get-started."**
 → Uses: `/get-started`, then auth-setup
 
 **"Build me a pipeline for USDC transfers on Base"**
