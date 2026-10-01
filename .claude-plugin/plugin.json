@@ -7,7 +7,9 @@
     "name": "Goldsky"
   },
   "repository": "https://github.com/goldsky-io/goldsky-agent",
-  "homepage": "https://docs.goldsky.com",
+  "homepage": "https://goldsky.com",
+  "documentationUrl": "https://docs.goldsky.com",
+  "supportUrl": "https://docs.goldsky.com/getting-support",
   "privacyPolicyUrl": "https://goldsky.com/privacy",
   "license": "MIT",
   "keywords": [
