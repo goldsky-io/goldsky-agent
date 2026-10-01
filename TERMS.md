@@ -20,7 +20,7 @@ agent work with Goldsky. The plugin is **instructional content**, not a service.
 
 The plugin helps you drive Goldsky, but it is not the product. Your use of the
 Goldsky platform, CLI, and APIs is governed separately by the Goldsky Terms of
-Service at <https://goldsky.com/terms>. You need your own Goldsky account.
+Service at <https://goldsky.com/terms/terms-and-conditions>. You need your own Goldsky account.
 
 ## Review what the agent does
 
