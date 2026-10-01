@@ -10,6 +10,7 @@ AI-powered tools for the full Goldsky product surface. Build, deploy, and debug 
 
 | I want to...                                          | Use                  |
 | ----------------------------------------------------- | -------------------- |
+| I just installed Goldsky                              | `/get-started`       |
 | Build a new Turbo pipeline                            | `/turbo-builder`     |
 | Fix a broken Turbo pipeline                           | `/turbo-doctor`      |
 | Fix a broken Mirror pipeline                          | `/mirror-doctor`     |
@@ -24,7 +25,15 @@ AI-powered tools for the full Goldsky product surface. Build, deploy, and debug 
 | Look up Turbo YAML syntax                             | `/turbo-pipelines`   |
 | Set up the CLI and log in                             | `/auth-setup`        |
 
-Just describe what you need in natural language — the right skill is selected automatically.
+Just describe what you need in natural language — the right skill is selected automatically. With nothing installed yet, paste this. It installs the CLI, then runs `/get-started`, which does the rest:
+
+```text
+Set up Goldsky. Do this yourself. I only approve login in the browser and tell you what I am trying to do.
+
+Install the Goldsky CLI by running auth-setup/scripts/install.sh with bash. If you cannot read that skill yet, install it first with npx skills add goldsky-io/goldsky-agent -y -g -a <agent>, using claude-code, cursor, codex, or opencode, or -a '*' if you cannot tell which host you are. Do not curl an installer and do not ask for sudo.
+
+Then run /get-started and follow it.
+```
 
 ## Installation
 
