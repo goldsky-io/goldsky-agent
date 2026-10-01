@@ -8,6 +8,7 @@
   },
   "repository": "https://github.com/goldsky-io/goldsky-agent",
   "homepage": "https://docs.goldsky.com",
+  "privacyPolicyUrl": "https://goldsky.com/privacy",
   "license": "MIT",
   "keywords": [
     "goldsky",
