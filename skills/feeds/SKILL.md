@@ -22,18 +22,33 @@ A project has one Feeds key, and every feed answers it. Creating that key is the
 The call authenticates with the project token from `goldsky login`, which is stored at `~/.goldsky/auth_token`. Do not read that file into the chat, do not pass `--token`, and do not ask the user to paste a token. If `goldsky project list` says they are not logged in, use `/auth-setup` first. The caller has to be an Editor on the project.
 
 ```bash
-curl -sS -X POST \
+create_raw=$(curl -sS -X POST \
   -H "Authorization: Bearer $(cat "$HOME/.goldsky/auth_token")" \
-  https://api.goldsky.com/api/v1/feeds/api-key
+  -w '\n%{http_code}' \
+  https://api.goldsky.com/api/v1/feeds/api-key)
+printf '%s\n' "${create_raw##*$'\n'}"
 ```
 
-The body is `{ "data": { "name": "feeds", "api_key": "<plaintext or null>" } }`.
+Do not print `create_raw`. The line above is the HTTP status. The rest of the variable is `{ "data": { "name": "feeds", "api_key": "<plaintext or null>" } }`.
 
-- `api_key` is a string only on the call that created the key. Export it as `GOLDSKY_FEEDS_API_KEY` for the requests below. Do not print it, and do not write it into a file.
-- `api_key` is null when the project already has the key. This endpoint will not return it again. Reveal the existing one with `GET https://api.goldsky.com/api/v1/edge/feeds/api-key` and the same `Authorization` header, then export that value. Do not call `POST /api/v1/feeds/key/rotate` unless the user asks: rotate revokes the current key immediately.
+- When `api_key` is a string, that call created the key. Export it as `GOLDSKY_FEEDS_API_KEY`. Do not print it, and do not write it into a file.
+- When `api_key` is null, the project already has the key and this endpoint will not return it again. Reveal it, export `.data.api_key`, and do not print that response either. The reveal body is `{ "data": { "api_key": "<plaintext>" } }` and has no `name`. Run this only in that case:
+
+```bash
+reveal_raw=$(curl -sS \
+  -H "Authorization: Bearer $(cat "$HOME/.goldsky/auth_token")" \
+  -w '\n%{http_code}' \
+  https://api.goldsky.com/api/v1/edge/feeds/api-key)
+printf '%s\n' "${reveal_raw##*$'\n'}"
+```
+
+Do not call `POST /api/v1/feeds/key/rotate` unless the user asks: rotate revokes the current key immediately.
+
 - 401 means they are not logged in. Use `/auth-setup`.
 - 403 means this user is not an Editor on the project.
 - 409 means an Edge endpoint named `feeds` exists and is not the Feeds key. That endpoint has to be deleted before this call can create one.
+
+A 401, 403, or 409 body is an error and has no key, so it can be shown. A 200 body has the key, so leave it in the variable.
 
 Send `GOLDSKY_FEEDS_API_KEY` in the `x-api-key` header. `?key=` and `Authorization: Bearer` are also accepted on the feed itself. Prefer the header so the key does not land in a URL log.
 
@@ -61,11 +76,11 @@ curl -sS -H "x-api-key: $GOLDSKY_FEEDS_API_KEY" \
 
 Re-read the OpenAPI spec when a request is rejected. The chain set lives on the `chains` parameter there.
 
-- Omit `chains` to query every supported chain. Pass canonical slugs, comma-separated. `polygon` and `arbitrum_one` are the Feeds names; `matic` and `arbitrum` are Turbo prefixes and are not this parameter.
+- Omit `chains` to query every supported chain. Pass canonical slugs, comma-separated. `matic`, `arbitrum`, and `mainnet` are aliases for `polygon`, `arbitrum_one`, and `ethereum`. Matching is case-insensitive, and `-` is read as `_`. Any other spelling returns 400.
 - `token_symbol` matches a symbol, so two contracts can both match. Use `token_address` when the token must be a specific contract. On balances, the zero address selects the native asset.
 - `include_unknown_price` defaults to false, which leaves out tokens Goldsky has no price for.
 - `min_value_usd` drops rows below that USD value and also drops unpriced rows. It applies to `total_value_usd` too.
-- On transfers, `from` and `to` are inclusive RFC 3339 bounds on `block_timestamp`. `from_block` and `to_block` require exactly one chain, because block numbers are not comparable across chains. `transfer_type` is a comma list of `native`, `erc20`, and `spl`. `direction` is `in` or `out`.
+- On transfers, `from` and `to` are inclusive RFC 3339 bounds on `block_timestamp`. `from_block` and `to_block` require exactly one chain, because block numbers are not comparable across chains. `transfer_type` is `native`, `erc20`, or both, comma-separated. Anything else, including `spl` and the NFT types, returns 400. `direction` is `in` or `out`.
 - `page_size` defaults to 100 and the maximum is 1000. The next page is `page_token` set to the previous response's `pagination.next_page_token`. A token is only valid for the filters that produced it. Each page is a separate billed request (https://docs.goldsky.com/pricing/summary#feeds). Do not walk the whole history unless the user asked for that range.
 
 ## Writing code against a response
