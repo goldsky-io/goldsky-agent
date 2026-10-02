@@ -17,17 +17,25 @@ The installed CLI has no feeds command. Do not look for `goldsky feeds`, and do 
 
 ## Key
 
-Create it in the dashboard: https://app.goldsky.com/dashboard/feeds?tab=api-keys. One key covers every feed in the project. Running a test request there creates a key when the project has none.
+A project has one Feeds key, and every feed answers it. Creating that key is the setup. Do it with the API. Do not send the user to the dashboard, and do not run `goldsky edge create`.
 
-The user saves it in their own shell:
+The call authenticates with the project token from `goldsky login`, which is stored at `~/.goldsky/auth_token`. Do not read that file into the chat, do not pass `--token`, and do not ask the user to paste a token. If `goldsky project list` says they are not logged in, use `/auth-setup` first. The caller has to be an Editor on the project.
 
 ```bash
-export GOLDSKY_FEEDS_API_KEY=your-api-key
+curl -sS -X POST \
+  -H "Authorization: Bearer $(cat "$HOME/.goldsky/auth_token")" \
+  https://api.goldsky.com/api/v1/feeds/api-key
 ```
 
-Do not ask them to paste the key into the chat, do not echo it, and do not write it into a file. If `GOLDSKY_FEEDS_API_KEY` is unset, stop and send them to that dashboard page.
+The body is `{ "data": { "name": "feeds", "api_key": "<plaintext or null>" } }`.
 
-Send the key in the `x-api-key` header. `?key=` and `Authorization: Bearer` are also accepted. Prefer the header so the key does not land in a URL log.
+- `api_key` is a string only on the call that created the key. Export it as `GOLDSKY_FEEDS_API_KEY` for the requests below. Do not print it, and do not write it into a file.
+- `api_key` is null when the project already has the key. This endpoint will not return it again. Reveal the existing one with `GET https://api.goldsky.com/api/v1/edge/feeds/api-key` and the same `Authorization` header, then export that value. Do not call `POST /api/v1/feeds/key/rotate` unless the user asks: rotate revokes the current key immediately.
+- 401 means they are not logged in. Use `/auth-setup`.
+- 403 means this user is not an Editor on the project.
+- 409 means an Edge endpoint named `feeds` exists and is not the Feeds key. That endpoint has to be deleted before this call can create one.
+
+Send `GOLDSKY_FEEDS_API_KEY` in the `x-api-key` header. `?key=` and `Authorization: Bearer` are also accepted on the feed itself. Prefer the header so the key does not land in a URL log.
 
 ## Calls
 
