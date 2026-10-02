@@ -1,6 +1,6 @@
 # Goldsky Agent Skills
 
-AI-powered tools for building, deploying, and debugging across the full Goldsky product surface — Turbo pipelines, Mirror pipelines, Subgraphs, Compose, and Edge RPC.
+AI-powered tools for building, deploying, and debugging across the full Goldsky product surface — Turbo pipelines, Mirror pipelines, Subgraphs, Compose, Edge RPC, and Feeds.
 
 ## Available Skills
 
@@ -28,6 +28,9 @@ _Legacy streaming product — prefer Turbo for new pipelines unless you need a s
 ### RPC (Edge and Boost)
 - **edge** - Managed RPC endpoints, capabilities, supported chains, error code lookups
 - **boost** - Free CDN in front of an RPC provider you already pay for; cacheable reads served from Goldsky's data, everything else forwarded free
+
+### Feeds
+- **feeds** - REST API for one wallet's balances and transfers. No `goldsky feeds` command; the key is `GOLDSKY_FEEDS_API_KEY`, not the CLI login token
 
 ### Cross-product routing
 - **onchain-automation** - Detect an onchain event, decide, and send a transaction back onchain; maps an end-to-end automation goal onto the right combination of products and hands off to their skills
