@@ -1,6 +1,6 @@
 ---
 name: turbo-builder
-description: "Build and deploy new Goldsky Turbo pipelines: requirements, dataset selection, YAML, validation, and deployment. Use for 'build a pipeline', 'index X on Y chain', or moving chain/contract data into Postgres, MySQL, ClickHouse, Kafka, Pub/Sub, S3, SQS, or webhooks. Also use for data goals such as Polymarket fills/positions/PnL, prediction markets, stablecoin or circulating supply, proof of reserves, sanctions/AML transfer monitoring, deposit detection, CCTP burns/mints, cross-chain settlement, payment reconciliation, wallet balances/history, token holder registries, tokenized equities/RWA, and wash-trading detection. Debug existing pipelines with /turbo-doctor; look up syntax with /turbo-pipelines."
+description: "Build and deploy new Goldsky Turbo pipelines: requirements, dataset selection, YAML, validation, and deployment. Use for 'build a pipeline', 'index X on Y chain', or moving chain/contract data into Postgres, MySQL, ClickHouse, Kafka, Pub/Sub, S3, SQS, or webhooks. Also use for data goals such as Polymarket fills/positions/PnL, prediction markets, stablecoin or circulating supply, proof of reserves, sanctions/AML transfer monitoring, deposit detection, CCTP burns/mints, cross-chain settlement, payment reconciliation, wallet history streamed into the user's own database, token holder registries, tokenized equities/RWA, and wash-trading detection. A REST lookup of one wallet's balances or transfers is /feeds, not a pipeline. Debug existing pipelines with /turbo-doctor; look up syntax with /turbo-pipelines."
 ---
 
 # Pipeline Builder
@@ -10,6 +10,7 @@ description: "Build and deploy new Goldsky Turbo pipelines: requirements, datase
 - Build NEW pipelines. Do not diagnose broken pipelines — that belongs to `/turbo-doctor`.
 - Do not serve as a YAML reference. If the user only needs to look up a field or syntax, use the `/turbo-pipelines` skill instead.
 - For dataset lookups, use `/datasets`.
+- A REST lookup of one wallet's balances or transfers is `/feeds`. Build a pipeline only when the rows need to land in the user's own database or webhook.
 
 Walk the user through building a complete pipeline from scratch, step by step. Generate a valid YAML configuration, validate it, and deploy it.
 

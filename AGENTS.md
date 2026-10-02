@@ -6,7 +6,7 @@
 
 # AGENTS.md — Goldsky Agent
 
-Guide for AI coding agents (Devin, Codex, Cursor, Amp, Claude Code, and anything else that reads `AGENTS.md`). This repo is a **skill pack** for building, deploying, and debugging on Goldsky — Turbo pipelines, Mirror pipelines, Subgraphs, Compose, and Edge RPC. Each skill is a self-contained folder of step-by-step instructions plus reference material.
+Guide for AI coding agents (Devin, Codex, Cursor, Amp, Claude Code, and anything else that reads `AGENTS.md`). This repo is a **skill pack** for building, deploying, and debugging on Goldsky — Turbo pipelines, Mirror pipelines, Subgraphs, Compose, Edge RPC, and Feeds. Each skill is a self-contained folder of step-by-step instructions plus reference material.
 
 ## How to use these skills
 
@@ -38,6 +38,7 @@ Each `SKILL.md` opens with a `description:` in its frontmatter stating what it c
 | React to an onchain event and send a transaction back onchain (detect → decide → execute) | `onchain-automation` |
 | Get a fast, reliable managed RPC endpoint; RPC error codes | `edge` |
 | Cut the bill from an RPC provider you already pay for; cache hit rates, `x-cache` | `boost` |
+| Look up one wallet's balances or transfers over the Feeds REST API | `feeds` |
 | Find the right dataset name / chain prefix | `datasets` |
 | Store credentials for a sink (Postgres, ClickHouse, Kafka…) | `secrets` |
 | Install the CLI / log in / switch projects / fix `unauthorized` | `auth-setup` |

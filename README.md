@@ -1,7 +1,7 @@
 # Goldsky Agent
 
 [![Install with npx](https://img.shields.io/badge/install-npx%20skills%20add-blue)](https://github.com/goldsky-io/goldsky-agent#installation)
-[![Skills](https://img.shields.io/badge/skills-18-green)](#skills)
+[![Skills](https://img.shields.io/badge/skills-19-green)](#skills)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 AI-powered tools for the full Goldsky product surface. Build, deploy, and debug Turbo pipelines, Mirror pipelines, Subgraphs, Compose apps, and Edge RPC — from natural-language prompts.
@@ -88,6 +88,7 @@ cp -r goldsky-agent/skills/* .cursor/skills/    # Cursor
 | Build a Compose app (oracle / keeper / automation) | `/compose`          |
 | Get a fast, reliable RPC endpoint                  | `/edge`             |
 | Cut the bill from your existing RPC provider       | `/boost`            |
+| Look up a wallet's balances or transfers           | `/feeds`            |
 | Find the right dataset name                        | `/datasets`         |
 | Look up Turbo YAML syntax                          | `/turbo-pipelines`  |
 | Set up the CLI and log in                          | `/auth-setup`       |
@@ -131,6 +132,7 @@ goldsky-agent/
 │   ├── onchain-automation/    # Cross-product router: detect → decide → execute
 │   ├── edge/                  # Managed RPC capabilities, error codes, pricing
 │   ├── boost/                 # Free CDN in front of your existing RPC provider
+│   ├── feeds/                 # Wallet balances and transfers over the REST API
 │   ├── datasets/              # Chain prefixes, dataset types
 │   ├── secrets/               # Credential management
 │   └── auth-setup/            # CLI installation, login
@@ -208,6 +210,14 @@ Globally distributed, low-latency JSON-RPC for EVM chains, built on eRPC — a d
 | ----- | ----------- | ------------- |
 | `edge` | "RPC rate limits, hedged requests, flashblocks, x402, error code -32005" | Capabilities, supported chains, pricing, dashboard, error code reference |
 | `boost` | "cut my Alchemy bill", "why is my cache hit rate low", "x-cache MISS" | Free CDN over your own provider: setup, what the CDN serves, headers, metrics, troubleshooting |
+
+### Feeds
+
+Ready-made wallet balances and transfers over a REST API. One request returns one wallet, priced, across the supported chains. There is no `goldsky feeds` command.
+
+| Skill | When to use | What's inside |
+| ----- | ----------- | ------------- |
+| `feeds` | "what does this wallet hold", "show its transfers", "Feeds API key" | The two endpoints, the Feeds key, and the parameters that differ from Turbo |
 
 ### Cross-cutting
 
@@ -308,6 +318,7 @@ The skills cover the full Goldsky product surface:
 - **Compose** — `compose.yaml` manifest, cron / HTTP / onchain triggers, smart wallets, gas sponsorship, `TaskContext` API, codegen, pricing
 - **Edge RPC** — Capabilities, supported chains, hedged requests, flashblocks, x402, error code lookups
 - **Boost** — Free CDN in front of the RPC provider you already pay for; cacheable reads served from Goldsky, everything else forwarded free
+- **Feeds** — REST API for one wallet's balances and transfers
 - **Cross-cutting** — Authentication, secrets, dataset naming, full CLI reference
 
 ## MCP Server
