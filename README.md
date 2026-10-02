@@ -1,7 +1,7 @@
 # Goldsky Agent
 
 [![Install with npx](https://img.shields.io/badge/install-npx%20skills%20add-blue)](https://github.com/goldsky-io/goldsky-agent#installation)
-[![Skills](https://img.shields.io/badge/skills-18-green)](#skills)
+[![Skills](https://img.shields.io/badge/skills-19-green)](#skills)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 AI-powered tools for the full Goldsky product surface. Build, deploy, and debug Turbo pipelines, Mirror pipelines, Subgraphs, Compose apps, and Edge RPC — from natural-language prompts.
