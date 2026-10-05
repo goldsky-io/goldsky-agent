@@ -1,11 +1,13 @@
 ---
 name: feeds
-description: "Query Goldsky Feeds, the REST API for one wallet's balances and transfers. Use for wallet holdings, portfolio value, transfer history, deposit checks, edge.goldsky.com/data/feeds, a Feeds API key, or GOLDSKY_FEEDS_API_KEY. There is no goldsky feeds command, and the CLI login token is not this key. For rows in the user's own database, use /turbo-builder. For a Turbo dataset name, use /datasets. For JSON-RPC, use /edge or /boost."
+description: "Query Goldsky Feeds, the REST API for one wallet's balances and transfers. Use for wallet holdings, portfolio value, transfer history, deposit checks, edge.goldsky.com/data/feeds, a Feeds API key, or GOLDSKY_FEEDS_API_KEY. The same key also serves Polymarket activity, positions and balances, and block headers by number, hash or timestamp. There is no goldsky feeds command, and the CLI login token is not this key. For rows in the user's own database, use /turbo-builder. For a Turbo dataset name, use /datasets. For JSON-RPC, use /edge or /boost."
 ---
 
 # Goldsky Feeds
 
 Feeds answers one question about one wallet over HTTP: what it holds, or what it sent and received, across the supported chains in a single request. Goldsky indexes, normalizes, and prices the rows. The caller does not run a pipeline.
+
+The same host and the same key also serve Polymarket and block-header feeds. Those are listed under "Other feeds on this key", and they do not follow the conventions below.
 
 The installed CLI has no feeds command. Do not look for `goldsky feeds`, and do not mint the key with `goldsky edge create`. The endpoint name `feeds` is reserved on the Edge create path, so that command is rejected. The CLI login token is a different credential and does not authenticate these requests.
 
@@ -42,6 +44,8 @@ reveal_raw=$(curl -sS \
 printf '%s\n' "${reveal_raw##*$'\n'}"
 ```
 
+The two paths differ on purpose and are not interchangeable: create is `POST /api/v1/feeds/api-key` with no `edge/`, reveal is `GET /api/v1/edge/feeds/api-key` with it. The other two combinations are 404. Do not "correct" either path.
+
 Do not call `POST /api/v1/feeds/key/rotate` unless the user asks: rotate revokes the current key immediately.
 
 - 401 means they are not logged in. Use `/auth-setup`.
@@ -51,6 +55,8 @@ Do not call `POST /api/v1/feeds/key/rotate` unless the user asks: rotate revokes
 A 401, 403, or 409 body is an error and has no key, so it can be shown. A 200 body has the key, so leave it in the variable.
 
 Send `GOLDSKY_FEEDS_API_KEY` in the `x-api-key` header. `?key=` and `Authorization: Bearer` are also accepted on the feed itself. Prefer the header so the key does not land in a URL log.
+
+The codes above are the mint and reveal calls. The feed itself answers a missing key with 402 and an x402 payment-required body, not 401, because that path is also offered pay-per-request. A key that is present but wrong is 401. So on a 402, the header did not arrive; re-read it before assuming the key is bad.
 
 ## Calls
 
@@ -70,18 +76,32 @@ curl -sS -H "x-api-key: $GOLDSKY_FEEDS_API_KEY" \
   "https://edge.goldsky.com/data/feeds/wallets/transfers?address=0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
 ```
 
-`address` is required and is exactly one wallet. An EVM address is `0x` plus 40 hex digits. A non-200 body is an error, not an empty wallet.
+Both feeds can also answer 502 when ClickHouse upstream fails, and balances can answer 503 when native balances are unavailable on some chains. The 503 names them in `error.chains` and sets `Retry-After`; it is a partial outage, so retry rather than reporting the wallet as empty.
+
+`address` is required and is exactly one wallet. An EVM address is `0x` plus 40 hex digits. A base58 Solana address passes validation but has no chain behind it yet, so it answers 200 with an empty `data`. A non-200 body is an error, not an empty wallet.
 
 ## Parameters
 
 Re-read the OpenAPI spec when a request is rejected. The chain set lives on the `chains` parameter there.
 
 - Omit `chains` to query every supported chain. Pass canonical slugs, comma-separated. `matic`, `arbitrum`, and `mainnet` are aliases for `polygon`, `arbitrum_one`, and `ethereum`. Matching is case-insensitive, and `-` is read as `_`. Any other spelling returns 400.
-- `token_symbol` matches a symbol, so two contracts can both match. Use `token_address` when the token must be a specific contract. On balances, the zero address selects the native asset.
-- `include_unknown_price` defaults to false, which leaves out tokens Goldsky has no price for.
+- `token_symbol` matches a symbol, so two contracts can both match — `usdc` returns both the native and the bridged contract on several chains at once. Use `token_address` when the token must be a specific contract; it takes up to 100, comma-separated. On balances, the zero address selects the native asset of every chain in scope.
+- `include_unknown_price` defaults to false, which leaves out tokens Goldsky has no price *source* for. It is not a promise that every row is priced: at the default, rows whose token is priceable still come back with `price_usd` and `value_usd` null. Handle a null price on every row.
+- `include_historical` defaults to false. Set it to true on balances to also get zero rows: tokens fully sold, and natives the wallet holds none of. On one wallet here that took 373 rows to 517. "Has this wallet ever held X" needs it; "what is it worth now" does not.
 - `min_value_usd` drops rows below that USD value and also drops unpriced rows. It applies to `total_value_usd` too.
-- On transfers, `from` and `to` are inclusive RFC 3339 bounds on `block_timestamp`. `from_block` and `to_block` require exactly one chain, because block numbers are not comparable across chains. `transfer_type` is `native`, `erc20`, or both, comma-separated. Anything else, including `spl` and the NFT types, returns 400. `direction` is `in` or `out`.
-- `page_size` defaults to 100 and the maximum is 1000. The next page is `page_token` set to the previous response's `pagination.next_page_token`. A token is only valid for the filters that produced it. Each page is a separate billed request (https://docs.goldsky.com/pricing/summary#feeds). Do not walk the whole history unless the user asked for that range.
+- On transfers, `from` and `to` are inclusive RFC 3339 bounds on `block_timestamp`. `from_block` and `to_block` require exactly one chain, because block numbers are not comparable across chains; without one they are 422 `CONFLICTING_FILTERS`, not 400. `transfer_type` is `native`, `erc20`, or both, comma-separated. The NFT types (`erc721`, `erc1155`) return 400. `spl` is accepted and returns 200 with an empty `data`, because no Solana chain is served yet: that empty page means the filter matched nothing on the EVM chains, not that the wallet is empty. `direction` is `in` or `out`.
+- `page_size` defaults to 100 and the maximum is 1000. A larger value is clamped to 1000 rather than rejected, so read `pagination.page_size` back instead of assuming the request size was honored. The next page is `page_token` set to the previous response's `pagination.next_page_token`. A token is only valid for the filters that produced it. Each page is a separate billed request (https://docs.goldsky.com/pricing/summary#feeds). Do not walk the whole history unless the user asked for that range.
+
+## Other feeds on this key
+
+`/polymarket/activity`, `/polymarket/positions`, `/polymarket/balances`, `/blocks/{chain}` and `/blocks/{chain}/head` are served by the same host and the same key. A Polymarket question does not have to become a pipeline: reach for `/turbo-builder` only when the rows have to land in the user's own database. Read the OpenAPI spec before calling one, because all three of the conventions above change:
+
+- **Pagination is `limit` and `cursor`, not `page_size` and `page_token`,** and the next cursor is `next_cursor` at the top level, not `pagination.next_page_token`. `page_size` is accepted and silently ignored, so a request meaning to ask for 2 rows returns the default 100 — and every one of those is billed. Check what came back.
+- **The chain vocabulary is not the wallet feeds' vocabulary.** `/blocks` serves 21 chains and spells Polygon `matic`; `polygon`, `mainnet` and every `arbitrum` spelling are 400 there. The wallet feeds serve 7 and spell it `polygon`, with `matic` only an alias. A slug that works on one is not known to work on the other.
+- **Errors are not always the `{"error":{"code","message"}}` envelope.** A bad query string on these paths comes back as a bare string (`Failed to deserialize query string: ...`), so reading `.error.message` gets null. Branch on the status code, not on the body shape.
+- **Numbers are scaled differently per path.** `/polymarket/activity` serves JSON numbers already in decimals (`price: 0.65`, `amount_shares: 84.615385`, `amount_usdc: 55.0`, and `amount_usdc / amount_shares == price`). `/polymarket/positions` and `/polymarket/balances` serve strings in raw 1e6 integer units, so `avg_price: "100000"` is $0.10 and `amount: "12120000000"` is 12120 shares. Divide by 1e6 before showing either to a user. `positions.amount` and `balances.balance` share that scale but are **not** the same quantity and disagreed on half the rows sampled here: `amount` is the trade-derived net position, `balance` is the conditional-token balance actually held, and splits, merges, redeems and plain transfers move tokens without a fill. Pick the one that answers the question and do not substitute one for the other.
+- **`/polymarket/activity` refuses an unselective scan.** It needs one of `address`, `token_id`, a closed block window of 300000 blocks or fewer, a closed time window of 604800 seconds or fewer, or `limit` of 100 or fewer with no filter. Anything else is 400 `MISSING_SELECTIVE_FILTER`.
+- **Three values carry warnings in the spec.** `activity.fee`'s basis is inconsistent across some maker/taker pairs in the source data. `positions.last_updated_at` is pipeline upsert time, not block time, so rows with different `block_number` can share it; use `block_number` to order. `balances.as_of_block` is the latest balance at or before that block by insert order, not a reconstruction of that block.
 
 ## Writing code against a response
 
