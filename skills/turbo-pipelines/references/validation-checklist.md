@@ -54,7 +54,7 @@ For each sink entry:
 - [ ] `type` is one of: `postgres`, `postgres_aggregate`, `clickhouse`, `kafka`, `pubsub`, `webhook`, `s3_sink`, `s2_sink`, `blackhole`
 - [ ] `from` references a valid source or transform key name
 - [ ] Required fields by type:
-  - `postgres`: `schema`, `table`, `secret_name`, `primary_key`
+  - `postgres`: `schema`, `table`, `secret_name` (`primary_key` is optional and enables upserts)
   - `postgres_aggregate`: `schema`, `landing_table`, `agg_table`, `primary_key`, `secret_name`, `group_by`, `aggregate`
   - `clickhouse`: `table`, `secret_name`, `primary_key`
   - `kafka`: `topic`

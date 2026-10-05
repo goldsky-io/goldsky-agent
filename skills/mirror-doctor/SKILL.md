@@ -84,7 +84,7 @@ Based on the diagnostic data, match against these known patterns:
 
 **Fix:**
 1. If the secret doesn't exist, direct the user to `/secrets` to create it.
-2. If the secret exists but credentials are wrong, create a new secret (secrets are immutable — you create a replacement with the same name).
+2. If the secret exists but credentials are wrong, update it in place with `goldsky secret update`; follow [Rotating Credentials](../secrets/SKILL.md#rotating-credentials) for the required JSON format and credential handling. Do not delete and recreate an in-use secret.
 3. Restart: `goldsky pipeline restart <name> --from-snapshot last`
 
 #### Sink Unreachable

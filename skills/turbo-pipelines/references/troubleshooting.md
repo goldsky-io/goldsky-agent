@@ -112,7 +112,7 @@ Execution error: Failed to create PostgreSQL connection: error returned from dat
 **Fix:**
 
 1. Verify credentials work: `psql 'postgresql://user:pass@host/db'`
-2. Update the secret: `goldsky secret update SECRET_NAME --value '...'`
+2. Update the existing secret in place with `goldsky secret update`; follow [Rotating Credentials](../../secrets/SKILL.md#rotating-credentials) for the required JSON format and credential handling.
 3. Redeploy: `goldsky turbo apply pipeline.yaml`
 
 **Error: Project size limit exceeded (Neon free tier)**

@@ -101,7 +101,7 @@ If the fix involves CLI commands (restart, update secrets, redeploy), offer to e
 
 Common fixes:
 - **Restart:** `goldsky turbo restart <name>` (or `--clear-state` for a fresh start)
-- **Update secret:** `goldsky secret create <name>` and let the CLI prompt for the value (secrets are immutable — recreate to update). Avoid passing the credential inline via `--value`, which stores it in shell history; see the `/secrets` skill. Never echo a revealed secret back into the conversation.
+- **Update secret:** Use `goldsky secret update <name> --value "$(cat /secure/path/secret.json)"` to rotate the existing secret in place; see [Rotating Credentials](../secrets/SKILL.md#rotating-credentials) for the JSON format and credential handling. Do not delete and recreate an in-use secret. Unlike `create`, `update` does not prompt for a value. Never echo credentials back into the conversation.
 - **Redeploy:** `goldsky turbo delete <name>` then `goldsky turbo apply <file.yaml>`
 - **Resume:** `goldsky turbo resume <name>` (for paused pipelines)
 

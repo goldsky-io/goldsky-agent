@@ -13,7 +13,7 @@ Mirror is Goldsky's original streaming pipeline product. It reads onchain data f
 |---|---|---|
 | Subgraph sources | **Yes** | No |
 | Speed & reliability | Good | **Faster, more reliable** |
-| Sink variety | 11 sink types | Growing — new sinks added regularly |
+| Sink options | See [common Mirror sinks](#sinks) below | See the [Turbo sink catalog](https://docs.goldsky.com/turbo-pipelines/sinks/overview) |
 | Config complexity | Moderate | **Simpler YAML** |
 | Dataset coverage | 130+ chains | 130+ chains, richer catalog |
 
@@ -97,6 +97,8 @@ See [docs.goldsky.com/mirror/sources/supported-sources](https://docs.goldsky.com
 ---
 
 ## Sinks
+
+Common Mirror destinations are listed below; this is not an exhaustive count of supported sink types. Compare the specific destination the user needs, rather than inferring product-wide counts from these examples.
 
 | Sink | YAML `type` value | Notes |
 | ---- | ----------------- | ----- |

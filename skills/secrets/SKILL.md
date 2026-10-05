@@ -5,7 +5,7 @@ description: "Use this skill when a user wants to store, manage, or work with Go
 
 # Goldsky Secrets Management
 
-Create and manage secrets for pipeline sink credentials.
+Create and manage secrets for pipeline sink credentials. **Rotate existing credentials with `goldsky secret update`, preserving the secret name.** Do not delete an in-use secret to update it; see [Rotating Credentials](#rotating-credentials).
 
 ## Agent Instructions
 
@@ -205,13 +205,13 @@ Run `goldsky secret list` to confirm the secret was created.
 
 ## Quick Reference
 
-| Action | Command                                             |
-| ------ | --------------------------------------------------- |
-| Create | `goldsky secret create --name NAME --value "value"` |
-| List   | `goldsky secret list`                               |
-| Reveal | `goldsky secret reveal NAME`                        |
-| Update | `goldsky secret update NAME --value "new-value"`    |
-| Delete | `goldsky secret delete NAME`                        |
+| Action | Command                                                                |
+| ------ | ---------------------------------------------------------------------- |
+| Create | `goldsky secret create --name NAME --value "value"`                    |
+| List   | `goldsky secret list`                                                  |
+| Reveal | `goldsky secret reveal NAME`                                           |
+| Update | `goldsky secret update NAME --value "$(cat /secure/path/secret.json)"` |
+| Delete | `goldsky secret delete NAME`                                           |
 
 ## Prerequisites
 
@@ -283,13 +283,15 @@ sinks:
 
 ### Rotating Credentials
 
-Update an existing secret without changing pipeline configs:
+Update the existing secret in place, preserving its name and pipeline references. `update --value` requires the complete secret JSON object, including its `type`; it does not accept a raw connection string or prompt for a value. Use `--description` without `--value` for metadata-only updates.
+
+Prepare the JSON in a local file readable only by its owner (for example, `/secure/path/secret.json` with mode `600`), using the appropriate [secret format](https://docs.goldsky.com/turbo-pipelines/pipeline-config#secret-formats). For PostgreSQL, use the JDBC fields `type`, `protocol`, `host`, `port`, `databaseName`, `user`, and `password`.
 
 ```bash
-goldsky secret update MY_POSTGRES_SECRET --value 'postgres://admin:NEW_PASSWORD@db.example.com:5432/mydb'
+goldsky secret update MY_POSTGRES_SECRET --value "$(cat /secure/path/secret.json)"
 ```
 
-Active pipelines will pick up the new credentials on their next connection.
+This keeps the value out of shell history, but the CLI still receives it through argv, which can be visible in the process list. Keep shell tracing disabled and never print the file or the expanded command. Remove temporary credential files after use. Verify pipeline connectivity after rotation; do not assume a successful secret update proves a running pipeline has reloaded the credentials.
 
 ### Deleting Unused Secrets
 
@@ -333,7 +335,7 @@ Error: Secret 'MY_SECRET' already exists
 ```
 
 **Cause:** Attempting to create a secret with a name that's already in use.  
-**Fix:** Use `goldsky secret update MY_SECRET --value "new-value"` to update, or choose a different name.
+**Fix:** Follow [Rotating Credentials](#rotating-credentials) to update the existing secret, or choose a different name for a separate secret.
 
 ### Error: Invalid secret value format
 
@@ -361,11 +363,7 @@ echo '{"url":"...","user":"..."}' | jq .
 ### Pipeline fails with "authentication failed"
 
 **Cause:** Username or password in the secret is incorrect.
-**Fix:** Update the secret with correct credentials:
-
-```bash
-goldsky secret update MY_SECRET --value 'postgres://correct:credentials@host:5432/db'
-```
+**Fix:** Update the existing secret with correct credentials using [Rotating Credentials](#rotating-credentials).
 
 ### Secret value contains special characters
 
