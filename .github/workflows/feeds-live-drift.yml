@@ -1,0 +1,73 @@
+# Checks skills/feeds/SKILL.md against the live Feeds API.
+#
+# Deliberately NOT a pull_request gate. Each live request is billed, the API is
+# a third-party dependency whose outage would fail unrelated PRs, and forks
+# cannot read the secret. A weekly run plus manual dispatch catches drift
+# without putting any of that in a contributor's path.
+#
+# The script runs a spec tier (public openapi.json, no key, no billing) and a
+# live tier (real requests, needs GOLDSKY_FEEDS_API_KEY). The live tier is
+# skipped rather than failed when the secret is absent, so this workflow is
+# inert until the secret exists and turns itself on once it does — the same
+# pattern sync-kb.yml uses for its prod leg.
+#
+# On drift it opens (or comments on) an issue, because a scheduled failure
+# nobody is watching is the same as no check at all.
+name: Feeds live drift
+
+on:
+  schedule:
+    # Mondays 09:00 UTC — a week's drift is caught before it is quoted at anyone.
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4
+        with:
+          node-version: "22"
+
+      - name: Check the skill against the live API
+        id: check
+        env:
+          GOLDSKY_FEEDS_API_KEY: ${{ secrets.GOLDSKY_FEEDS_API_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GOLDSKY_FEEDS_API_KEY:-}" ]; then
+            echo "::notice::GOLDSKY_FEEDS_API_KEY is not set — only the spec tier will run."
+          fi
+          # Keep the report for the issue body whether it passes or fails.
+          set +e
+          node scripts/check-feeds-live.mjs 2>&1 | tee report.txt
+          rc=${PIPESTATUS[0]}
+          set -e
+          echo "rc=$rc" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Open or update the drift issue
+        if: steps.check.outputs.rc != '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          title="Feeds skill has drifted from the live API"
+          body=$'The scheduled check found `skills/feeds/SKILL.md` no longer matches the live API.\n\n```\n'"$(cat report.txt)"$'\n```\n\n'"Run: $RUN_URL"
+          existing=$(gh issue list --state open --search "$title in:title" --json number -q '.[0].number' || true)
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "$body"
+          else
+            gh issue create --title "$title" --body "$body"
+          fi
+
+      - name: Fail the run when drifted
+        if: steps.check.outputs.rc != '0'
+        run: exit 1
