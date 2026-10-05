@@ -7,6 +7,8 @@ description: "Turbo pipeline YAML reference and architecture guide. Covers: YAML
 
 YAML configuration reference and architecture guide for Turbo pipelines. For interactive pipeline building, use `/turbo-builder`. For troubleshooting, use `/turbo-doctor`. For transform implementation, use `/turbo-transforms`.
 
+**Decoded contract events are transform output, not a consumable `<chain>.decoded_logs` dataset.** Source EVM contract logs from `<chain>.raw_logs`, then decode them in a transform (see `/turbo-transforms`). Pre-decoded token datasets such as `<chain>.erc20_transfers`, `<chain>.erc721_transfers`, and `<chain>.erc1155_transfers` are separate, available datasets; use `/datasets` to verify chain coverage.
+
 > **CRITICAL:** Always validate YAML with `goldsky turbo validate <file.yaml>` before showing complete pipeline YAML to the user or deploying.
 
 ---
@@ -273,6 +275,17 @@ Effective max throughput ≈ `max_batch_size / min_batch_interval` records per s
 ### Sink Configuration
 
 Quick examples for common sinks. For full field specs of all sink types, see [Sinks](https://docs.goldsky.com/turbo-pipelines/sinks/overview) in the docs (one page per sink type).
+
+**`primary_key` placement depends on the sink type; it is not limited to transforms.** A SQL transform's key describes its output, while a sink's key controls destination behavior:
+
+| Turbo sink | Sink-level `primary_key` |
+| --- | --- |
+| [PostgreSQL](https://docs.goldsky.com/turbo-pipelines/sinks/postgres) | Optional; enables upserts. Omit for plain inserts. |
+| [MySQL](https://docs.goldsky.com/turbo-pipelines/sinks/mysql) | Optional; enables upserts. Omit for plain inserts. |
+| [ClickHouse](https://docs.goldsky.com/turbo-pipelines/sinks/clickhouse) | Required; sets table ordering and deduplication columns. |
+| [Kafka](https://docs.goldsky.com/turbo-pipelines/sinks/kafka) | Optional; selects message-key columns. If omitted, uses the upstream key when available. |
+
+For other sink types, check their own field reference before adding or removing `primary_key`. Mirror uses different sink schemas; do not copy Turbo sink fields into Mirror configs.
 
 #### PostgreSQL
 
