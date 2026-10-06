@@ -1,6 +1,6 @@
 ---
 name: feeds
-description: "Query Goldsky Feeds, the REST API for one wallet's balances and transfers. Use for wallet holdings, portfolio value, transfer history, deposit checks, edge.goldsky.com/data/feeds, a Feeds API key, or GOLDSKY_FEEDS_API_KEY. The same key also serves Polymarket activity, positions and balances, and block headers by number, hash or timestamp. There is no goldsky feeds command, and the CLI login token is not this key. For rows in the user's own database, use /turbo-builder. For a Turbo dataset name, use /datasets. For JSON-RPC, use /edge or /boost."
+description: "Query Goldsky Feeds for one wallet's balances and transfers. Use for wallet holdings, portfolio value, transfer history, deposit checks, edge.goldsky.com/data/feeds, a Feeds API key, or GOLDSKY_FEEDS_API_KEY. The same key also serves Polymarket activity, positions and balances, and block headers by number, hash or timestamp. Use goldsky feeds key ensure, goldsky feeds balances, and goldsky feeds transfers. If a feeds subcommand is missing, stop. The CLI login token is not this key. For rows in the user's own database, use /turbo-builder. For a Turbo dataset name, use /datasets. For JSON-RPC, use /edge or /boost."
 ---
 
 # Goldsky Feeds
@@ -9,7 +9,7 @@ Feeds answers one question about one wallet over HTTP: what it holds, or what it
 
 The same host and the same key also serve Polymarket and block-header feeds. Those are listed under "Other feeds on this key", and they do not follow the conventions below.
 
-The installed CLI has no feeds command. Do not look for `goldsky feeds`, and do not mint the key with `goldsky edge create`. The endpoint name `feeds` is reserved on the Edge create path, so that command is rejected. The CLI login token is a different credential and does not authenticate these requests.
+Use `goldsky feeds`. Do not mint the key with `goldsky edge create`. The endpoint name `feeds` is reserved on the Edge create path, so that command is rejected. The CLI login token is a different credential and does not authenticate these requests. If `goldsky feeds` is not a command, stop. Do not build an Authorization header, and do not print the Feeds key.
 
 ## When this is the wrong tool
 
@@ -19,62 +19,28 @@ The installed CLI has no feeds command. Do not look for `goldsky feeds`, and do 
 
 ## Key
 
-A project has one Feeds key, and every feed answers it. Creating that key is the setup. Do it with the API. Do not send the user to the dashboard, and do not run `goldsky edge create`.
-
-The call authenticates with the project token from `goldsky login`, which is stored at `~/.goldsky/auth_token`. Do not read that file into the chat, do not pass `--token`, and do not ask the user to paste a token. If `goldsky project list` says they are not logged in, use `/auth-setup` first. The caller has to be an Editor on the project.
+A project has one Feeds key, and every feed answers it. Ensure it with the CLI. Do not send the user to the dashboard, and do not run `goldsky edge create`.
 
 ```bash
-create_raw=$(curl -sS -X POST \
-  -H "Authorization: Bearer $(cat "$HOME/.goldsky/auth_token")" \
-  -w '\n%{http_code}' \
-  https://api.goldsky.com/api/v1/feeds/api-key)
-printf '%s\n' "${create_raw##*$'\n'}"
+goldsky feeds key ensure
 ```
 
-Do not print `create_raw`. The line above is the HTTP status. The rest of the variable is `{ "data": { "name": "feeds", "api_key": "<plaintext or null>" } }`.
+If that subcommand is missing, stop. Do not build an Authorization header. Do not print the Feeds key. Do not pass `--token`. If the CLI says they are not logged in, use `/auth-setup` first. The caller has to be an Editor on the project.
 
-- When `api_key` is a string, that call created the key. Export it as `GOLDSKY_FEEDS_API_KEY`. Do not print it, and do not write it into a file.
-- When `api_key` is null, the project already has the key and this endpoint will not return it again. Reveal it, export `.data.api_key`, and do not print that response either. The reveal body is `{ "data": { "api_key": "<plaintext>" } }` and has no `name`. Run this only in that case:
-
-```bash
-reveal_raw=$(curl -sS \
-  -H "Authorization: Bearer $(cat "$HOME/.goldsky/auth_token")" \
-  -w '\n%{http_code}' \
-  https://api.goldsky.com/api/v1/edge/feeds/api-key)
-printf '%s\n' "${reveal_raw##*$'\n'}"
-```
-
-The two paths differ on purpose and are not interchangeable: create is `POST /api/v1/feeds/api-key` with no `edge/`, reveal is `GET /api/v1/edge/feeds/api-key` with it. The other two combinations are 404. Do not "correct" either path.
-
-Do not call `POST /api/v1/feeds/key/rotate` unless the user asks: rotate revokes the current key immediately.
-
-- 401 means they are not logged in. Use `/auth-setup`.
-- 403 means this user is not an Editor on the project.
-- 409 means an Edge endpoint named `feeds` exists and is not the Feeds key. That endpoint has to be deleted before this call can create one.
-
-A 401, 403, or 409 body is an error and has no key, so it can be shown. A 200 body has the key, so leave it in the variable.
-
-Send `GOLDSKY_FEEDS_API_KEY` in the `x-api-key` header. `?key=` and `Authorization: Bearer` are also accepted on the feed itself. Prefer the header so the key does not land in a URL log.
-
-The codes above are the mint and reveal calls. The feed itself answers a missing key with 402 and an x402 payment-required body, not 401, because that path is also offered pay-per-request. A key that is present but wrong is 401. So on a 402, the header did not arrive; re-read it before assuming the key is bad.
+Do not rotate the key unless the user asks: rotate revokes the current key immediately.
 
 ## Calls
 
+```bash
+goldsky feeds balances --address 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045
+goldsky feeds transfers --address 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045
+```
+
+Balances returns the latest balance of each token the wallet holds, native assets included, plus `total_value_usd`. Transfers returns that wallet's movements, newest first. `direction` is `in` or `out` relative to `address`.
+
+If either subcommand is missing, stop. Do not rebuild these as HTTP requests, and do not build an Authorization header.
+
 Read https://edge.goldsky.com/data/openapi.json before using a parameter or response field that the quickstart does not show. That document is the contract. The guide is https://docs.goldsky.com/feeds/quickstart and the overview is https://docs.goldsky.com/feeds.
-
-Balances returns the latest balance of each token the wallet holds, native assets included, plus `total_value_usd`:
-
-```bash
-curl -sS -H "x-api-key: $GOLDSKY_FEEDS_API_KEY" \
-  "https://edge.goldsky.com/data/feeds/wallets/balances?address=0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
-```
-
-Transfers returns that wallet's movements, newest first. `direction` is `in` or `out` relative to `address`:
-
-```bash
-curl -sS -H "x-api-key: $GOLDSKY_FEEDS_API_KEY" \
-  "https://edge.goldsky.com/data/feeds/wallets/transfers?address=0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
-```
 
 Both feeds can also answer 502 when ClickHouse upstream fails, and balances can answer 503 when native balances are unavailable on some chains. The 503 names them in `error.chains` and sets `Retry-After`; it is a partial outage, so retry rather than reporting the wallet as empty.
 
@@ -82,7 +48,7 @@ Both feeds can also answer 502 when ClickHouse upstream fails, and balances can 
 
 ## Parameters
 
-Re-read the OpenAPI spec when a request is rejected. The chain set lives on the `chains` parameter there.
+Re-read `goldsky feeds balances --help` and the OpenAPI spec when a request is rejected. Pass these as flags on `goldsky feeds balances` or `goldsky feeds transfers`. Do not fall back to HTTP, and do not build an Authorization header. The chain set lives on the `chains` parameter.
 
 - Omit `chains` to query every supported chain. Pass canonical slugs, comma-separated. `matic`, `arbitrum`, and `mainnet` are aliases for `polygon`, `arbitrum_one`, and `ethereum`. Matching is case-insensitive, and `-` is read as `_`. Any other spelling returns 400.
 - `token_symbol` matches a symbol, so two contracts can both match — `usdc` returns both the native and the bridged contract on several chains at once. Use `token_address` when the token must be a specific contract; it takes up to 100, comma-separated. On balances, the zero address selects the native asset of every chain in scope.
@@ -94,7 +60,7 @@ Re-read the OpenAPI spec when a request is rejected. The chain set lives on the 
 
 ## Other feeds on this key
 
-`/polymarket/activity`, `/polymarket/positions`, `/polymarket/balances`, `/blocks/{chain}` and `/blocks/{chain}/head` are served by the same host and the same key. A Polymarket question does not have to become a pipeline: reach for `/turbo-builder` only when the rows have to land in the user's own database. Read the OpenAPI spec before calling one, because all three of the conventions above change:
+`/polymarket/activity`, `/polymarket/positions`, `/polymarket/balances`, `/blocks/{chain}` and `/blocks/{chain}/head` are served by the same host and the same key. A Polymarket question does not have to become a pipeline: reach for `/turbo-builder` only when the rows have to land in the user's own database. If `goldsky feeds` has no subcommand for the path, stop. Do not print the Feeds key and do not build an Authorization header. Read the OpenAPI spec before calling one, because all three of the conventions above change:
 
 - **Pagination is `limit` and `cursor`, not `page_size` and `page_token`,** and the next cursor is `next_cursor` at the top level, not `pagination.next_page_token`. `page_size` is accepted and silently ignored, so a request meaning to ask for 2 rows returns the default 100 — and every one of those is billed. Check what came back.
 - **The chain vocabulary is not the wallet feeds' vocabulary.** `/blocks` serves 21 chains and spells Polygon `matic`; `polygon`, `mainnet` and every `arbitrum` spelling are 400 there. The wallet feeds serve 7 and spell it `polygon`, with `matic` only an alias. A slug that works on one is not known to work on the other.

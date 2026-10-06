@@ -106,7 +106,7 @@ The deploy command errors out and nothing gets created. Common cases:
 | `Interface '<X>' not defined` | Schema references an undefined interface | Define the interface in `schema.graphql`. |
 | Timeseries/aggregation spec errors (`must have id field of type Int8`, `@unique` missing, `aggregations not supported in spec version 1.0.0`) | Schema uses timeseries/aggregations not valid for the spec version | Fix the `id` type to `Int8`, add `@unique`, or remove aggregations. |
 | `A deployment with this name & version already exists` | Re-deploying the same `name/version` | Bump the version, or `goldsky subgraph delete <name/version>` then redeploy. |
-| `curl ... | sh` install fails (Windows) | Install script is shell-only | Install via npm: `npm i -g @goldskycom/cli`. |
+| Windows CLI install fails | The installer runs in WSL, not native Windows | Use auth-setup `scripts/install.ps1`. It installs the pinned CLI with npm inside WSL. Do not pipe a remote installer. |
 
 #### Handler / mapping errors (indexing halts)
 

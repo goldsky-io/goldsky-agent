@@ -16,59 +16,38 @@ case "$(uname -s)" in
   *) echo 'Run this installer inside WSL on Windows; see auth-setup.' >&2; exit 1 ;;
 esac
 : "${HOME:?A writable home directory is required}"
-command -v curl >/dev/null || { echo 'curl and CA certificates are required.' >&2; exit 1; }
+command -v npm >/dev/null 2>&1 || { echo 'npm is required.' >&2; exit 1; }
+
 mkdir -p "$HOME/.local/bin" "$HOME/.goldsky/bin"
 export PATH="$HOME/.local/bin:$HOME/.goldsky/bin:$PATH"
+export npm_config_yes=true
 
-scratch=$(mktemp -d)
-trap 'rm -rf "$scratch"' EXIT
+npm install --global --prefix "$HOME/.local" @goldskycom/cli@13.15.1
+hash -r
 
-download() {
-  curl --fail --show-error --silent --location --connect-timeout 20 --max-time 180 \
-    "$1" --output "$2" || return 1
-  if [ ! -s "$2" ]; then
-    echo "Empty download: $1" >&2
-    return 1
-  fi
-}
-
-if ! command -v goldsky >/dev/null || ! goldsky --version >/dev/null 2>&1; then
-  download https://goldsky.com "$scratch/goldsky-install.sh"
-  GOLDSKY_INSTALL_DIR="$HOME/.local/bin" bash "$scratch/goldsky-install.sh" -f
-  hash -r
-fi
-goldsky --version
+cli_version=$(goldsky --version 2>&1) || { echo 'goldsky --version failed.' >&2; exit 1; }
+printf '%s\n' "$cli_version"
+case "$cli_version" in
+  *13.15.1*) ;;
+  *) echo 'Expected Goldsky CLI 13.15.1.' >&2; exit 1 ;;
+esac
 
 if [ "$component" = all ] || [ "$component" = compose ]; then
-  compose_bin="$HOME/.goldsky/bin/compose"
-  if [ ! -x "$compose_bin" ] || ! "$compose_bin" --version >/dev/null 2>&1; then
-    download https://compose.goldsky.com/install "$scratch/compose-install.sh"
-    sh "$scratch/compose-install.sh"
-  fi
+  goldsky compose install
   goldsky compose --version
 fi
 
 if [ "$component" = all ] || [ "$component" = turbo ]; then
-  turbo_bin="$HOME/.goldsky/bin/turbo"
-  if [ ! -x "$turbo_bin" ] || ! "$turbo_bin" --version >/dev/null 2>&1; then
-    if [ "$(uname -s)" = Darwin ] && [ "$(uname -m)" != arm64 ] && [ "$(sysctl -n hw.optional.arm64 2>/dev/null || true)" != 1 ]; then
-      echo 'Turbo has no published Intel Mac binary. Full installation is incomplete. Use Apple Silicon or an x64 Ubuntu 24.04+ environment, or request only Compose.' >&2
+  turbo_status=0
+  turbo_log=$(goldsky turbo install 2>&1) || turbo_status=$?
+  printf '%s\n' "$turbo_log"
+  case "$turbo_log" in
+    *'not a Goldsky Turbo command'*|*'unrecognized subcommand'*)
+      echo 'goldsky turbo install is not available in this CLI.' >&2
       exit 1
-    fi
-    if [ "$(uname -s)" = Linux ]; then
-      case "$(uname -m)" in
-        x86_64|amd64) ;;
-        *) echo 'Turbo has no published Linux ARM binary. Full installation is incomplete. Use an x64 Ubuntu 24.04+ environment, or request only Compose.' >&2; exit 1 ;;
-      esac
-      libc=$(getconf GNU_LIBC_VERSION 2>/dev/null || true)
-      if ! printf '%s\n' "$libc" | awk '$1 == "glibc" { split($2, v, "."); if (v[1] > 2 || (v[1] == 2 && v[2] >= 39)) ok=1 } END { exit !ok }'; then
-        echo 'The published Turbo Linux binary requires glibc 2.39+. Full installation is incomplete. Use x64 Ubuntu 24.04+ or request only Compose.' >&2
-        exit 1
-      fi
-    fi
-    download https://install-turbo.goldsky.com "$scratch/turbo-install.sh"
-    INSTALL_DIR="$HOME/.goldsky/bin" bash "$scratch/turbo-install.sh"
-  fi
+      ;;
+  esac
+  [ "$turbo_status" -eq 0 ]
   goldsky turbo --version
 fi
 

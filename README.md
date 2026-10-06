@@ -10,7 +10,7 @@ Paste this to get started. The agent installs the CLI, then runs `/get-started`,
 
 ```text
 Set up Goldsky. Do this yourself. I only approve login in the browser and tell you what I am trying to do.
-Install the Goldsky CLI by running auth-setup/scripts/install.sh with bash. If you cannot read that skill yet, install it first with npx skills add goldsky-io/goldsky-agent -y -g -a <agent> (claude-code, cursor, codex, or opencode, or -a '*' if you cannot tell which host you are). Do not curl an installer and do not ask for sudo.
+Install the Goldsky CLI by running auth-setup/scripts/install.sh with bash. It needs npm and does not download a shell script. If you cannot read that skill yet, install it first with npx skills add goldsky-io/goldsky-agent -y -g -a <agent> (claude-code, cursor, codex, or opencode, or -a '*' if you cannot tell which host you are). Do not curl an installer and do not ask for sudo.
 Then run /get-started and follow it.
 ```
 
@@ -213,11 +213,11 @@ Globally distributed, low-latency JSON-RPC for EVM chains, built on eRPC — a d
 
 ### Feeds
 
-Ready-made wallet balances and transfers over a REST API. One request returns one wallet, priced, across the supported chains. There is no `goldsky feeds` command.
+Ready-made wallet balances and transfers. Use `goldsky feeds balances` and `goldsky feeds transfers`. If those commands are missing, stop. Do not read the CLI login token.
 
 | Skill | When to use | What's inside |
 | ----- | ----------- | ------------- |
-| `feeds` | "what does this wallet hold", "show its transfers", "Feeds API key" | The two endpoints, the Feeds key, and the parameters that differ from Turbo |
+| `feeds` | "what does this wallet hold", "show its transfers", "Feeds API key" | `goldsky feeds` balances and transfers, and the parameters that differ from Turbo |
 
 ### Cross-cutting
 

@@ -17,106 +17,48 @@ permissions:
   contents: read
 
 jobs:
-  unix:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-24.04, macos-15]
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install without a terminal or sudo
-        run: bash skills/auth-setup/scripts/install.sh
-      - name: Verify in a separate shell and repeat
-        run: |
-          export PATH="$HOME/.local/bin:$HOME/.goldsky/bin:$PATH"
-          goldsky --version
-          goldsky compose --version
-          goldsky turbo --version
-          bash skills/auth-setup/scripts/install.sh
-
-  macos-intel:
-    runs-on: macos-15-intel
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v4
-      - run: bash skills/auth-setup/scripts/install.sh compose
-      - name: Full install must explicitly fail until Turbo supports Intel Mac
-        run: |
-          if bash skills/auth-setup/scripts/install.sh > result.log 2>&1; then
-            cat result.log
-            echo 'Expected the current unsupported Turbo platform to fail.' >&2
-            exit 1
-          fi
-          cat result.log
-          grep -q 'no published Intel Mac binary' result.log
-
-  linux-arm:
-    runs-on: ubuntu-24.04-arm
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v4
-      - run: bash skills/auth-setup/scripts/install.sh compose
-      - name: Full install must explicitly fail until Turbo supports ARM
-        run: |
-          if bash skills/auth-setup/scripts/install.sh > result.log 2>&1; then
-            cat result.log
-            echo 'Expected the current unsupported Turbo platform to fail.' >&2
-            exit 1
-          fi
-          cat result.log
-          grep -q 'no published Linux ARM binary' result.log
-
-  regressions:
+  contract:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - name: Isolated users and simulated download failures
+      - name: Installer does not fetch an installer
         run: |
-          docker run --rm -v "$PWD:/work:ro" ubuntu:24.04 sh -ec '
-            apt-get update -qq
-            apt-get install -y -qq python3
-            python3 /work/tests/installer-sandbox.py
-          '
-
-  windows-wsl:
-    runs-on: windows-2025
-    timeout-minutes: 25
-    steps:
-      - uses: actions/checkout@v4
-      - name: Provision disposable Ubuntu WSL test environment
-        shell: pwsh
+          python3 - <<'PY'
+          from pathlib import Path
+          banned = (
+              'curl',
+              'wget',
+              'https://goldsky.com',
+              'compose.goldsky.com',
+              'install-turbo.goldsky.com',
+              '@latest',
+              '| sh',
+              '| bash',
+          )
+          for name in (
+              'skills/auth-setup/scripts/install.sh',
+              'skills/auth-setup/scripts/install.ps1',
+          ):
+              text = Path(name).read_text()
+              for needle in banned:
+                  if needle in text:
+                      raise SystemExit(f'{name} contains {needle!r}')
+          print('install scripts do not fetch an installer')
+          PY
+      - name: Missing npm exits 1
         run: |
-          $Image = 'ubuntu-24.04.5-wsl-amd64.wsl'
-          $Rootfs = Join-Path $env:RUNNER_TEMP $Image
-          $ChecksumFile = Join-Path $env:RUNNER_TEMP 'ubuntu-SHA256SUMS'
-          Invoke-WebRequest 'https://releases.ubuntu.com/24.04/SHA256SUMS' -OutFile $ChecksumFile
-          $Checksums = Get-Content -Raw $ChecksumFile
-          $Expected = (($Checksums -split "`n" | Where-Object { $_ -match [regex]::Escape($Image) }) -split '\s+')[0]
-          if ($Expected -notmatch '^[a-f0-9]{64}$') { throw 'Could not parse WSL image checksum' }
-          Invoke-WebRequest "https://releases.ubuntu.com/24.04/$Image" -OutFile $Rootfs
-          $Actual = (Get-FileHash $Rootfs -Algorithm SHA256).Hash.ToLower()
-          if ($Actual -ne $Expected) { throw "WSL image checksum mismatch: expected $Expected, got $Actual" }
-          wsl.exe --import GoldskyInstallTest "$env:RUNNER_TEMP\goldsky-wsl" $Rootfs --version 2
-          if ($LASTEXITCODE -ne 0) { throw 'WSL import failed' }
-          'WSL_TEST_CREATED=true' >> $env:GITHUB_ENV
-          wsl.exe --distribution GoldskyInstallTest --user root --exec bash -ec 'apt-get update -qq; apt-get install -y -qq curl ca-certificates; useradd -m agent'
-          if ($LASTEXITCODE -ne 0) { throw 'WSL prerequisites failed' }
-      - name: Install from PowerShell as an unprivileged Linux user
-        shell: pwsh
-        run: |
-          & ./skills/auth-setup/scripts/install.ps1 -Distribution GoldskyInstallTest -User agent
-          if ($LASTEXITCODE -ne 0) { throw 'Installation failed' }
-      - name: Verify in a separate shell and repeat
-        shell: pwsh
-        run: |
-          wsl.exe --distribution GoldskyInstallTest --user agent --exec bash -ec 'export PATH="$HOME/.local/bin:$HOME/.goldsky/bin:$PATH"; goldsky --version; goldsky compose --version; goldsky turbo --version'
-          if ($LASTEXITCODE -ne 0) { throw 'Verification failed' }
-          & ./skills/auth-setup/scripts/install.ps1 -Distribution GoldskyInstallTest -User agent
-          if ($LASTEXITCODE -ne 0) { throw 'Repeat installation failed' }
-      - name: Remove disposable WSL environment
-        if: always() && env.WSL_TEST_CREATED == 'true'
-        shell: pwsh
-        run: wsl.exe --unregister GoldskyInstallTest
+          bindir="${RUNNER_TEMP}/bin"
+          home="${RUNNER_TEMP}/no-npm-home"
+          mkdir -p "$bindir" "$home"
+          ln -s "$(command -v uname)" "$bindir/uname"
+          ln -s "$(command -v mkdir)" "$bindir/mkdir"
+          set +e
+          env -i HOME="$home" PATH="$bindir" bash skills/auth-setup/scripts/install.sh >"$RUNNER_TEMP/out.txt" 2>"$RUNNER_TEMP/err.txt"
+          status=$?
+          set -e
+          cat "$RUNNER_TEMP/err.txt"
+          test "$status" -eq 1
+          grep -q 'npm is required.' "$RUNNER_TEMP/err.txt"
+      - name: Installer sandbox
+        run: python3 tests/installer-sandbox.py

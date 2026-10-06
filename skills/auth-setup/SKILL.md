@@ -27,7 +27,7 @@ On macOS and Linux (including WSL), run the bundled [installer](scripts/install.
 bash scripts/install.sh
 ```
 
-The default installs Goldsky, Compose, and Turbo. Pass `cli` when only the base CLI is needed. For a Compose-only or Turbo-only task, pass `compose` or `turbo`; both include the base Goldsky CLI. The script uses user-writable directories, disables installation prompts even in a PTY, checks download failures and empty responses, and requires each requested binary to run successfully. It reuses working installations and repairs broken ones. No sudo or login is needed.
+The default installs Goldsky, Compose, and Turbo. Pass `cli` when only the base CLI is needed. For a Compose-only or Turbo-only task, pass `compose` or `turbo`; both include the base Goldsky CLI. The script installs `@goldskycom/cli@13.15.1` with `npm install --global --prefix "$HOME/.local"` (no sudo, no `@latest`), then runs `goldsky compose install` and `goldsky turbo install` for the requested extensions. If `goldsky turbo install` is not a command, it exits 1. It does not download or execute a remote shell script. Missing npm is a failure. It requires each requested command's version check to succeed. No login is needed.
 
 **Every new shell/tool call must restore PATH**, including authentication and project commands below. An export in a previous tool call does not persist:
 
@@ -40,11 +40,11 @@ goldsky turbo --version
 
 Check only the components requested. Do not trigger Turbo's interactive auto-installer when its binary is absent. Do not report setup complete if the installer or a required version check fails.
 
-**Platform limits:** Goldsky and Compose publish macOS Intel/Apple Silicon and Linux x64/ARM64 binaries. The current Linux Turbo binary requires x64 and glibc 2.39+ (for example Ubuntu 24.04). A full install on Linux ARM64, older glibc, or musl must report incomplete; `compose` can still be installed separately. These are upstream binary limits, not reasons to ask for sudo or silently omit Turbo. The current Turbo Mac binary is Apple Silicon-only; Intel Macs can install Goldsky and Compose, but a full install must report incomplete.
+**Platform limits:** `goldsky turbo install` enforces the published Turbo binary limits. Do not curl a fallback and do not ask for sudo if it fails. The current Linux Turbo binary requires x64 and glibc 2.39+ (for example Ubuntu 24.04). The current Turbo Mac binary is Apple Silicon-only. Goldsky and Compose publish macOS Intel/Apple Silicon and Linux x64/ARM64 binaries, so `compose` can still be installed when Turbo cannot. Report the CLI's error. A Turbo failure is not a successful full install.
 
 **Windows:** the complete toolset currently runs inside WSL, not native PowerShell or Git Bash: Compose has no published Windows binary. Use an existing x64 Ubuntu 24.04+ WSL distribution for all three tools. See [Windows setup](references/windows.md) for PowerShell invocation and prerequisites. Keep installation, subsequent CLI commands, project files, and `goldsky login` in the same WSL environment. Run login yourself there. Installing/enabling WSL itself may require administrator access and a reboot; do not claim that prerequisite can always be automated without intervention.
 
-Prerequisites inside the selected environment: Bash, curl, CA certificates, standard Unix utilities, internet access, and a writable home directory. If an environment lacks these, report the missing prerequisite instead of claiming installation succeeded.
+Prerequisites inside the selected environment: Bash, npm, CA certificates, standard Unix utilities, internet access, and a writable home directory. If an environment lacks these, report the missing prerequisite instead of claiming installation succeeded. Do not install curl in order to pipe a remote installer.
 
 ### Step 2: Check Authentication Status
 
@@ -154,8 +154,8 @@ goldsky login
 
 | Issue             | Action                                                 |
 | ----------------- | ------------------------------------------------------ |
-| Installer asks for confirmation or sudo | Use the bundled installer, which creates a writable destination and passes `-f`. Do not retry with sudo |
-| `turbo` or `compose` is missing or cannot run | Re-run the bundled installer for that component; check its exit status and platform requirements |
+| Installer asks for confirmation or sudo | Use the bundled installer. It installs into `$HOME/.local` with npm and does not use sudo. Do not retry with sudo or a remote shell script |
+| `turbo` or `compose` is missing or cannot run | Re-run the bundled installer for that component. If `goldsky turbo install` is not a command, stop. Do not curl an installer |
 | Not logged in     | Run `goldsky login` yourself and leave it running until the browser login finishes |
 | Invalid token     | Run `goldsky login` again. Do not ask for a token      |
 | Permission denied | User needs role upgrade from project Owner/Admin       |
