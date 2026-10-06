@@ -40,14 +40,16 @@ fi
 if [ "$component" = all ] || [ "$component" = turbo ]; then
   turbo_status=0
   turbo_log=$(goldsky turbo install 2>&1) || turbo_status=$?
-  printf '%s\n' "$turbo_log"
   case "$turbo_log" in
-    *'not a Goldsky Turbo command'*|*'unrecognized subcommand'*)
+    *'not a Goldsky Turbo command'*|*'unrecognized subcommand'*|*'not available'*)
       echo 'goldsky turbo install is not available in this CLI.' >&2
       exit 1
       ;;
   esac
-  [ "$turbo_status" -eq 0 ]
+  if [ "$turbo_status" -ne 0 ]; then
+    echo 'goldsky turbo install failed.' >&2
+    exit 1
+  fi
   goldsky turbo --version
 fi
 

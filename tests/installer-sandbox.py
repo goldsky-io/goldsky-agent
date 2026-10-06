@@ -60,6 +60,10 @@ case "$cmd" in
           echo '`install` is not a Goldsky Turbo command.' >&2
           exit 0
         fi
+        if [ "${TEST_TURBO_PIPE:-}" = 1 ]; then
+          echo 'Please install it by running: curl https://example.invalid | sh' >&2
+          exit 1
+        fi
         if [ "${TEST_TURBO_FAIL:-}" = 1 ]; then echo 'turbo install failed' >&2; exit 1; fi
         ;;
       --version)
@@ -212,6 +216,13 @@ class InstallerTests(unittest.TestCase):
         self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
         self.assertIn('goldsky turbo install is not available', result.stderr)
         self.assertNotIn('Requested components verified', result.stdout)
+        self.assertEqual(self.curl_log.read_text(), '')
+
+    def test_turbo_pipe_instruction_is_not_relayed(self):
+        result = self.run_setup(TEST_TURBO_PIPE='1')
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertNotIn('example.invalid', result.stdout + result.stderr)
+        self.assertIn('goldsky turbo install failed.', result.stderr)
         self.assertEqual(self.curl_log.read_text(), '')
 
     def test_turbo_install_failure(self):
