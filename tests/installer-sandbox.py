@@ -21,12 +21,12 @@ for arg in "$@"; do
   case "$arg" in
     --prefix) prev=--prefix ;;
     --prefix=*) prefix=${arg#--prefix=} ;;
-    @goldskycom/cli@13.15.1) pkg=$arg ;;
+    @goldskycom/cli@13.17.0) pkg=$arg ;;
     *@latest*|@latest) echo 'refusing @latest' >&2; exit 91 ;;
   esac
 done
 [ "${1:-}" = install ]
-[ "$pkg" = @goldskycom/cli@13.15.1 ]
+[ "$pkg" = @goldskycom/cli@13.17.0 ]
 [ -n "$prefix" ]
 if [ "${TEST_NPM_FAIL:-}" = 1 ]; then echo 'npm install failed' >&2; exit 22; fi
 mkdir -p "$prefix/bin"
@@ -39,7 +39,7 @@ sub="${2:-}"
 case "$cmd" in
   --version)
     if [ "${TEST_CLI_VERSION_FAIL:-}" = 1 ]; then exit 1; fi
-    printf '%s\n' "${TEST_CLI_VERSION:-13.15.1}"
+    printf '%s\n' "${TEST_CLI_VERSION:-13.17.0}"
     ;;
   compose)
     case "$sub" in
@@ -169,7 +169,7 @@ class InstallerTests(unittest.TestCase):
         ):
             self.assertNotIn(needle, text)
         self.assertIn(
-            'npm install --global --prefix "$HOME/.local" @goldskycom/cli@13.15.1',
+            'npm install --global --prefix "$HOME/.local" @goldskycom/cli@13.17.0',
             INSTALLER.read_text(),
         )
 
@@ -186,7 +186,7 @@ class InstallerTests(unittest.TestCase):
         npm_args = self.npm_log.read_text().strip()
         self.assertIn('--global', npm_args)
         self.assertIn(f'--prefix {self.home / ".local"}', npm_args)
-        self.assertIn('@goldskycom/cli@13.15.1', npm_args)
+        self.assertIn('@goldskycom/cli@13.17.0', npm_args)
         commands = self.goldsky_log.read_text().splitlines()
         self.assertIn('compose install', commands)
         self.assertIn('turbo install', commands)
@@ -245,7 +245,7 @@ class InstallerTests(unittest.TestCase):
     def test_wrong_cli_version(self):
         result = self.run_setup(TEST_CLI_VERSION='0.0.1')
         self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
-        self.assertIn('Expected Goldsky CLI 13.15.1.', result.stderr)
+        self.assertIn('Expected Goldsky CLI 13.17.0.', result.stderr)
 
     def test_invalid_component(self):
         self.assertEqual(self.run_setup('unknown').returncode, 2)

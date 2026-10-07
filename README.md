@@ -213,11 +213,11 @@ Globally distributed, low-latency JSON-RPC for EVM chains, built on eRPC — a d
 
 ### Feeds
 
-Ready-made wallet balances and transfers. Use `goldsky feeds balances` and `goldsky feeds transfers`. If those commands are missing, stop. Do not read the CLI login token.
+Ready-made wallet balances and transfers. Get the key with `goldsky feeds key reveal`, then call the feeds over HTTP. Do not use the CLI login token.
 
 | Skill | When to use | What's inside |
 | ----- | ----------- | ------------- |
-| `feeds` | "what does this wallet hold", "show its transfers", "Feeds API key" | `goldsky feeds` balances and transfers, and the parameters that differ from Turbo |
+| `feeds` | "what does this wallet hold", "show its transfers", "Feeds API key" | `goldsky feeds key reveal`, the balances and transfers calls, and the parameters that differ from Turbo |
 
 ### Cross-cutting
 

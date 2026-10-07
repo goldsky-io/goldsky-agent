@@ -27,7 +27,7 @@ On macOS and Linux (including WSL), run the bundled [installer](scripts/install.
 bash scripts/install.sh
 ```
 
-The default installs Goldsky, Compose, and Turbo. Pass `cli` when only the base CLI is needed. For a Compose-only or Turbo-only task, pass `compose` or `turbo`; both include the base Goldsky CLI. The script installs `@goldskycom/cli@13.15.1` with `npm install --global --prefix "$HOME/.local"` (no sudo, no `@latest`), then runs `goldsky compose install` and `goldsky turbo install` for the requested extensions. If `goldsky turbo install` is not a command, it exits 1. It does not download or execute a remote shell script. Missing npm is a failure. It requires each requested command's version check to succeed. No login is needed.
+The default installs Goldsky, Compose, and Turbo. Pass `cli` when only the base CLI is needed. For a Compose-only or Turbo-only task, pass `compose` or `turbo`; both include the base Goldsky CLI. The script installs `@goldskycom/cli@13.17.0` with `npm install --global --prefix "$HOME/.local"` (no sudo, no `@latest`), then runs `goldsky compose install` and `goldsky turbo install` for the requested extensions. If `goldsky turbo install` is not a command, it exits 1. It does not download or execute a remote shell script. Missing npm is a failure. It requires each requested command's version check to succeed. No login is needed.
 
 **Every new shell/tool call must restore PATH**, including authentication and project commands below. An export in a previous tool call does not persist:
 

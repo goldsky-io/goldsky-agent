@@ -1,6 +1,6 @@
 ---
 name: feeds
-description: "Query Goldsky Feeds for one wallet's balances and transfers. Use for wallet holdings, portfolio value, transfer history, deposit checks, edge.goldsky.com/data/feeds, a Feeds API key, or GOLDSKY_FEEDS_API_KEY. The same key also serves Polymarket activity, positions and balances, and block headers by number, hash or timestamp. Use goldsky feeds key ensure, goldsky feeds balances, and goldsky feeds transfers. If a feeds subcommand is missing, stop. The CLI login token is not this key. For rows in the user's own database, use /turbo-builder. For a Turbo dataset name, use /datasets. For JSON-RPC, use /edge or /boost."
+description: "Query Goldsky Feeds for one wallet's balances and transfers. Use for wallet holdings, portfolio value, transfer history, deposit checks, edge.goldsky.com/data/feeds, a Feeds API key, or GOLDSKY_FEEDS_API_KEY. The same key also serves Polymarket activity, positions and balances, and block headers by number, hash or timestamp. Get the key with goldsky feeds key reveal, then call the feeds over HTTP. The CLI login token is not this key. For rows in the user's own database, use /turbo-builder. For a Turbo dataset name, use /datasets. For JSON-RPC, use /edge or /boost."
 ---
 
 # Goldsky Feeds
@@ -9,7 +9,7 @@ Feeds answers one question about one wallet over HTTP: what it holds, or what it
 
 The same host and the same key also serve Polymarket and block-header feeds. Those are listed under "Other feeds on this key", and they do not follow the conventions below.
 
-Use `goldsky feeds`. Do not mint the key with `goldsky edge create`. The endpoint name `feeds` is reserved on the Edge create path, so that command is rejected. The CLI login token is a different credential and does not authenticate these requests. If `goldsky feeds` is not a command, stop. Do not build an Authorization header, and do not print the Feeds key.
+The CLI gets the key (`goldsky feeds key reveal`); the feeds themselves are plain HTTP. There are no `goldsky feeds` read commands. Do not mint the key with `goldsky edge create`. The endpoint name `feeds` is reserved on the Edge create path, so that command is rejected. The CLI login token is a different credential and does not authenticate these requests. Do not print the Feeds key.
 
 ## When this is the wrong tool
 
@@ -19,26 +19,31 @@ Use `goldsky feeds`. Do not mint the key with `goldsky edge create`. The endpoin
 
 ## Key
 
-A project has one Feeds key, and every feed answers it. Ensure it with the CLI. Do not send the user to the dashboard, and do not run `goldsky edge create`.
+A project has one Feeds key, and every feed answers it. Get it with the CLI. Do not send the user to the dashboard, and do not run `goldsky edge create`.
 
 ```bash
-goldsky feeds key ensure
+goldsky feeds key reveal
+export GOLDSKY_FEEDS_API_KEY="$(cat "$HOME/.goldsky/feeds-api-key")"
 ```
 
-If that subcommand is missing, stop. Do not build an Authorization header. Do not print the Feeds key. Do not pass `--token`. If the CLI says they are not logged in, use `/auth-setup` first. The caller has to be an Editor on the project.
+`reveal` creates the key if the project has none, otherwise fetches the existing one, and writes it to `~/.goldsky/feeds-api-key` (mode 600). It never prints the key and never rotates it, so it is safe to run again. Do not `cat` that file into the chat, and do not write the key anywhere else.
+
+Success prints `Created Feeds API key and saved it to ~/.goldsky/feeds-api-key` or `Saved existing Feeds API key to ~/.goldsky/feeds-api-key`. If it prints the general help instead, the CLI is older than 13.17.0 (an older CLI exits 0 there, so read the output, not the exit code); run `/auth-setup` to install the pinned version. Do not pass `--token`. A 401 means they are not logged in: use `/auth-setup` first. A 403 means the user is not an Editor on the project. A 409 means an Edge endpoint named `feeds` exists and is not the Feeds key; that endpoint has to be deleted first.
 
 Do not rotate the key unless the user asks: rotate revokes the current key immediately.
+
+Send the key in the `x-api-key` header. `?key=` and `Authorization: Bearer` are also accepted, but prefer the header so the key does not land in a URL log. A missing key answers 402 with an x402 payment-required body, not 401, because the feeds are also offered pay-per-request. A key that is present but wrong is 401. So on a 402, the header did not arrive; check that `GOLDSKY_FEEDS_API_KEY` is set before assuming the key is bad.
 
 ## Calls
 
 ```bash
-goldsky feeds balances --address 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045
-goldsky feeds transfers --address 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045
+curl -sS -H "x-api-key: $GOLDSKY_FEEDS_API_KEY" \
+  "https://edge.goldsky.com/data/feeds/wallets/balances?address=0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
+curl -sS -H "x-api-key: $GOLDSKY_FEEDS_API_KEY" \
+  "https://edge.goldsky.com/data/feeds/wallets/transfers?address=0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
 ```
 
 Balances returns the latest balance of each token the wallet holds, native assets included, plus `total_value_usd`. Transfers returns that wallet's movements, newest first. `direction` is `in` or `out` relative to `address`.
-
-If either subcommand is missing, stop. Do not rebuild these as HTTP requests, and do not build an Authorization header.
 
 Read https://edge.goldsky.com/data/openapi.json before using a parameter or response field that the quickstart does not show. That document is the contract. The guide is https://docs.goldsky.com/feeds/quickstart and the overview is https://docs.goldsky.com/feeds.
 
@@ -48,7 +53,7 @@ Both feeds can also answer 502 when ClickHouse upstream fails, and balances can 
 
 ## Parameters
 
-Re-read `goldsky feeds balances --help` and the OpenAPI spec when a request is rejected. Pass these as flags on `goldsky feeds balances` or `goldsky feeds transfers`. Do not fall back to HTTP, and do not build an Authorization header. The chain set lives on the `chains` parameter.
+Re-read the OpenAPI spec when a request is rejected. These are query parameters on the URL. The chain set lives on the `chains` parameter.
 
 - Omit `chains` to query every supported chain. Pass canonical slugs, comma-separated. `matic`, `arbitrum`, and `mainnet` are aliases for `polygon`, `arbitrum_one`, and `ethereum`. Matching is case-insensitive, and `-` is read as `_`. Any other spelling returns 400.
 - `token_symbol` matches a symbol, so two contracts can both match — `usdc` returns both the native and the bridged contract on several chains at once. Use `token_address` when the token must be a specific contract; it takes up to 100, comma-separated. On balances, the zero address selects the native asset of every chain in scope.
@@ -60,7 +65,7 @@ Re-read `goldsky feeds balances --help` and the OpenAPI spec when a request is r
 
 ## Other feeds on this key
 
-`/polymarket/activity`, `/polymarket/positions`, `/polymarket/balances`, `/blocks/{chain}` and `/blocks/{chain}/head` are served by the same host and the same key. A Polymarket question does not have to become a pipeline: reach for `/turbo-builder` only when the rows have to land in the user's own database. If `goldsky feeds` has no subcommand for the path, stop. Do not print the Feeds key and do not build an Authorization header. Read the OpenAPI spec before calling one, because all three of the conventions above change:
+`/polymarket/activity`, `/polymarket/positions`, `/polymarket/balances`, `/blocks/{chain}` and `/blocks/{chain}/head` are served by the same host and the same key. A Polymarket question does not have to become a pipeline: reach for `/turbo-builder` only when the rows have to land in the user's own database. Call them the same way, with the `x-api-key` header. Read the OpenAPI spec before calling one, because all three of the conventions above change:
 
 - **Pagination is `limit` and `cursor`, not `page_size` and `page_token`,** and the next cursor is `next_cursor` at the top level, not `pagination.next_page_token`. `page_size` is accepted and silently ignored, so a request meaning to ask for 2 rows returns the default 100 — and every one of those is billed. Check what came back.
 - **The chain vocabulary is not the wallet feeds' vocabulary.** `/blocks` serves 21 chains and spells Polygon `matic`; `polygon`, `mainnet` and every `arbitrum` spelling are 400 there. The wallet feeds serve 7 and spell it `polygon`, with `matic` only an alias. A slug that works on one is not known to work on the other.

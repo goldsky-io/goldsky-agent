@@ -22,14 +22,14 @@ mkdir -p "$HOME/.local/bin" "$HOME/.goldsky/bin"
 export PATH="$HOME/.local/bin:$HOME/.goldsky/bin:$PATH"
 export npm_config_yes=true
 
-npm install --global --prefix "$HOME/.local" @goldskycom/cli@13.15.1
+npm install --global --prefix "$HOME/.local" @goldskycom/cli@13.17.0
 hash -r
 
 cli_version=$(goldsky --version 2>&1) || { echo 'goldsky --version failed.' >&2; exit 1; }
 printf '%s\n' "$cli_version"
 case "$cli_version" in
-  *13.15.1*) ;;
-  *) echo 'Expected Goldsky CLI 13.15.1.' >&2; exit 1 ;;
+  *13.17.0*) ;;
+  *) echo 'Expected Goldsky CLI 13.17.0.' >&2; exit 1 ;;
 esac
 
 if [ "$component" = all ] || [ "$component" = compose ]; then

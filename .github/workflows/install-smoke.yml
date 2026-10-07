@@ -62,3 +62,26 @@ jobs:
           grep -q 'npm is required.' "$RUNNER_TEMP/err.txt"
       - name: Installer sandbox
         run: python3 tests/installer-sandbox.py
+
+  real-install:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install the pinned CLI, Compose, and Turbo
+        run: bash skills/auth-setup/scripts/install.sh
+      - name: Commands the skills rely on exist
+        run: |
+          export PATH="$HOME/.local/bin:$HOME/.goldsky/bin:$PATH"
+          goldsky turbo --version
+          goldsky compose --version
+          # An unknown subcommand prints the general help and exits 0, so check the text.
+          goldsky turbo install --help | grep -q 'Install the Turbo CLI'
+          goldsky feeds key reveal --help | grep -q 'feeds-api-key'
