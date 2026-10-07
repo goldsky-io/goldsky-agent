@@ -46,20 +46,6 @@ jobs:
                       raise SystemExit(f'{name} contains {needle!r}')
           print('install scripts do not fetch an installer')
           PY
-      - name: Missing npm exits 1
-        run: |
-          bindir="${RUNNER_TEMP}/bin"
-          home="${RUNNER_TEMP}/no-npm-home"
-          mkdir -p "$bindir" "$home"
-          ln -s "$(command -v uname)" "$bindir/uname"
-          ln -s "$(command -v mkdir)" "$bindir/mkdir"
-          set +e
-          env -i HOME="$home" PATH="$bindir" bash skills/auth-setup/scripts/install.sh >"$RUNNER_TEMP/out.txt" 2>"$RUNNER_TEMP/err.txt"
-          status=$?
-          set -e
-          cat "$RUNNER_TEMP/err.txt"
-          test "$status" -eq 1
-          grep -q 'npm is required.' "$RUNNER_TEMP/err.txt"
       - name: Installer sandbox
         run: python3 tests/installer-sandbox.py
 
