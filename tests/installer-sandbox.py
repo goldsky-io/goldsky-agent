@@ -21,12 +21,12 @@ for arg in "$@"; do
   case "$arg" in
     --prefix) prev=--prefix ;;
     --prefix=*) prefix=${arg#--prefix=} ;;
-    @goldskycom/cli@13.17.0) pkg=$arg ;;
+    '@goldskycom/cli@^13.17.0') pkg=$arg ;;
     *@latest*|@latest) echo 'refusing @latest' >&2; exit 91 ;;
   esac
 done
 [ "${1:-}" = install ]
-[ "$pkg" = @goldskycom/cli@13.17.0 ]
+[ "$pkg" = '@goldskycom/cli@^13.17.0' ]
 [ -n "$prefix" ]
 if [ "${TEST_NPM_FAIL:-}" = 1 ]; then echo 'npm install failed' >&2; exit 22; fi
 mkdir -p "$prefix/bin"
@@ -169,7 +169,7 @@ class InstallerTests(unittest.TestCase):
         ):
             self.assertNotIn(needle, text)
         self.assertIn(
-            'npm install --global --prefix "$HOME/.local" @goldskycom/cli@13.17.0',
+            'npm install --global --prefix "$HOME/.local" "@goldskycom/cli@^13.17.0"',
             INSTALLER.read_text(),
         )
 
@@ -186,7 +186,7 @@ class InstallerTests(unittest.TestCase):
         npm_args = self.npm_log.read_text().strip()
         self.assertIn('--global', npm_args)
         self.assertIn(f'--prefix {self.home / ".local"}', npm_args)
-        self.assertIn('@goldskycom/cli@13.17.0', npm_args)
+        self.assertIn('@goldskycom/cli@^13.17.0', npm_args)
         commands = self.goldsky_log.read_text().splitlines()
         self.assertIn('compose install', commands)
         self.assertIn('turbo install', commands)
@@ -243,9 +243,14 @@ class InstallerTests(unittest.TestCase):
         self.assertFalse((self.home / '.local/bin/goldsky').exists())
 
     def test_wrong_cli_version(self):
-        result = self.run_setup(TEST_CLI_VERSION='0.0.1')
-        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
-        self.assertIn('Expected Goldsky CLI 13.17.0.', result.stderr)
+        for version in ('0.0.1', '13.16.9', '13.1.0', '14.0.0', '113.17.0'):
+            result = self.run_setup(TEST_CLI_VERSION=version)
+            self.assertEqual(result.returncode, 1, version + result.stdout + result.stderr)
+            self.assertIn('Expected Goldsky CLI 13.17.0 or a newer 13.x.', result.stderr)
+
+    def test_newer_minor_cli_version(self):
+        for version in ('13.17.0', '13.18.2', '13.20.0', '13.100.1'):
+            self.assert_success(self.run_setup('cli', TEST_CLI_VERSION='Telemetry notice 1.2.3\n\n' + version + '\nturbo extension: 0.13.1'))
 
     def test_invalid_component(self):
         self.assertEqual(self.run_setup('unknown').returncode, 2)

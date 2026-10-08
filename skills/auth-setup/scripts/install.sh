@@ -22,15 +22,20 @@ mkdir -p "$HOME/.local/bin" "$HOME/.goldsky/bin"
 export PATH="$HOME/.local/bin:$HOME/.goldsky/bin:$PATH"
 export npm_config_yes=true
 
-npm install --global --prefix "$HOME/.local" @goldskycom/cli@13.17.0
+# Minimum version: 13.16.0 added `turbo install`, 13.17.0 added `feeds key reveal`.
+npm install --global --prefix "$HOME/.local" "@goldskycom/cli@^13.17.0"
 hash -r
 
 cli_version=$(goldsky --version 2>&1) || { echo 'goldsky --version failed.' >&2; exit 1; }
 printf '%s\n' "$cli_version"
-case "$cli_version" in
-  *13.17.0*) ;;
-  *) echo 'Expected Goldsky CLI 13.17.0.' >&2; exit 1 ;;
-esac
+# A first run prints a telemetry notice before the version line.
+cli_ok=
+while IFS= read -r line; do
+  case "$line" in
+    13.1[7-9].*|13.[2-9][0-9].*|13.[1-9][0-9][0-9]*.*) cli_ok=1; break ;;
+  esac
+done <<< "$cli_version"
+[ -n "$cli_ok" ] || { echo 'Expected Goldsky CLI 13.17.0 or a newer 13.x.' >&2; exit 1; }
 
 if [ "$component" = all ] || [ "$component" = compose ]; then
   goldsky compose install
