@@ -2,7 +2,7 @@
 
 The complete Goldsky toolset runs inside WSL. The base CLI has a Windows npm package and Turbo publishes a Windows executable, but Compose currently has no native Windows artifact. Do not mix Windows binaries or credentials with a WSL installation.
 
-Use an installed, initialized **x64 Ubuntu 24.04+** distribution for all three components. Linux ARM64 WSL can install Goldsky and Compose, but the published Turbo Linux binary does not support ARM64. WSL, Bash, curl, CA certificates, and a writable Linux home are prerequisites; enabling WSL may require administrator access and a reboot. Do not silently run elevated system setup.
+Use an installed, initialized **x64 Ubuntu 24.04+** distribution for all three components. Linux ARM64 WSL can install Goldsky and Compose, but the published Turbo Linux binary does not support ARM64. WSL, Bash, npm, CA certificates, and a writable Linux home are prerequisites; enabling WSL may require administrator access and a reboot. Do not silently run elevated system setup. The installer does not download a shell script. Missing npm exits 1.
 
 From PowerShell, run `scripts/install.ps1` from this skill's directory. Resolve that path yourself. Do not ask the user where it is.
 
