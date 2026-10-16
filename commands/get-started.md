@@ -34,7 +34,7 @@ On Cursor, merge this into `.cursor/mcp.json` without removing other servers:
 
 On any other host, look up that host's MCP config and write an HTTP server named `goldsky-docs` at that URL. A plugin install that already registered this server counts as done.
 
-3. CLIs. Resolve `scripts/install.sh` from the `auth-setup` skill you just installed, or from this plugin, and run it with bash. Do not ask where it is, do not run `curl` installers, and do not ask for sudo. It installs the Goldsky CLI, Compose, and Turbo into user-writable directories. On Windows, resolve `scripts/install.ps1` the same way and follow the Windows section of `auth-setup`: run install, login, and later commands yourself inside the same WSL distribution. Enabling WSL is the one step you cannot do — say so only when no distribution is installed. On every later command, restore PATH:
+3. CLIs. Resolve `scripts/install.sh` from the `auth-setup` skill you just installed, or from this plugin, and run it with bash. Do not ask where it is, do not run `curl` installers, do not pipe a remote shell script, and do not ask for sudo. It needs npm. Missing npm is a failure. It installs the pinned Goldsky CLI, then Compose and Turbo, into user-writable directories. On Windows, resolve `scripts/install.ps1` the same way and follow the Windows section of `auth-setup`: run install, login, and later commands yourself inside the same WSL distribution. Enabling WSL is the one step you cannot do — say so only when no distribution is installed. On every later command, restore PATH:
 
 ```bash
 export PATH="$HOME/.local/bin:$HOME/.goldsky/bin:$PATH"

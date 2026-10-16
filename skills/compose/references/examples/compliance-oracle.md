@@ -30,9 +30,8 @@ Pick the mode from the tools available to you:
 - **A `deployComposeApp` tool is available (Goldsky webapp chatbot).** Compliance now deploys fully in-app. In-app flow: run the Step 1 interview (app name first), `walletCreate({ appName: "<chosen app name>", walletName: "compliance-oracle-wallet" })` to get the oracle wallet address (pass `appName` as the chosen app name and `walletName` explicitly; passing the wallet name positionally as `appName` creates the wrong app scope, and the resulting address never matches the runtime `evm.wallet({ name: "compliance-oracle-wallet" })`), `deployContract` MockUSDC, then `deployContract` ComplianceGatedTransfer with `constructorArgs: ["<token_addr>", "<oracle-wallet-addr>", "<recipient_addr>"]` for single-payee or `["<token_addr>", "<oracle-wallet-addr>"]` for P2P (these are tool inputs: `sources` and `constructorArgs`, not CLI flags). Wire the deployed contract address and chain into the inlined source (Step 3), then `deployComposeApp`. The `WEBACY_API_KEY` secret is the user's LAST step: the in-app deploy skips secret validation, so `deployComposeApp` succeeds without it, but the app won't run until the user adds the secret in the Compose app's dashboard **and redeploys from the dashboard** so the pod picks it up (secrets are baked into the pod at deploy, not hot-reloaded). NEVER attempt to set a secret from chat; there is no tool, by design. Scaffold the inlined source from **The app (full source)** below in-memory.
   - **Testing in webapp mode:** After deploy succeeds, **always proactively walk the user through the smoke test** (Step 7). The smoke test requires `goldsky compose writeContract` (a CLI command). Before giving the commands, ask the user if they have the Goldsky CLI installed. If they don't, walk them through installing it first:
     ```
-    curl https://goldsky.com | sh
-    export PATH="$HOME/.local/bin:$PATH"
-    goldsky compose install
+    bash scripts/install.sh compose
+    export PATH="$HOME/.local/bin:$HOME/.goldsky/bin:$PATH"
     goldsky login
     ```
     Then proceed with the Step 7 smoke test commands. Do NOT skip the smoke test or wait for the user to ask — deploying without testing leaves the user unsure whether the app actually works.
@@ -833,7 +832,7 @@ The `goldsky` CLI and auth checks are the standard Compose preflight (see `/comp
    goldsky compose deployContract --help >/dev/null 2>&1 && echo "deployContract OK" || echo "deployContract UNKNOWN — CLI too old"
    ```
    If the version is older than `0.8.1` or either command is unknown, **offer** `goldsky compose update` (or `goldsky compose update 0.8.1` for a specific version), run it on confirmation, then re-check before proceeding.
-2. **`cast`** — `cast --version`. Install with `curl -L https://foundry.paradigm.xyz | bash && foundryup` if missing. Used only for the `cast` alternative in Step 7 (`forge` is no longer required — `deployContract` compiles in-CLI).
+2. **`cast`** — `cast --version`. If `cast` is missing, skip the Foundry alternative in Step 7. Do not install Foundry. Used only for that alternative (`forge` is not required — `deployContract` compiles in-CLI).
 3. **No OpenZeppelin install needed.** All contracts are self-contained — `IERC20` is inlined as a two-function interface in the escrow contract, and `MockUSDC` is a standalone ERC20 implementation. This means the contracts compile in both the CLI's `deployContract` and the webapp's in-app compiler without any `npm install`.
 
 ## Step 1 — Configuration interview
@@ -959,7 +958,7 @@ goldsky compose deploy
 
 First deploy may take 1-2 minutes. Watch for `Deployed compose app: <the chosen app name>` (e.g. `compliance-oracle`). The `on_transfer_requested` event listener and the `reconcile` cron both go live.
 
-**⚠ MANDATORY: After deploy succeeds, always proceed directly to Step 7 (smoke test).** Do not stop at "deployed" or only mention secrets — the user needs to see their oracle actually process a transfer end-to-end. If the user is in the webapp (no Bash tool), check whether they have the Goldsky CLI installed and walk them through installing it (`curl https://goldsky.com | sh`, then `export PATH="$HOME/.local/bin:$PATH"` if `goldsky` is not found, then `goldsky compose install` and `goldsky login`) before giving the smoke test commands.
+**⚠ MANDATORY: After deploy succeeds, always proceed directly to Step 7 (smoke test).** Do not stop at "deployed" or only mention secrets — the user needs to see their oracle actually process a transfer end-to-end. If the user is in the webapp (no Bash tool), check whether they have the Goldsky CLI installed and walk them through the auth-setup installer (`bash scripts/install.sh compose`, then `export PATH="$HOME/.local/bin:$HOME/.goldsky/bin:$PATH"`, then `goldsky login`) before giving the smoke test commands. Do not curl an installer and do not ask for sudo.
 
 ## Step 7 — Smoke test
 
@@ -1029,7 +1028,7 @@ goldsky compose runs --task on_transfer_requested --since 5m --json
 goldsky compose collections query transfer-audits
 ```
 
-**What to look for:** `deposit received`, `screening complete ... risk score N`, then `transfer #<id> APPROVED` (or a reject warning) with an `oracleTxHash`. Verify on-chain — `transfers(<id>)` status should be `1` (Approved) or `2` (Rejected), not `0`:
+**What to look for:** `deposit received`, `screening complete ... risk score N`, then `transfer #<id> APPROVED` (or a reject warning) with an `oracleTxHash`. Verify on-chain — `transfers(<id>)` status should be `1` (Approved) or `2` (Rejected), not `0`. If `cast` is missing, skip the `cast call` below. Do not install Foundry:
 
 ```bash
 cast call $CONTRACT_ADDRESS "transfers(uint256)(address,uint256,uint8)" <id> --rpc-url $RPC_URL
@@ -1037,7 +1036,7 @@ cast call $CONTRACT_ADDRESS "transfers(uint256)(address,uint256,uint8)" <id> --r
 
 ### Alternative — `cast` from your own funded EOA
 
-If you'd rather drive the flow with a separate sender key (`$SENDER_KEY`, not the oracle), it is **not** gas-sponsored, so fund it first: get Base Sepolia ETH from a faucet (e.g. https://www.coinbase.com/faucets/base-sepolia) into `$SENDER_ADDRESS`, then:
+If `cast` is missing, skip this alternative. Do not install Foundry. If you'd rather drive the flow with a separate sender key (`$SENDER_KEY`, not the oracle), it is **not** gas-sponsored, so fund it first: get Base Sepolia ETH from a faucet (e.g. https://www.coinbase.com/faucets/base-sepolia) into `$SENDER_ADDRESS`, then:
 
 ```bash
 # mint is open — any funded key mints to the sender (MockUSDC only)
@@ -1056,7 +1055,7 @@ Generate `$SENDER_KEY` without printing it (a separate funded EOA, not the oracl
 
 - **`error: Unknown command "deployContract". Did you mean command "deploy"?` (or the `writeContract` variant).** Compose CLI is older than 0.8.1. Run `goldsky compose update` (or `goldsky compose update 0.8.1`), confirm `goldsky compose --version` prints `0.8.1`+, then retry.
 - **Edits to `compose.yaml` or source files don't take effect after redeploy.** Stale `.compose/` bundle cache. Run `rm -rf .compose/` and redeploy.
-- **`approveTransfer`/`rejectTransfer` reverts with `not oracle`.** The `compliance-oracle-wallet` address doesn't match the contract's `oracle`. They must be the same wallet. Check: `cast call $CONTRACT_ADDRESS "oracle()(address)" --rpc-url $RPC_URL` should equal the `compliance-oracle-wallet` address (from `goldsky compose wallet list`).
+- **`approveTransfer`/`rejectTransfer` reverts with `not oracle`.** The `compliance-oracle-wallet` address doesn't match the contract's `oracle`. They must be the same wallet. If `cast` is installed, `cast call $CONTRACT_ADDRESS "oracle()(address)" --rpc-url $RPC_URL` should equal the `compliance-oracle-wallet` address (from `goldsky compose wallet list`). If `cast` is missing, skip that check. Do not install Foundry.
 - **`requestTransfer` reverts with "transfer amount exceeds allowance".** The sender didn't `approve` the escrow to spend their USDC first. Run the `approve` call before `requestTransfer`.
 - **Task never fires when a transfer is requested.** Confirm `compose.yaml`'s `contract:` and `network:` match where you deployed, the deploy succeeded, and the trigger is active (`goldsky compose status`). Wiring only one of `chain` (constants.ts) / `network` (compose.yaml) is the usual cause.
 - **Webacy returns an empty response / task throws.** Check `WEBACY_API_KEY` is set as a secret and valid, and the address is well-formed hex. Transient failures are absorbed by the `retry_config` (3 attempts, backoff).

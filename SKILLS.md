@@ -30,7 +30,7 @@ _Legacy streaming product — prefer Turbo for new pipelines unless you need a s
 - **boost** - Free CDN in front of an RPC provider you already pay for; cacheable reads served from Goldsky's data, everything else forwarded free
 
 ### Feeds
-- **feeds** - REST API for one wallet's balances and transfers. No `goldsky feeds` command; the key is `GOLDSKY_FEEDS_API_KEY`, not the CLI login token
+- **feeds** - One wallet's balances and transfers over HTTP, with the key from `goldsky feeds key reveal`. The Feeds key is not the CLI login token
 
 ### Cross-product routing
 - **onchain-automation** - Detect an onchain event, decide, and send a transaction back onchain; maps an end-to-end automation goal onto the right combination of products and hands off to their skills
