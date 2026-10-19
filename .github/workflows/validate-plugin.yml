@@ -175,6 +175,43 @@ jobs:
       - run: npm run validate:skills
       - run: npm test
 
+  openai-package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --global npm@11.10.0
+      - run: npm ci
+      - run: npm run build:openai
+      - name: Package is skills-only and within portal limits
+        run: |
+          # The OpenAI portal rejects lifecycle hooks, and a root mcp.json turns the
+          # upload into a With-MCP submission. Keep both out of the ZIP.
+          zip=$(ls dist/goldsky-openai-*.zip)
+          dir=$(mktemp -d)
+          unzip -q "$zip" -d "$dir"
+          root="$dir/goldsky"
+          for bad in hooks mcp.json .mcp.json commands agents .claude-plugin .cursor-plugin .codex-plugin; do
+            [ ! -e "$root/$bad" ] || { echo "::error::$zip contains $bad"; exit 1; }
+          done
+          jq -e --arg pkg "$(jq -r .version package.json)" '
+            .version == $pkg
+            and .extensions["com.openai"].requires_local_executor == true
+            and (.extensions["com.openai"].interface
+                 | (.displayName | length) <= 30
+                   and (.shortDescription | length) <= 30
+                   and (.longDescription | length) <= 4000
+                   and (.developerName | length) <= 80
+                   and ((.defaultPrompt // []) | length <= 3 and all(length <= 128))
+                   and ((.capabilities // []) | length <= 20 and all(length <= 120)))
+          ' "$root/plugin.json" >/dev/null || { echo "::error::plugin.json fails OpenAI field limits"; exit 1; }
+          for p in $(jq -r '.extensions["com.openai"] | .onboardingSkill, .interface.logo' "$root/plugin.json"); do
+            [ -f "$root/$p" ] || { echo "::error::plugin.json references missing $p"; exit 1; }
+          done
+          node scripts/validate-skills.mjs "$root/skills"
+
   shellcheck:
     runs-on: ubuntu-latest
     steps:

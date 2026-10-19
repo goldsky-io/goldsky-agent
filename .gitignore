@@ -12,3 +12,6 @@ boost-workspace/
 
 # Python test artifacts
 __pycache__/
+
+# OpenAI portal package (npm run build:openai)
+dist/
