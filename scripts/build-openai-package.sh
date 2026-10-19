@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # Build the ZIP uploaded to the OpenAI plugin portal (platform.openai.com/plugins,
-# Create plugin -> Skills only).
+# Create plugin -> With MCP).
 #
-# The portal rejects packages with lifecycle hooks, and a root mcp.json would make
-# it a With-MCP submission (domain verification + OAuth for docs.goldsky.com). So
-# the package is skills only: the root Agent Plugins manifest, skills/, the logo,
-# and the policy files. No hooks/, commands/, agents/, mcp.json, or host manifests.
+# The portal no longer accepts skills-only submissions, so the package declares
+# the public docs MCP server (https://docs.goldsky.com/mcp, Streamable HTTP, no
+# auth, read-only search tools) in a root mcp.json. The portal rejects lifecycle
+# hooks, so the package is: the root Agent Plugins manifest, mcp.json, skills/,
+# the logo, and the policy files. No hooks/, commands/, agents/, or host manifests.
 # auth-setup already covers "set it up and help me get started", so it is the
 # onboarding skill in place of commands/get-started.md.
 #
@@ -24,7 +25,7 @@ trap 'rm -rf "$stage"' EXIT
 mkdir -p "$stage/goldsky/assets" dist
 cp -R skills "$stage/goldsky/skills"
 cp assets/logo.png "$stage/goldsky/assets/logo.png"
-cp LICENSE PRIVACY.md TERMS.md SECURITY.md "$stage/goldsky/"
+cp LICENSE PRIVACY.md TERMS.md SECURITY.md mcp.json "$stage/goldsky/"
 
 jq --arg version "$version" '{
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
@@ -43,7 +44,7 @@ jq --arg version "$version" '{
       interface: {
         displayName: .displayName,
         shortDescription: "Onchain data pipelines + RPC",
-        longDescription: (.description + "\n\nThe skills install the Goldsky CLI with npm into user-writable directories and sign in through `goldsky login` in the browser. Requires a desktop environment with Node.js and npm, and a Goldsky account (free to create at login)."),
+        longDescription: (.description + "\n\nThe skills install the Goldsky CLI with npm into user-writable directories and sign in through `goldsky login` in the browser. Requires a desktop environment with Node.js and npm, and a Goldsky account, which can be created during login."),
         developerName: "Goldsky",
         category: "Developer Tools",
         capabilities: [

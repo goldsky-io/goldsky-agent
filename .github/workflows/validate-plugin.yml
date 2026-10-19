@@ -185,17 +185,19 @@ jobs:
       - run: npm install --global npm@11.10.0
       - run: npm ci
       - run: npm run build:openai
-      - name: Package is skills-only and within portal limits
+      - name: Package has no hooks, declares only the docs MCP, and fits portal limits
         run: |
-          # The OpenAI portal rejects lifecycle hooks, and a root mcp.json turns the
-          # upload into a With-MCP submission. Keep both out of the ZIP.
+          # The OpenAI portal rejects lifecycle hooks, and a With-MCP plugin takes
+          # exactly one MCP server: the public docs endpoint.
           zip=$(ls dist/goldsky-openai-*.zip)
           dir=$(mktemp -d)
           unzip -q "$zip" -d "$dir"
           root="$dir/goldsky"
-          for bad in hooks mcp.json .mcp.json commands agents .claude-plugin .cursor-plugin .codex-plugin; do
+          for bad in hooks .mcp.json commands agents .claude-plugin .cursor-plugin .codex-plugin; do
             [ ! -e "$root/$bad" ] || { echo "::error::$zip contains $bad"; exit 1; }
           done
+          jq -e '.mcpServers | keys == ["goldsky-docs"] and .["goldsky-docs"].url == "https://docs.goldsky.com/mcp" and (.["goldsky-docs"].headers // {} | length) == 0' "$root/mcp.json" >/dev/null \
+            || { echo "::error::mcp.json must declare only goldsky-docs at https://docs.goldsky.com/mcp with no headers"; exit 1; }
           jq -e --arg pkg "$(jq -r .version package.json)" '
             .version == $pkg
             and .extensions["com.openai"].requires_local_executor == true
