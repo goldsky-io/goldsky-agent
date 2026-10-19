@@ -196,7 +196,7 @@ jobs:
           for bad in hooks .mcp.json commands agents .claude-plugin .cursor-plugin .codex-plugin; do
             [ ! -e "$root/$bad" ] || { echo "::error::$zip contains $bad"; exit 1; }
           done
-          jq -e '.mcpServers | keys == ["goldsky-docs"] and .["goldsky-docs"].url == "https://docs.goldsky.com/mcp" and (.["goldsky-docs"].headers // {} | length) == 0' "$root/mcp.json" >/dev/null \
+          jq -e '.mcpServers | keys == ["goldsky-docs"] and .["goldsky-docs"].url == "https://docs.goldsky.com/mcp" and .["goldsky-docs"].type == "streamable-http" and (.["goldsky-docs"].headers // {} | length) == 0' "$root/mcp.json" >/dev/null \
             || { echo "::error::mcp.json must declare only goldsky-docs at https://docs.goldsky.com/mcp with no headers"; exit 1; }
           jq -e --arg pkg "$(jq -r .version package.json)" '
             .version == $pkg

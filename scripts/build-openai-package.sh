@@ -4,7 +4,8 @@
 #
 # The portal no longer accepts skills-only submissions, so the package declares
 # the public docs MCP server (https://docs.goldsky.com/mcp, Streamable HTTP, no
-# auth, read-only search tools) in a root mcp.json. The portal rejects lifecycle
+# auth, read-only search tools) in a root mcp.json, converted to the portable
+# format. The portal rejects lifecycle
 # hooks, so the package is: the root Agent Plugins manifest, mcp.json, skills/,
 # the logo, and the policy files. No hooks/, commands/, agents/, or host manifests.
 # auth-setup already covers "set it up and help me get started", so it is the
@@ -25,7 +26,14 @@ trap 'rm -rf "$stage"' EXIT
 mkdir -p "$stage/goldsky/assets" dist
 cp -R skills "$stage/goldsky/skills"
 cp assets/logo.png "$stage/goldsky/assets/logo.png"
-cp LICENSE PRIVACY.md TERMS.md SECURITY.md mcp.json "$stage/goldsky/"
+cp LICENSE PRIVACY.md TERMS.md SECURITY.md "$stage/goldsky/"
+
+# The repo's mcp.json uses Cursor's "type": "http". The portable format the portal
+# reads needs its schema and "streamable-http", or the portal sees no MCP server.
+jq '{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  mcpServers: (.mcpServers | map_values({ type: "streamable-http", url }))
+}' mcp.json > "$stage/goldsky/mcp.json"
 
 jq --arg version "$version" '{
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
