@@ -2,7 +2,7 @@
 # Bump the plugin version and sync it across every host manifest.
 # Run this whenever you change anything under skills/ — CI enforces it on PRs,
 # because Claude Code / Cursor plugin users only receive updates when the
-# plugin `version` changes. Then commit the four modified manifest files.
+# plugin `version` changes. Then commit the five modified manifest files.
 #
 # NOTE: bumping delivers updates automatically on Claude Code (the directory pins a
 # commit SHA and advances it from main). Cursor does NOT auto-update — every release
@@ -26,11 +26,11 @@ case "$level" in
   *) echo "Unknown bump level '$level'. Use: patch (default) | minor | major" >&2; exit 1 ;;
 esac
 
-for f in package.json .claude-plugin/plugin.json .cursor-plugin/plugin.json .claude-plugin/marketplace.json; do
+for f in package.json .claude-plugin/plugin.json .cursor-plugin/plugin.json .claude-plugin/marketplace.json gemini-extension.json; do
   # -i.bak works on both GNU (Linux) and BSD (macOS) sed; drop the backup after
   sed -i.bak -E "s/\"version\": \"[0-9]+\.[0-9]+\.[0-9]+\"/\"version\": \"$new\"/" "$f"
   rm -f "$f.bak"
 done
 
 echo "Bumped $current -> $new ($level) across all manifests. Commit:"
-echo "  package.json .claude-plugin/plugin.json .cursor-plugin/plugin.json .claude-plugin/marketplace.json"
+echo "  package.json .claude-plugin/plugin.json .cursor-plugin/plugin.json .claude-plugin/marketplace.json gemini-extension.json"
