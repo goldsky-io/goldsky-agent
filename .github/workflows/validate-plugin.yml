@@ -193,7 +193,7 @@ jobs:
           dir=$(mktemp -d)
           unzip -q "$zip" -d "$dir"
           root="$dir/goldsky"
-          for bad in hooks .mcp.json commands agents .claude-plugin .cursor-plugin .codex-plugin; do
+          for bad in hooks .mcp.json commands agents .claude-plugin .cursor-plugin .codex-plugin skills/compose skills/compose-doctor skills/onchain-automation; do
             [ ! -e "$root/$bad" ] || { echo "::error::$zip contains $bad"; exit 1; }
           done
           jq -e '.mcpServers | keys == ["goldsky-docs"] and .["goldsky-docs"].url == "https://docs.goldsky.com/mcp" and .["goldsky-docs"].type == "streamable-http" and (.["goldsky-docs"].headers // {} | length) == 0' "$root/mcp.json" >/dev/null \
