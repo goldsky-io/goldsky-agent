@@ -164,7 +164,7 @@ List names in the manifest's `secrets:` array, set values with `goldsky compose 
 
 Two different sets — do not conflate them:
 
-- **Runtime task gas** (smart-wallet `writeContract` / `sendTransaction` while the app runs): bundler fallback Alchemy → Pimlico → Gelato. A chain is sponsorable if *any* of the three covers it (~112 chains in the 0.8.1 source). **Don't hardcode the list**; confirm on the Goldsky docs chains page. See `references/wallets-and-gas.md`.
+- **Runtime task gas** (smart-wallet `writeContract` / `sendTransaction` while the app runs): bundler fallback Alchemy → Pimlico. A chain is sponsorable if *either* of the two covers it (~111 chains in the 0.8.1 source). **Don't hardcode the list**; confirm on the Goldsky docs chains page. See `references/wallets-and-gas.md`.
 - **Cloud `deployContract` / `writeContract` CLI path**: the 10-chain Alchemy set only (1, 11155111, 137, 80002, 42161, 421614, 10, 11155420, 8453, 84532). Outside that set: `No Alchemy bundler URL for chain <id>` → `forge create` / `cast send` with a funded key.
 
 Base / Base Sepolia are sponsored on *both* paths, which is why examples recommend them. They are not the only sponsored chains.

@@ -24,16 +24,16 @@ Works in both cloud and local. When `sponsorGas: true`, the wallet configures EI
 
 ## Gas Sponsorship
 
-Bundler fallback order: **Alchemy → Pimlico → Gelato**. Override via `BUNDLER_PROVIDER=<alchemy|pimlico|gelato>` env var.
+Bundler fallback order: **Alchemy → Pimlico**. Override via `BUNDLER_PROVIDER=<alchemy|pimlico>` env var.
 
 ### Supported chains
 
-A chain is runtime-sponsorable if **any** of the three bundler providers covers it (tried in fallback order Alchemy → Pimlico → Gelato, each gated on its API keys being set). In the 0.8.1 source that union spans **112 chains**. This is the **runtime** task-gas sponsorship set - far broader than the `deployContract` / `writeContract` cloud *deploy* path, which covers the 10-chain Alchemy set (1, 11155111, 137, 80002, 42161, 421614, 10, 11155420, 8453, 84532; FOU-991 tracks broader coverage); runtime sponsorship also covers the Arbitrum, Optimism (incl. **Arbitrum Sepolia (`421614`)** / Optimism Sepolia (`11155420`)), Polygon, Ethereum and BNB families, among many others. **Don't hardcode the list** - it changes; confirm current coverage on the Goldsky docs chains page.
+A chain is runtime-sponsorable if **either** of the two bundler providers covers it (tried in fallback order Alchemy → Pimlico, each gated on its API keys being set). In the 0.8.1 source that union spans **111 chains**. This is the **runtime** task-gas sponsorship set - far broader than the `deployContract` / `writeContract` cloud *deploy* path, which covers the 10-chain Alchemy set (1, 11155111, 137, 80002, 42161, 421614, 10, 11155420, 8453, 84532; FOU-991 tracks broader coverage); runtime sponsorship also covers the Arbitrum, Optimism (incl. **Arbitrum Sepolia (`421614`)** / Optimism Sepolia (`11155420`)), Polygon, Ethereum and BNB families, among many others. **Don't hardcode the list** - it changes; confirm current coverage on the Goldsky docs chains page.
 
 ### Error on unsupported chain
 
 ```
-No bundler provider available for chain <id>. Providers: alchemy: chain not supported; pimlico: missing keys (PIMLICO_API_KEY); gelato: …
+No bundler provider available for chain <id>. Providers: alchemy: chain not supported; pimlico: missing keys (PIMLICO_API_KEY)
 ```
 
 Either use a supported chain or set `sponsorGas: false` and fund the EOA manually.
