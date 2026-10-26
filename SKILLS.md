@@ -1,6 +1,6 @@
 # Goldsky Agent Skills
 
-AI-powered tools for building, deploying, and debugging across the full Goldsky product surface — Turbo pipelines, Mirror pipelines, Subgraphs, Compose, Edge RPC, and Feeds.
+AI-powered tools for building, deploying, and debugging Goldsky Turbo pipelines, Mirror pipelines, Subgraphs, Edge RPC, and Feeds. Compose skills, which send onchain transactions, are in [goldsky-io/goldsky-compose-agent](https://github.com/goldsky-io/goldsky-compose-agent).
 
 ## Available Skills
 
@@ -21,19 +21,12 @@ _Legacy streaming product — prefer Turbo for new pipelines unless you need a s
 - **subgraph-doctor** - Diagnose and fix failing, stalled, or stuck subgraphs interactively
 - **subgraph-migrate** - Guided migration of a subgraph from The Graph
 
-### Compose
-- **compose** - Build offchain-to-onchain TypeScript tasks (oracles, keepers, automation). Manifest/CLI/API live in `skills/compose/references/`; worked examples in `skills/compose/references/examples/`
-- **compose-doctor** - Diagnose and fix broken Compose apps interactively
-
 ### RPC (Edge and Boost)
 - **edge** - Managed RPC endpoints, capabilities, supported chains, error code lookups
 - **boost** - Free CDN in front of an RPC provider you already pay for; cacheable reads served from Goldsky's data, everything else forwarded free
 
 ### Feeds
 - **feeds** - One wallet's balances and transfers over HTTP, with the key from `goldsky feeds key reveal`. The Feeds key is not the CLI login token
-
-### Cross-product routing
-- **onchain-automation** - Detect an onchain event, decide, and send a transaction back onchain; maps an end-to-end automation goal onto the right combination of products and hands off to their skills
 
 ### Cross-cutting
 - **datasets** - Chain prefixes, dataset types, 130+ chains
@@ -61,9 +54,6 @@ npx skills add goldsky-io/goldsky-agent
 **"My pipeline is stuck in error state"**
 → Uses: turbo-doctor, turbo-operations
 
-**"My Compose app is crashlooping"**
-→ Uses: compose-doctor
-
 **"Sync my subgraph entities into PostgreSQL"**
 → Uses: mirror, secrets
 
@@ -75,15 +65,6 @@ npx skills add goldsky-io/goldsky-agent
 
 **"Migrate my subgraph from The Graph to Goldsky"**
 → Uses: subgraph-migrate, subgraph-builder
-
-**"Build a compliance-gated payment system" / "wallet screening oracle" / "AML-gated transfers"**
-→ Uses: compose (then `references/examples/compliance-oracle.md`)
-
-**"Build a price oracle that writes onchain"**
-→ Uses: compose (then `references/examples/bitcoin-oracle.md`)
-
-**"Build a custom Compose app that isn't the example"**
-→ Uses: compose
 
 **"I need a fast, reliable RPC endpoint with hedged requests"**
 → Uses: edge

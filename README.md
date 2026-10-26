@@ -1,10 +1,12 @@
 # Goldsky Agent
 
 [![Install with npx](https://img.shields.io/badge/install-npx%20skills%20add-blue)](https://github.com/goldsky-io/goldsky-agent#installation)
-[![Skills](https://img.shields.io/badge/skills-19-green)](#skills)
+[![Skills](https://img.shields.io/badge/skills-16-green)](#skills)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-AI-powered tools for the full Goldsky product surface. Build, deploy, and debug Turbo pipelines, Mirror pipelines, Subgraphs, Compose apps, and Edge RPC — from natural-language prompts.
+AI-powered tools for the Goldsky data product surface. Build, deploy, and debug Turbo pipelines, Mirror pipelines, Subgraphs, Edge RPC, and Feeds — from natural-language prompts.
+
+Compose skills, which send onchain transactions, are in a separate plugin: [goldsky-io/goldsky-compose-agent](https://github.com/goldsky-io/goldsky-compose-agent).
 
 Paste this to get started. The agent installs the CLI, then runs `/get-started`, which does the rest:
 
@@ -81,11 +83,9 @@ cp -r goldsky-agent/skills/* .cursor/skills/    # Cursor
 | Build a new Turbo pipeline                         | `/turbo-builder`    |
 | Fix a broken Turbo pipeline                        | `/turbo-doctor`     |
 | Fix a broken Mirror pipeline                       | `/mirror-doctor`    |
-| Fix a broken Compose app                           | `/compose-doctor`   |
 | Build / deploy a subgraph                          | `/subgraph-builder` |
 | Fix a broken / stalled subgraph                    | `/subgraph-doctor`  |
 | Migrate a subgraph from The Graph                  | `/subgraph-migrate` |
-| Build a Compose app (oracle / keeper / automation) | `/compose`          |
 | Get a fast, reliable RPC endpoint                  | `/edge`             |
 | Cut the bill from your existing RPC provider       | `/boost`            |
 | Look up a wallet's balances or transfers           | `/feeds`            |
@@ -127,9 +127,6 @@ goldsky-agent/
 │   ├── subgraph-builder/      # Author, build & deploy subgraphs; schema/mappings/manifest
 │   ├── subgraph-doctor/       # Diagnose and fix failing/stalled subgraphs
 │   ├── subgraph-migrate/      # Guided migration from The Graph
-│   ├── compose/               # Compose app scaffolding; references/ + examples/
-│   ├── compose-doctor/        # Diagnose and fix Compose apps
-│   ├── onchain-automation/    # Cross-product router: detect → decide → execute
 │   ├── edge/                  # Managed RPC capabilities, error codes, pricing
 │   ├── boost/                 # Free CDN in front of your existing RPC provider
 │   ├── feeds/                 # Wallet balances and transfers over the REST API
@@ -192,15 +189,6 @@ Hosted GraphQL APIs over indexed onchain data.
 | `subgraph-builder` | "Build / write / deploy a subgraph; design a schema; write a mapping" | Interactive author→build→deploy; schema design, AssemblyScript mappings, manifest, instant subgraphs, performance, testing; endpoints, tags, webhooks |
 | `subgraph-doctor` | "My subgraph stopped syncing / won't deploy / is throwing errors" | Diagnostic workflow: status + log checks, the `_meta` query, error-pattern matching, preventive mapping-code root causes, fixes |
 | `subgraph-migrate` | "Move my subgraph off The Graph onto Goldsky" | Path selection, deploy, verify sync, migrate tags, swap endpoint |
-
-### Compose
-
-Offchain-to-onchain TypeScript framework for oracles, keepers, circuit breakers, and cross-chain automation. When you need to *run logic and write back onchain* — not just read data — Compose is the tool: managed gas, smart wallets, and cron / HTTP / onchain triggers.
-
-| Skill | When to use | What it does |
-| ----- | ----------- | ------------ |
-| `compose` | "Build a price oracle / keeper / cross-chain bot in TypeScript" | Walks through scaffolding, task triggers (cron, HTTP, onchain), wallets, gas sponsorship. Manifest/CLI/API in `references/`; worked examples in `references/examples/` |
-| `compose-doctor` | "My Compose app is in error state / crashlooping" | Runs `status`, `logs`, `secret list`, `wallet list` and diagnoses |
 
 ### Edge (managed RPC)
 
@@ -310,12 +298,11 @@ still required before marketplace submission.
 
 ## Coverage
 
-The skills cover the full Goldsky product surface:
+The skills cover the Goldsky data products:
 
 - **Turbo pipelines** — 130+ chain sources (EVM, Solana, Bitcoin, Stellar, Sui, NEAR, Starknet); SQL / TypeScript / dynamic table transforms; PostgreSQL, ClickHouse, Kafka, S3, Webhook, S2, SQS, MySQL, Pub/Sub sinks; streaming and job modes; full lifecycle and monitoring
 - **Mirror pipelines** — Subgraph and direct-indexing sources, sinks, lifecycle, plus interactive diagnosis (legacy — prefer Turbo for new pipelines unless you need a subgraph entity source)
 - **Subgraphs** — Author/build/deploy (`subgraph-builder`: schema design, AssemblyScript mappings, manifest, instant subgraphs, performance, testing, endpoints/tags/webhooks); interactive diagnosis (`subgraph-doctor`); guided migration from The Graph (`subgraph-migrate`)
-- **Compose** — `compose.yaml` manifest, cron / HTTP / onchain triggers, smart wallets, gas sponsorship, `TaskContext` API, codegen, pricing
 - **Edge RPC** — Capabilities, supported chains, hedged requests, flashblocks, x402, error code lookups
 - **Boost** — Free CDN in front of the RPC provider you already pay for; cacheable reads served from Goldsky, everything else forwarded free
 - **Feeds** — REST API for one wallet's balances and transfers
