@@ -67,7 +67,7 @@ Re-read the OpenAPI spec when a request is rejected. These are query parameters 
 
 ## Tokens
 
-`/feeds/tokens` is not under `/feeds/wallets` and takes no `address`. Its only parameter is `tokens`: comma-separated `chain:token_address` pairs, at most 100. The cap counts entries as sent, before folding, so 101 entries that fold to 100 are still 400. It serves current prices only, with no price history.
+`/feeds/tokens` is not under `/feeds/wallets` and takes no `address`. Its only parameter is `tokens`: comma-separated `chain:token_address` pairs, at most 100. The cap counts distinct entries before alias and case folding: exact repeats are dropped first, but `mainnet:0xA0B8…` and `ethereum:0xa0b8…` use two of the 100. It serves current prices only, with no price history.
 
 - The chain is one of `ethereum`, `base`, `arbitrum_one`, `optimism`, `polygon`, `bsc`, `robinhood`, `arc`, with the same aliases and folding as `chains`. It is EVM-only: `solana:<mint>` is 400.
 - The address is `0x` plus 40 hex digits, any case. The zero address is the chain's native token, with the same symbol, name and decimals as its balances row (`base:0x000…000` is ETH, Ether, 18). Pairs are deduplicated after case and alias folding, so `mainnet:0xA0B8…` and `ethereum:0xa0b8…` together return one item.
