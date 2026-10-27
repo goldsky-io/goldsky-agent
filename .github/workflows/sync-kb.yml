@@ -2,6 +2,9 @@
 # ingest buckets and triggers a Knowledge Base ingestion job.
 # goldsky-io/goldsky-agent repository.
 #
+# It also pulls skills from goldsky-io/goldsky-compose-agent. Changes there do
+# not trigger this workflow; run it manually ("Run workflow") after merging.
+#
 # Dual-write: there is one KB per environment (dev + prod), each in its own AWS
 # account, and they are kept in sync by syncing to BOTH on every run. Each
 # environment leg activates only when its per-environment repo secrets are set,
@@ -71,6 +74,24 @@ jobs:
         if: steps.kb.outputs.active == 'true'
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
+      - name: Checkout goldsky-compose-agent
+        if: steps.kb.outputs.active == 'true'
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          repository: goldsky-io/goldsky-compose-agent
+          path: compose-agent
+
+      - name: Add Compose skills to skills/
+        if: steps.kb.outputs.active == 'true'
+        run: |
+          for d in compose-agent/skills/*/; do
+            if [ -e "skills/$(basename "$d")" ]; then
+              echo "::error::skills/$(basename "$d") already exists in goldsky-agent"
+              exit 1
+            fi
+          done
+          cp -R compose-agent/skills/. skills/
+
       - name: Configure AWS credentials via OIDC
         if: steps.kb.outputs.active == 'true'
         uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
@@ -83,9 +104,6 @@ jobs:
         run: |
           aws s3 sync skills/ "s3://goldsky-kb-${{ matrix.environment }}/skills/" \
             --exclude "*.sh" \
-            --exclude "compose/*" \
-            --exclude "compose-doctor/*" \
-            --exclude "onchain-automation/*" \
             --delete
 
       - name: Trigger + wait for ingestion (${{ matrix.environment }})
