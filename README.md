@@ -88,7 +88,7 @@ cp -r goldsky-agent/skills/* .cursor/skills/    # Cursor
 | Build a Compose app (oracle / keeper / automation) | `/compose`          |
 | Get a fast, reliable RPC endpoint                  | `/edge`             |
 | Cut the bill from your existing RPC provider       | `/boost`            |
-| Look up a wallet's balances or transfers           | `/feeds`            |
+| Look up wallet balances, transfers, token prices   | `/feeds`            |
 | Find the right dataset name                        | `/datasets`         |
 | Look up Turbo YAML syntax                          | `/turbo-pipelines`  |
 | Set up the CLI and log in                          | `/auth-setup`       |
@@ -132,7 +132,7 @@ goldsky-agent/
 │   ├── onchain-automation/    # Cross-product router: detect → decide → execute
 │   ├── edge/                  # Managed RPC capabilities, error codes, pricing
 │   ├── boost/                 # Free CDN in front of your existing RPC provider
-│   ├── feeds/                 # Wallet balances and transfers over the REST API
+│   ├── feeds/                 # Wallet balances and transfers, token prices and metadata
 │   ├── datasets/              # Chain prefixes, dataset types
 │   ├── secrets/               # Credential management
 │   └── auth-setup/            # CLI installation, login
@@ -213,11 +213,11 @@ Globally distributed, low-latency JSON-RPC for EVM chains, built on eRPC — a d
 
 ### Feeds
 
-Ready-made wallet balances and transfers. Get the key with `goldsky feeds key reveal`, then call the feeds over HTTP. Do not use the CLI login token.
+Ready-made wallet balances and transfers, plus metadata and current USD prices for up to 100 tokens per request. Get the key with `goldsky feeds key reveal`, then call the feeds over HTTP. Do not use the CLI login token.
 
 | Skill | When to use | What's inside |
 | ----- | ----------- | ------------- |
-| `feeds` | "what does this wallet hold", "show its transfers", "Feeds API key" | `goldsky feeds key reveal`, the balances and transfers calls, and the parameters that differ from Turbo |
+| `feeds` | "what does this wallet hold", "show its transfers", "what is this token worth", "Feeds API key" | `goldsky feeds key reveal`, the balances, transfers and tokens calls, and the parameters that differ from Turbo |
 
 ### Cross-cutting
 
@@ -318,7 +318,7 @@ The skills cover the full Goldsky product surface:
 - **Compose** — `compose.yaml` manifest, cron / HTTP / onchain triggers, smart wallets, gas sponsorship, `TaskContext` API, codegen, pricing
 - **Edge RPC** — Capabilities, supported chains, hedged requests, flashblocks, x402, error code lookups
 - **Boost** — Free CDN in front of the RPC provider you already pay for; cacheable reads served from Goldsky, everything else forwarded free
-- **Feeds** — REST API for one wallet's balances and transfers
+- **Feeds** — REST API for one wallet's balances and transfers, and for token metadata and prices
 - **Cross-cutting** — Authentication, secrets, dataset naming, full CLI reference
 
 ## MCP Server

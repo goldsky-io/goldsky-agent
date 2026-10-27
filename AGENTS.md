@@ -38,7 +38,7 @@ Each `SKILL.md` opens with a `description:` in its frontmatter stating what it c
 | React to an onchain event and send a transaction back onchain (detect → decide → execute) | `onchain-automation` |
 | Get a fast, reliable managed RPC endpoint; RPC error codes | `edge` |
 | Cut the bill from an RPC provider you already pay for; cache hit rates, `x-cache` | `boost` |
-| Look up one wallet's balances or transfers over the Feeds REST API | `feeds` |
+| Look up one wallet's balances or transfers, or token metadata and USD prices, over the Feeds REST API | `feeds` |
 | Find the right dataset name / chain prefix | `datasets` |
 | Store credentials for a sink (Postgres, ClickHouse, Kafka…) | `secrets` |
 | Install the CLI / log in / switch projects / fix `unauthorized` | `auth-setup` |
