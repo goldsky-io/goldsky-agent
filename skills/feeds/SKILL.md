@@ -51,7 +51,7 @@ Read https://edge.goldsky.com/data/openapi.json before using a parameter or resp
 
 All three can also answer 502 when ClickHouse upstream fails, and balances can answer 503 when native balances are unavailable on some chains. The 503 names them in `error.chains` and sets `Retry-After`; it is a partial outage, so retry rather than reporting the wallet as empty.
 
-On the wallet feeds, `address` is required and is exactly one wallet. An EVM address is `0x` plus 40 hex digits. A base58 Solana address passes validation but has no chain behind it yet, so it answers 200 with an empty `data`. A non-200 body is an error, not an empty wallet.
+On the wallet feeds, `address` is required and is exactly one wallet. An EVM address is `0x` plus 40 hex digits. A non-200 body is an error, not an empty wallet.
 
 ## Parameters
 
@@ -62,19 +62,19 @@ Re-read the OpenAPI spec when a request is rejected. These are query parameters 
 - `include_unknown_price` defaults to false, which leaves out tokens Goldsky has no price *source* for. It is not a promise that every row is priced: at the default, rows whose token is priceable still come back with `price_usd` and `value_usd` null. Handle a null price on every row.
 - `include_historical` defaults to false. Set it to true on balances to also get zero rows: tokens fully sold, and natives the wallet holds none of. On one wallet here that took 373 rows to 517. "Has this wallet ever held X" needs it; "what is it worth now" does not.
 - `min_value_usd` drops rows below that USD value and also drops unpriced rows. It applies to `total_value_usd` too.
-- On transfers, `from` and `to` are inclusive RFC 3339 bounds on `block_timestamp`. `from_block` and `to_block` require exactly one chain, because block numbers are not comparable across chains; without one they are 422 `CONFLICTING_FILTERS`, not 400. `transfer_type` is `native`, `erc20`, or both, comma-separated. The NFT types (`erc721`, `erc1155`) return 400. `spl` is accepted and returns 200 with an empty `data`, because no Solana chain is served yet: that empty page means the filter matched nothing on the EVM chains, not that the wallet is empty. `direction` is `in` or `out`.
+- On transfers, `from` and `to` are inclusive RFC 3339 bounds on `block_timestamp`. `from_block` and `to_block` require exactly one chain, because block numbers are not comparable across chains; without one they are 422 `CONFLICTING_FILTERS`, not 400. `transfer_type` is `native`, `erc20`, or both, comma-separated. The NFT types (`erc721`, `erc1155`) return 400. `direction` is `in` or `out`.
 - `page_size` defaults to 100 and the maximum is 1000. A larger value is clamped to 1000 rather than rejected, so read `pagination.page_size` back instead of assuming the request size was honored. The next page is `page_token` set to the previous response's `pagination.next_page_token`. A token is only valid for the filters that produced it. Each page is a separate billed request (https://docs.goldsky.com/pricing/summary#feeds). Do not walk the whole history unless the user asked for that range.
 
 ## Tokens
 
 `/feeds/tokens` is not under `/feeds/wallets` and takes no `address`. Its only parameter is `tokens`: comma-separated `chain:token_address` pairs, at most 100. The cap counts distinct entries before alias and case folding: exact repeats are dropped first, but `mainnet:0xA0B8…` and `ethereum:0xa0b8…` use two of the 100. It serves current prices only, with no price history.
 
-- The chain is one of `ethereum`, `base`, `arbitrum_one`, `optimism`, `polygon`, `bsc`, `robinhood`, `arc`, with the same aliases and folding as `chains`. It is EVM-only: `solana:<mint>` is 400.
+- The chain is one of `ethereum`, `base`, `arbitrum_one`, `optimism`, `polygon`, `bsc`, `robinhood`, `arc`, with the same aliases and folding as `chains`. Any other chain is 400.
 - The address is `0x` plus 40 hex digits, any case. The zero address is the chain's native token, with the same symbol, name and decimals as its balances row (`base:0x000…000` is ETH, Ether, 18). Pairs are deduplicated after case and alias folding, so `mainnet:0xA0B8…` and `ethereum:0xa0b8…` together return one item.
 - The response is `{"data":[...]}`: one item per distinct pair, in request order, with no pagination. Each item has `chain`, `chain_family`, `token_address`, `token_symbol`, `token_name`, `token_decimals`, `token_logo_url`, `price_usd` and `last_priced_at`. A token Goldsky knows nothing about is still listed, with every field after `token_address` null. Match items to the input by `(chain, token_address)`; both come back normalized (canonical slug, lowercase address). A null is not an error.
 - `price_usd` follows the rule balances prices a row with, and uses only observations from the last 4 hours; without one it is null. `last_priced_at` is the time of that observation. A null `last_priced_at` beside a non-null `price_usd` is a major stablecoin asserted at par, not a stale price.
 - A request bills the same whether it names 1 token or 100, and a 400 bills nothing (https://docs.goldsky.com/pricing/summary#feeds). To price a list, batch up to 100 pairs per request instead of one request per token.
-- One bad entry rejects the whole request with 400 `BAD_REQUEST`, and the message says what is wrong: `` `tokens` is required: … ``, `` `tokens` entry is not a `chain:token_address` pair: base. ``, `` `tokens` entry has no chain: … ``, `` `tokens` entry has no EVM token address: base:0x12. … ``, `` Unsupported chain in `tokens`: solana. Supported: … `` (for several, the plural `` Unsupported chains in `tokens`: solana, bnb. Supported: … ``), `` At most 100 values may be passed in `tokens`; got 101. ``.
+- One bad entry rejects the whole request with 400 `BAD_REQUEST`, and the message says what is wrong: `` `tokens` is required: … ``, `` `tokens` entry is not a `chain:token_address` pair: base. ``, `` `tokens` entry has no chain: … ``, `` `tokens` entry has no EVM token address: base:0x12. … ``, `` Unsupported chain in `tokens`: avalanche. Supported: … `` (for several, the plural `` Unsupported chains in `tokens`: avalanche, bnb. Supported: … ``), `` At most 100 values may be passed in `tokens`; got 101. ``.
 
 ## Other feeds on this key
 
