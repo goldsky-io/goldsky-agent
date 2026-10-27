@@ -6,13 +6,13 @@
 
 # AGENTS.md — Goldsky Agent
 
-Guide for AI coding agents (Devin, Codex, Cursor, Amp, Claude Code, and anything else that reads `AGENTS.md`). This repo is a **skill pack** for building, deploying, and debugging on Goldsky — Turbo pipelines, Mirror pipelines, Subgraphs, Compose, Edge RPC, and Feeds. Each skill is a self-contained folder of step-by-step instructions plus reference material.
+Guide for AI coding agents (Devin, Codex, Cursor, Amp, Claude Code, and anything else that reads `AGENTS.md`). This repo is a **skill pack** for building, deploying, and debugging on Goldsky — Turbo pipelines, Mirror pipelines, Subgraphs, Edge RPC, and Feeds. Each skill is a self-contained folder of step-by-step instructions plus reference material. Compose skills, which send onchain transactions, live in [goldsky-io/goldsky-compose-agent](https://github.com/goldsky-io/goldsky-compose-agent).
 
 ## How to use these skills
 
 Some hosts (Claude Code, Cursor) auto-discover skills and trigger them from each skill's `description`. **If your runtime has no "skills" feature, use them manually — they are just Markdown:**
 
-1. Identify the task (build a pipeline, fix a broken one, write a transform, deploy/repair a subgraph, build a Compose app…).
+1. Identify the task (build a pipeline, fix a broken one, write a transform, deploy/repair a subgraph…).
 2. Open the matching `skills/<name>/SKILL.md` (routing table below; full index in [`SKILLS.md`](./SKILLS.md)).
 3. Follow it. A `SKILL.md` points into deeper files under `skills/<name>/references/` and `skills/<name>/templates/` — read those when it tells you to.
 4. For **reference lookups** (CLI flags, YAML fields, dataset names, error codes), query the Goldsky **docs MCP** at `https://docs.goldsky.com/mcp` rather than guessing. Every published doc is also in `https://docs.goldsky.com/llms.txt`.
@@ -33,9 +33,6 @@ Each `SKILL.md` opens with a `description:` in its frontmatter stating what it c
 | Author / build / deploy a subgraph; schema, mappings, manifest | `subgraph-builder` |
 | A subgraph stopped syncing / won't deploy / errors | `subgraph-doctor` |
 | Migrate a subgraph off The Graph | `subgraph-migrate` |
-| Build a Compose app (oracle / keeper / automation) in TypeScript | `compose` |
-| A Compose app is crashlooping / not processing tasks | `compose-doctor` |
-| React to an onchain event and send a transaction back onchain (detect → decide → execute) | `onchain-automation` |
 | Get a fast, reliable managed RPC endpoint; RPC error codes | `edge` |
 | Cut the bill from an RPC provider you already pay for; cache hit rates, `x-cache` | `boost` |
 | Look up one wallet's balances or transfers, or token metadata and USD prices, over the Feeds REST API | `feeds` |

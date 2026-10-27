@@ -83,6 +83,9 @@ jobs:
         run: |
           aws s3 sync skills/ "s3://goldsky-kb-${{ matrix.environment }}/skills/" \
             --exclude "*.sh" \
+            --exclude "compose/*" \
+            --exclude "compose-doctor/*" \
+            --exclude "onchain-automation/*" \
             --delete
 
       - name: Trigger + wait for ingestion (${{ matrix.environment }})

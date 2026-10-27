@@ -25,8 +25,6 @@ trap 'rm -rf "$stage"' EXIT
 
 mkdir -p "$stage/goldsky/assets" dist
 cp -R skills "$stage/goldsky/skills"
-# OpenAI requires attesting that the plugin does not initiate crypto transfers; these skills submit onchain writes.
-rm -rf "$stage/goldsky/skills/compose" "$stage/goldsky/skills/compose-doctor" "$stage/goldsky/skills/onchain-automation"
 cp assets/logo.png "$stage/goldsky/assets/logo.png"
 cp LICENSE PRIVACY.md TERMS.md SECURITY.md "$stage/goldsky/"
 

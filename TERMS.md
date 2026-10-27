@@ -25,14 +25,13 @@ Service at <https://goldsky.com/terms/terms-and-conditions>. You need your own G
 ## Review what the agent does
 
 The plugin instructs an AI agent to run commands — including commands that
-**deploy pipelines, create resources, and in the case of the Compose skills,
-send onchain transactions that spend real funds and gas**. Model output is not
-deterministic and can be wrong.
+**deploy pipelines and create resources in your Goldsky account**. Model output
+is not deterministic and can be wrong.
 
 You are responsible for what runs on your machine and in your account. Review
-generated pipeline YAML, contract addresses, and transactions before applying
-them. The optional pre-deploy hooks are disabled by default and are not a
-guarantee — a passing validation checks shape, not correctness.
+generated pipeline YAML and contract addresses before applying them. The
+optional pre-deploy hooks are disabled by default and are not a guarantee — a
+passing validation checks shape, not correctness.
 
 ## No warranty
 
