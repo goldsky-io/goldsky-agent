@@ -89,6 +89,7 @@ cp -r goldsky-agent/skills/* .cursor/skills/    # Cursor
 | Get a fast, reliable RPC endpoint                  | `/edge`             |
 | Cut the bill from your existing RPC provider       | `/boost`            |
 | Look up a wallet's balances or transfers           | `/feeds`            |
+| Look up a token's metadata and USD price           | `/feeds`            |
 | Find the right dataset name                        | `/datasets`         |
 | Look up Turbo YAML syntax                          | `/turbo-pipelines`  |
 | Set up the CLI and log in                          | `/auth-setup`       |
@@ -132,7 +133,7 @@ goldsky-agent/
 │   ├── onchain-automation/    # Cross-product router: detect → decide → execute
 │   ├── edge/                  # Managed RPC capabilities, error codes, pricing
 │   ├── boost/                 # Free CDN in front of your existing RPC provider
-│   ├── feeds/                 # Wallet balances and transfers over the REST API
+│   ├── feeds/                 # Wallet balances and transfers, token metadata and prices, over the REST API
 │   ├── datasets/              # Chain prefixes, dataset types
 │   ├── secrets/               # Credential management
 │   └── auth-setup/            # CLI installation, login
@@ -213,11 +214,11 @@ Globally distributed, low-latency JSON-RPC for EVM chains, built on eRPC — a d
 
 ### Feeds
 
-Ready-made wallet balances and transfers. Get the key with `goldsky feeds key reveal`, then call the feeds over HTTP. Do not use the CLI login token.
+Ready-made wallet balances and transfers, plus token metadata and prices. Get the key with `goldsky feeds key reveal`, then call the feeds over HTTP. Do not use the CLI login token.
 
 | Skill | When to use | What's inside |
 | ----- | ----------- | ------------- |
-| `feeds` | "what does this wallet hold", "show its transfers", "Feeds API key" | `goldsky feeds key reveal`, the balances and transfers calls, and the parameters that differ from Turbo |
+| `feeds` | "what does this wallet hold", "show its transfers", "what is this token worth", "Feeds API key" | `goldsky feeds key reveal`, the balances and transfers calls, the token metadata and price call, and the parameters that differ from Turbo |
 
 ### Cross-cutting
 

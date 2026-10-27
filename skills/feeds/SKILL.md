@@ -1,11 +1,11 @@
 ---
 name: feeds
-description: "Query Goldsky Feeds for one wallet's balances and transfers. Use for wallet holdings, portfolio value, transfer history, deposit checks, edge.goldsky.com/data/feeds, a Feeds API key, or GOLDSKY_FEEDS_API_KEY. The same key also serves Polymarket activity, positions and balances, and block headers by number, hash or timestamp. Get the key with goldsky feeds key reveal, then call the feeds over HTTP. The CLI login token is not this key. For rows in the user's own database, use /turbo-builder. For a Turbo dataset name, use /datasets. For JSON-RPC, use /edge or /boost."
+description: "Query Goldsky Feeds for a wallet's balances and transfers, or for a token's metadata and USD price. Use for wallet holdings, portfolio value, transfer history, deposit checks, token price, token metadata, edge.goldsky.com/data/feeds, a Feeds API key, or GOLDSKY_FEEDS_API_KEY. The same key also serves Polymarket activity, positions and balances, and block headers by number, hash or timestamp. Get the key with goldsky feeds key reveal, then call the feeds over HTTP. The CLI login token is not this key. For rows in the user's own database, use /turbo-builder. For a Turbo dataset name, use /datasets. For JSON-RPC, use /edge or /boost."
 ---
 
 # Goldsky Feeds
 
-Feeds answers one question about one wallet over HTTP: what it holds, or what it sent and received, across the supported chains in a single request. Goldsky indexes, normalizes, and prices the rows. The caller does not run a pipeline.
+Feeds answers one question about one wallet over HTTP: what it holds, or what it sent and received, across the supported chains in a single request. It can also answer one question about a token: what it is and what it costs right now (`/feeds/tokens`). Pick by question — a wallet's holdings is balances, a wallet's movements is transfers, point-in-time metadata and price for known token addresses is tokens. Goldsky indexes, normalizes, and prices the rows. The caller does not run a pipeline.
 
 The same host and the same key also serve Polymarket and block-header feeds. Those are listed under "Other feeds on this key", and they do not follow the conventions below.
 
@@ -41,9 +41,13 @@ curl -sS -H "x-api-key: $GOLDSKY_FEEDS_API_KEY" \
   "https://edge.goldsky.com/data/feeds/wallets/balances?address=0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
 curl -sS -H "x-api-key: $GOLDSKY_FEEDS_API_KEY" \
   "https://edge.goldsky.com/data/feeds/wallets/transfers?address=0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
+curl -sS -H "x-api-key: $GOLDSKY_FEEDS_API_KEY" \
+  "https://edge.goldsky.com/data/feeds/tokens?tokens=base:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913,ethereum:0x0000000000000000000000000000000000000000"
 ```
 
 Balances returns the latest balance of each token the wallet holds, native assets included, plus `total_value_usd`. Transfers returns that wallet's movements, newest first. `direction` is `in` or `out` relative to `address`.
+
+Tokens returns point-in-time metadata and price for token addresses, not a wallet: one row per requested `chain:token_address` pair, in request order, with `token_symbol`, `token_name`, `token_decimals`, `token_logo_url`, `price_usd`, and `last_priced_at`. Up to 100 pairs per request. It is EVM-only — the same chain list as the wallet feeds' `chains` parameter, aliases folded — even though the wallet feeds accept Solana addresses; `solana:…` is 400 here. The zero address means the chain's native token, and native rows read like their balances rows. A token Goldsky knows nothing about is still listed, with null metadata and price: an unknown pair is a row of nulls, not an error or an omission. `price_usd` follows the same rule balances uses to price a balance — null means no price source or no observation in the window — and null `last_priced_at` beside a non-null price means asserted at par (a tier-0 stablecoin or member of one), not stale. Both wallet feeds and tokens answer 400 for a bad query and 502 when ClickHouse upstream fails; on tokens, over 100 pairs, an unsupported chain, and an empty chain part (`tokens=:0x…`) are each 400. Billing is flat: 35 compute units per request, same as the wallet feeds, regardless of how many pairs are served.
 
 Read https://edge.goldsky.com/data/openapi.json before using a parameter or response field that the quickstart does not show. That document is the contract. The guide is https://docs.goldsky.com/feeds/quickstart and the overview is https://docs.goldsky.com/feeds.
 
@@ -57,6 +61,7 @@ Re-read the OpenAPI spec when a request is rejected. These are query parameters 
 
 - Omit `chains` to query every supported chain. Pass canonical slugs, comma-separated. `matic`, `arbitrum`, and `mainnet` are aliases for `polygon`, `arbitrum_one`, and `ethereum`. Matching is case-insensitive, and `-` is read as `_`. Any other spelling returns 400.
 - `token_symbol` matches a symbol, so two contracts can both match — `usdc` returns both the native and the bridged contract on several chains at once. Use `token_address` when the token must be a specific contract; it takes up to 100, comma-separated. On balances, the zero address selects the native asset of every chain in scope.
+- `/feeds/tokens` takes `tokens`, not `chains` or `address`: comma-separated `chain:token_address` pairs, up to 100, each pair naming its own chain. The chain vocabulary is the wallet feeds' (aliases folded), but the endpoint is EVM-only — `solana:…` is 400.
 - `include_unknown_price` defaults to false, which leaves out tokens Goldsky has no price *source* for. It is not a promise that every row is priced: at the default, rows whose token is priceable still come back with `price_usd` and `value_usd` null. Handle a null price on every row.
 - `include_historical` defaults to false. Set it to true on balances to also get zero rows: tokens fully sold, and natives the wallet holds none of. On one wallet here that took 373 rows to 517. "Has this wallet ever held X" needs it; "what is it worth now" does not.
 - `min_value_usd` drops rows below that USD value and also drops unpriced rows. It applies to `total_value_usd` too.
@@ -77,5 +82,6 @@ Re-read the OpenAPI spec when a request is rejected. These are query parameters 
 ## Writing code against a response
 
 - Balances are the latest amount of each token, not a history. Several transfers in one block become one balance row. Reconstruct movement from the transfers feed.
+- `/feeds/tokens` returns exactly one row per requested pair, in request order, including unknown tokens as rows of nulls. Do not match rows back by symbol — index them by `chain:token_address` as requested.
 - A transfer object has no id. Do not build a primary key that includes `block_number` or `block_timestamp`: a transaction that survives a reorg comes back with different block fields. Do not assume one transaction emits a transfer only once.
 - `price_usd` and `amount_usd` are computed when the request is served. A later read of the same transfer can show a different USD value.
