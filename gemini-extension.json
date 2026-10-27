@@ -1,6 +1,6 @@
 {
   "name": "goldsky",
-  "version": "1.7.16",
+  "version": "1.7.17",
   "description": "Goldsky onchain data: Feeds wallet APIs, prebuilt datasets, Turbo pipelines, subgraphs, Compose, and Edge RPC. Includes the Goldsky docs MCP server and agent skills.",
   "mcpServers": {
     "goldsky-docs": {

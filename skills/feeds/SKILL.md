@@ -51,13 +51,13 @@ Tokens returns point-in-time metadata and price for token addresses, not a walle
 
 Read https://edge.goldsky.com/data/openapi.json before using a parameter or response field that the quickstart does not show. That document is the contract. The guide is https://docs.goldsky.com/feeds/quickstart and the overview is https://docs.goldsky.com/feeds.
 
-Both feeds can also answer 502 when ClickHouse upstream fails, and balances can answer 503 when native balances are unavailable on some chains. The 503 names them in `error.chains` and sets `Retry-After`; it is a partial outage, so retry rather than reporting the wallet as empty.
+The wallet feeds can also answer 502 when ClickHouse upstream fails, and balances can answer 503 when native balances are unavailable on some chains. The 503 names them in `error.chains` and sets `Retry-After`; it is a partial outage, so retry rather than reporting the wallet as empty.
 
 `address` is required and is exactly one wallet. An EVM address is `0x` plus 40 hex digits. A base58 Solana address passes validation but has no chain behind it yet, so it answers 200 with an empty `data`. A non-200 body is an error, not an empty wallet.
 
 ## Parameters
 
-Re-read the OpenAPI spec when a request is rejected. These are query parameters on the URL. The chain set lives on the `chains` parameter.
+Re-read the OpenAPI spec when a request is rejected. These are query parameters on the URL. The wallet feeds' chain set lives on the `chains` parameter; `/feeds/tokens` names its chain inside each `tokens` pair.
 
 - Omit `chains` to query every supported chain. Pass canonical slugs, comma-separated. `matic`, `arbitrum`, and `mainnet` are aliases for `polygon`, `arbitrum_one`, and `ethereum`. Matching is case-insensitive, and `-` is read as `_`. Any other spelling returns 400.
 - `token_symbol` matches a symbol, so two contracts can both match — `usdc` returns both the native and the bridged contract on several chains at once. Use `token_address` when the token must be a specific contract; it takes up to 100, comma-separated. On balances, the zero address selects the native asset of every chain in scope.
