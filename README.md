@@ -88,7 +88,7 @@ cp -r goldsky-agent/skills/* .cursor/skills/    # Cursor
 | Migrate a subgraph from The Graph                  | `/subgraph-migrate` |
 | Get a fast, reliable RPC endpoint                  | `/edge`             |
 | Cut the bill from your existing RPC provider       | `/boost`            |
-| Look up wallet balances, transfers, token prices   | `/feeds`            |
+| Query wallets, tokens, Polymarket, blocks (REST)   | `/feeds`            |
 | Find the right dataset name                        | `/datasets`         |
 | Look up Turbo YAML syntax                          | `/turbo-pipelines`  |
 | Set up the CLI and log in                          | `/auth-setup`       |
@@ -201,11 +201,11 @@ Globally distributed, low-latency JSON-RPC for EVM chains, built on eRPC — a d
 
 ### Feeds
 
-Ready-made wallet balances and transfers, plus metadata and current USD prices for up to 100 tokens per request. Get the key with `goldsky feeds key reveal`, then call the feeds over HTTP. Do not use the CLI login token.
+Ready-made onchain data over a REST API: one wallet's balances and transfers; metadata and current USD prices for up to 100 tokens per request; Prediction markets (Polymarket activity, positions and balances); and Network datasets (block headers by number, hash or timestamp, and each chain's head). Edge Data / Data APIs is now part of Feeds, with the same URLs and keys. One Feeds API key serves every feed: get it with `goldsky feeds key reveal` (or Feeds → API keys in the dashboard), then call the feeds over HTTP. Do not use the CLI login token. Callers without an account can pay per request with x402.
 
 | Skill | When to use | What's inside |
 | ----- | ----------- | ------------- |
-| `feeds` | "what does this wallet hold", "show its transfers", "what is this token worth", "Feeds API key" | `goldsky feeds key reveal`, the balances, transfers and tokens calls, and the parameters that differ from Turbo |
+| `feeds` | "what does this wallet hold", "show its transfers", "what is this token worth", "this wallet's Polymarket positions", "which block was at this timestamp", "Feeds API key", "x402" | `goldsky feeds key reveal`, every feed's call and key parameters, pagination per family, pricing, and x402 pay-per-request |
 
 ### Cross-cutting
 
@@ -305,7 +305,7 @@ The skills cover the Goldsky data products:
 - **Subgraphs** — Author/build/deploy (`subgraph-builder`: schema design, AssemblyScript mappings, manifest, instant subgraphs, performance, testing, endpoints/tags/webhooks); interactive diagnosis (`subgraph-doctor`); guided migration from The Graph (`subgraph-migrate`)
 - **Edge RPC** — Capabilities, supported chains, hedged requests, flashblocks, x402, error code lookups
 - **Boost** — Free CDN in front of the RPC provider you already pay for; cacheable reads served from Goldsky, everything else forwarded free
-- **Feeds** — REST API for one wallet's balances and transfers, and for token metadata and prices
+- **Feeds** — REST API for one wallet's balances and transfers, token metadata and prices, Polymarket activity, positions and balances, and block headers and chain head (formerly Edge Data / Data APIs); one key or x402 pay-per-request
 - **Cross-cutting** — Authentication, secrets, dataset naming, full CLI reference
 
 ## MCP Server

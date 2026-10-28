@@ -59,7 +59,7 @@ jq --arg version "$version" '{
           "Build and deploy Turbo pipelines",
           "Build, deploy, and debug subgraphs",
           "Set up Edge and Boost RPC endpoints",
-          "Query wallet balances, transfers, and token prices"
+          "Query wallets, tokens, Polymarket, and blocks with Feeds"
         ],
         websiteURL: .homepage,
         supportURL: .supportUrl,

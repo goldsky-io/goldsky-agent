@@ -1,0 +1,17 @@
+[
+  {"query": "what tokens does 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045 hold right now and what are they worth in USD?", "should_trigger": true},
+  {"query": "show me the last 50 transfers in and out of this wallet across ethereum and base", "should_trigger": true},
+  {"query": "get the symbol, decimals and current USD price for these 30 token addresses on base and arbitrum", "should_trigger": true},
+  {"query": "what are this wallet's open Polymarket positions and its realized PnL?", "should_trigger": true},
+  {"query": "pull a wallet's recent Polymarket trades so i can show them in our app", "should_trigger": true},
+  {"query": "which block on base was at unix timestamp 1767225600?", "should_trigger": true},
+  {"query": "how far behind is goldsky's ethereum chain head, is the data fresh?", "should_trigger": true},
+  {"query": "we used the Edge Data / Data APIs polymarket endpoints, are those URLs and keys still valid now that it's called Feeds?", "should_trigger": true},
+  {"query": "can my agent call the feeds API without an account by paying with x402, and what does each request cost?", "should_trigger": true},
+  {"query": "where do i get a Feeds API key, and do i send it as a header or a query param?", "should_trigger": true},
+  {"query": "i need every Polymarket fill and position streamed into our postgres so the quant team can compute PnL, full history too", "should_trigger": false},
+  {"query": "what's the turbo dataset name for polygon blocks? matic.blocks?", "should_trigger": false},
+  {"query": "eth_getBlockByNumber keeps returning -32005 on my Goldsky Edge endpoint", "should_trigger": false},
+  {"query": "cut my Alchemy bill by caching eth_getLogs without switching providers", "should_trigger": false},
+  {"query": "my subgraph indexing polymarket stopped syncing at block 60000000", "should_trigger": false}
+]

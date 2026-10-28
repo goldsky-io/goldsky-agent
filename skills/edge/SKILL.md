@@ -1,6 +1,6 @@
 ---
 name: edge
-description: "Configure and troubleshoot Goldsky Edge, Goldsky's managed EVM RPC endpoint service. Use for Edge RPC, Goldsky RPC endpoints, edge.goldsky.com, slow eth_getLogs, rate limits, hedged requests, flashblocks, HyperEVM system transactions, x402 pay-per-request RPC, pricing, the Edge dashboard, gs_edge_ keys, rpc-edge, and errors -32005/-32012/-32014/-32015/-32016. Covers resilient low-latency EVM endpoints and provider comparisons. For self-hosted eRPC configuration, consult docs.erpc.cloud/llms.txt. To keep an existing provider and reduce its bill through caching, or for x-cache / x-edge-billable / goldsky boost, use /boost. Pipeline and Subgraph questions have separate skills."
+description: "Configure and troubleshoot Goldsky Edge, Goldsky's managed EVM RPC endpoint service. Use for Edge RPC, Goldsky RPC endpoints, edge.goldsky.com, slow eth_getLogs, rate limits, hedged requests, flashblocks, HyperEVM system transactions, x402 pay-per-request RPC, pricing, the Edge dashboard, gs_edge_ keys, rpc-edge, and errors -32005/-32012/-32014/-32015/-32016. Covers resilient low-latency EVM endpoints and provider comparisons. For self-hosted eRPC configuration, consult docs.erpc.cloud/llms.txt. To keep an existing provider and reduce its bill through caching, or for x-cache / x-edge-billable / goldsky boost, use /boost. REST reads under edge.goldsky.com/data (Feeds: wallets, tokens, Polymarket, blocks; formerly Edge Data / Data APIs) are /feeds. Pipeline and Subgraph questions have separate skills."
 ---
 
 # Goldsky Edge (RPC Endpoints)
@@ -245,6 +245,8 @@ They share the `edge.goldsky.com` host and get confused constantly:
 - **Boost** (`/boost`) is a free CDN in front of the provider the user **already has**. Cacheable reads come from Goldsky's indexed data; everything else forwards to their endpoint unchanged. Only genesis-covered chains, HTTP only, Goldsky-managed rate limits.
 
 "I want to spend less with Alchemy" is Boost. "I want to stop using Alchemy" is Edge. A user can also point Boost's upstream at an Edge endpoint.
+
+A third product shares the host: **Feeds** (`/feeds`), the REST API under `https://edge.goldsky.com/data` (wallet transfers and balances, tokens, Polymarket activity, positions and balances, block headers and chain head). It was formerly called Edge Data or Data APIs; the URLs and keys did not change. It is not JSON-RPC and does not take an Edge secret. It takes a Feeds API key, or x402 at Feeds prices. The block at a timestamp, or a wallet's Polymarket positions, is one Feeds request; use `/feeds` there rather than a loop of RPC calls.
 
 ## Goldsky Documentation Links
 
