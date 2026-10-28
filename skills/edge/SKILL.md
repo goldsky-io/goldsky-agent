@@ -1,6 +1,6 @@
 ---
 name: edge
-description: "Configure and troubleshoot Goldsky Edge, Goldsky's managed EVM RPC endpoint service. Use for Edge RPC, Goldsky RPC endpoints, edge.goldsky.com, slow eth_getLogs, rate limits, hedged requests, flashblocks, HyperEVM system transactions, x402 pay-per-request RPC, pricing, the Edge dashboard, gs_edge_ keys, rpc-edge, and errors -32005/-32012/-32014/-32015/-32016. Covers resilient low-latency EVM endpoints and provider comparisons. For self-hosted eRPC configuration, consult docs.erpc.cloud/llms.txt. To keep an existing provider and reduce its bill through caching, or for x-cache / x-edge-billable / goldsky boost, use /boost. Pipeline and Subgraph questions have separate skills."
+description: "Configure and troubleshoot Goldsky Edge, Goldsky's managed EVM RPC endpoint service. Use for Edge RPC, Goldsky RPC endpoints, edge.goldsky.com, slow eth_getLogs, rate limits, hedged requests, flashblocks, HyperEVM system transactions, x402 pay-per-request RPC, pricing, the Edge dashboard, gs_edge_ keys, rpc-edge, and errors -32005/-32012/-32014/-32015/-32016. Covers resilient low-latency EVM endpoints and provider comparisons. For self-hosted eRPC configuration, consult docs.erpc.cloud/llms.txt. To keep an existing provider and reduce its bill through caching, or for x-cache / x-edge-billable / goldsky boost, use /boost. REST reads under edge.goldsky.com/data (Feeds: wallets, tokens, Polymarket, blocks; formerly Edge Data / Data APIs) are /feeds. Pipeline and Subgraph questions have separate skills."
 ---
 
 # Goldsky Edge (RPC Endpoints)
@@ -32,7 +32,7 @@ Replace `{chainId}` with the chain ID (e.g., `1` for Ethereum, `8453` for Base, 
 Three options:
 - **Header (recommended)**: `X-ERPC-Secret-Token: YOUR_SECRET` — keeps the secret out of URLs, which are commonly logged by proxies, CDNs, and server access logs.
 - **Query parameter**: `?secret=YOUR_SECRET` — convenient for quick tests, but the secret leaks into any log that records the full URL. Prefer the header for production traffic. The examples below use the query param for brevity.
-- **x402 (pay-per-request)**: Clients without a secret receive an HTTP 402 response with payment requirements. An x402-compatible client signs a USDC payment and retries; Edge settles via a facilitator before forwarding the request upstream. Payment is settled on **Base** (chain `8453`) in USDC. Pricing is `$0.000005` per request (same as the standard `$5 per million` rate). See https://www.x402.org/ for the protocol spec.
+- **x402 (pay-per-request)**: Clients without a secret receive an HTTP 402 response with an x402 v2 challenge (`PAYMENT-REQUIRED` header). Payment is USDC funded through **Circle Gateway** (deposit once on Ethereum, Base, Arbitrum, Optimism, Polygon, Avalanche, Unichain, Sonic, World Chain, Sei, HyperEVM or Arc). The challenge asks for a `$0.005` top-up (5000 atomic USDC) that credits a prepaid balance for the paying wallet; each call then costs `$0.000005` (5 atomic USDC, the standard `$5 per million` rate) and is deducted from that balance without a settlement per call. The same balance pays for Feeds requests. Responses carry `x-goldsky-x402-funding` and `x-goldsky-x402-balance`. See https://docs.goldsky.com/edge-rpc/capabilities/x402 for the client setup and https://www.x402.org/ for the protocol spec.
 
 ### Example (curl)
 
@@ -245,6 +245,8 @@ They share the `edge.goldsky.com` host and get confused constantly:
 - **Boost** (`/boost`) is a free CDN in front of the provider the user **already has**. Cacheable reads come from Goldsky's indexed data; everything else forwards to their endpoint unchanged. Only genesis-covered chains, HTTP only, Goldsky-managed rate limits.
 
 "I want to spend less with Alchemy" is Boost. "I want to stop using Alchemy" is Edge. A user can also point Boost's upstream at an Edge endpoint.
+
+A third product shares the host: **Feeds** (`/feeds`), the REST API under `https://edge.goldsky.com/data` (wallet transfers and balances, tokens, Polymarket activity, positions and balances, block headers and chain head). It was formerly called Edge Data or Data APIs; the URLs and keys did not change. It is not JSON-RPC and does not take an Edge secret. It takes a Feeds API key, or x402 at Feeds prices. The block at a timestamp, or a wallet's Polymarket positions, is one Feeds request; use `/feeds` there rather than a loop of RPC calls.
 
 ## Goldsky Documentation Links
 

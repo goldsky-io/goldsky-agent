@@ -26,7 +26,7 @@ _Legacy streaming product — prefer Turbo for new pipelines unless you need a s
 - **boost** - Free CDN in front of an RPC provider you already pay for; cacheable reads served from Goldsky's data, everything else forwarded free
 
 ### Feeds
-- **feeds** - One wallet's balances and transfers, and metadata and current USD prices for up to 100 tokens per request, over HTTP, with the key from `goldsky feeds key reveal`. The Feeds key is not the CLI login token
+- **feeds** - One wallet's balances and transfers, metadata and current USD prices for up to 100 tokens per request, Polymarket activity, positions and balances, and block headers and chain head, over HTTP, with the key from `goldsky feeds key reveal` or x402 pay-per-request. Formerly Edge Data / Data APIs. The Feeds key is not the CLI login token
 
 ### Cross-cutting
 - **datasets** - Chain prefixes, dataset types, 130+ chains

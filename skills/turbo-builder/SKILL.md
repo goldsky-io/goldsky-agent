@@ -10,7 +10,7 @@ description: "Build and deploy new Goldsky Turbo pipelines: requirements, datase
 - Build NEW pipelines. Do not diagnose broken pipelines — that belongs to `/turbo-doctor`.
 - Do not serve as a YAML reference. If the user only needs to look up a field or syntax, use the `/turbo-pipelines` skill instead.
 - For dataset lookups, use `/datasets`.
-- A REST lookup of one wallet's balances or transfers is `/feeds`. Build a pipeline only when the rows need to land in the user's own database or webhook.
+- A REST lookup of one wallet's balances or transfers, token prices, a wallet's Polymarket activity, positions or balances, or a block by number, hash or timestamp is `/feeds`. Build a pipeline only when the rows need to land in the user's own database or webhook.
 
 Walk the user through building a complete pipeline from scratch, step by step. Generate a valid YAML configuration, validate it, and deploy it.
 
