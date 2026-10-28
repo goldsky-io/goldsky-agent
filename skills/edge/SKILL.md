@@ -32,7 +32,7 @@ Replace `{chainId}` with the chain ID (e.g., `1` for Ethereum, `8453` for Base, 
 Three options:
 - **Header (recommended)**: `X-ERPC-Secret-Token: YOUR_SECRET` — keeps the secret out of URLs, which are commonly logged by proxies, CDNs, and server access logs.
 - **Query parameter**: `?secret=YOUR_SECRET` — convenient for quick tests, but the secret leaks into any log that records the full URL. Prefer the header for production traffic. The examples below use the query param for brevity.
-- **x402 (pay-per-request)**: Clients without a secret receive an HTTP 402 response with payment requirements. An x402-compatible client signs a USDC payment and retries; Edge settles via a facilitator before forwarding the request upstream. Payment is settled on **Base** (chain `8453`) in USDC. Pricing is `$0.000005` per request (same as the standard `$5 per million` rate). See https://www.x402.org/ for the protocol spec.
+- **x402 (pay-per-request)**: Clients without a secret receive an HTTP 402 response with an x402 v2 challenge (`PAYMENT-REQUIRED` header). Payment is USDC funded through **Circle Gateway** (deposit once on Ethereum, Base, Arbitrum, Optimism, Polygon, Avalanche, Unichain, Sonic, World Chain, Sei, HyperEVM or Arc). The challenge asks for a `$0.005` top-up (5000 atomic USDC) that credits a prepaid balance for the paying wallet; each call then costs `$0.000005` (5 atomic USDC, the standard `$5 per million` rate) and is deducted from that balance without a settlement per call. The same balance pays for Feeds requests. Responses carry `x-goldsky-x402-funding` and `x-goldsky-x402-balance`. See https://docs.goldsky.com/edge-rpc/capabilities/x402 for the client setup and https://www.x402.org/ for the protocol spec.
 
 ### Example (curl)
 
