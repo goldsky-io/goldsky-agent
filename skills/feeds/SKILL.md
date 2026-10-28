@@ -132,7 +132,7 @@ Read the OpenAPI spec before calling one, because the wallet feeds' conventions 
 
 ## Pricing
 
-Every feed bills on one meter: $10 per million compute units (CUs). Errors and empty results cost nothing. The full table is https://docs.goldsky.com/pricing/summary#feeds.
+Every feed bills on one meter: $10 per million compute units (CUs). Errors cost nothing, and so does a Prediction markets or Blocks request that returns no rows (those bill per row). The wallet feeds and Tokens bill 35 CUs per request even when the result is empty. The full table is https://docs.goldsky.com/pricing/summary#feeds.
 
 - **Wallet Transfers, wallet Balances, Tokens:** 35 CUs per request ($350 per million requests), whatever the page size or the number of tokens.
 - **Prediction markets and Network datasets:** 1 CU per row returned ($10 per million rows). Chain head is 1 CU per call. Set `limit` to the rows the user needs: a left-out `limit` returns up to 100 rows, and each one bills.
