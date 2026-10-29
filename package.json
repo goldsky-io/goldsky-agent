@@ -1,6 +1,6 @@
 {
   "name": "@goldsky/agent-skills",
-  "version": "1.8.2",
+  "version": "1.8.3",
   "description": "AI-powered tools for streaming real-time blockchain data. Build, deploy, and debug Turbo pipelines.",
   "keywords": [
     "goldsky",
