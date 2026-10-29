@@ -139,12 +139,12 @@ Every feed bills on one meter: $10 per million compute units (CUs). Errors cost 
 
 ## Pay per request with x402
 
-Every feed can also be called with no Goldsky account and no key, paying per request with x402 in USDC through Circle Gateway. A keyless request answers `402` with a `PAYMENT-REQUIRED` header: a base64 JSON x402 v2 challenge (`scheme: exact`) that accepts USDC on Ethereum, Base, Avalanche, Arbitrum, Optimism, Polygon and more through Circle Gateway.
+Every feed can also be called with no Goldsky account and no key, paying per request with x402 in USDC. A keyless request answers `402` with a `PAYMENT-REQUIRED` header: a base64 JSON x402 v2 challenge (`scheme: exact`) listing two ways to pay. Edge lists its CDP entries first, so a **standard USDC payment settled through the Coinbase CDP facilitator** (Base, Polygon, Arbitrum, World Chain, Monad) is what a standard v2 client (`@x402/fetch`, not the legacy `x402-fetch`) pays by default, no deposit and no extra configuration. **Circle Gateway** accepts USDC on Ethereum, Base, Avalanche, Arbitrum, Optimism, Polygon and more, funded by a one-time deposit; Circle's `GatewayClient` selects it explicitly by `extra.name === "GatewayWalletBatched"`.
 
 - **Wallet Transfers, wallet Balances, Tokens:** 350 atomic USDC ($0.00035) per request.
 - **Prediction markets and Network datasets:** 10 atomic USDC ($0.00001) per request, flat, whatever the row count.
 
-Each payment is a $0.005 (5000 atomic USDC) top-up that later requests spend down: about 14 wallet or Tokens requests, or about 500 Prediction markets or Network datasets requests. The balance belongs to the paying wallet and is shared with Edge RPC's x402. Do not write the payment flow from this summary; follow https://docs.goldsky.com/edge-rpc/capabilities/x402 and the x402 section of https://docs.goldsky.com/feeds/api/overview. A user who has a Goldsky project should send the Feeds key instead.
+Each payment is a $0.005 (5000 atomic USDC) top-up that later requests spend down: about 14 wallet or Tokens requests, or about 500 Prediction markets or Network datasets requests. This applies to either payment option. The balance belongs to the paying wallet and is shared with Edge RPC's x402. Do not write the payment flow from this summary; follow https://docs.goldsky.com/edge-rpc/capabilities/x402 and the x402 section of https://docs.goldsky.com/feeds/api/overview. A user who has a Goldsky project should send the Feeds key instead.
 
 ## Writing code against a response
 
