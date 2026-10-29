@@ -139,7 +139,7 @@ Every feed bills on one meter: $10 per million compute units (CUs). Errors cost 
 
 ## Pay per request with x402
 
-Every feed can also be called with no Goldsky account and no key, paying per request with x402 in USDC. A keyless request answers `402` with a `PAYMENT-REQUIRED` header: a base64 JSON x402 v2 challenge (`scheme: exact`) listing two ways to pay. **Circle Gateway** accepts USDC on Ethereum, Base, Avalanche, Arbitrum, Optimism, Polygon and more, funded by a one-time deposit. A **standard USDC payment settled through the Coinbase CDP facilitator** (Base, Polygon, Arbitrum, World Chain, Monad) needs no deposit: an unmodified x402 client, such as the CDP SDK or `x402-fetch`, signs against the USDC token's own EIP-712 domain and pays directly. The CDP option is off by default and not yet enabled in production.
+Every feed can also be called with no Goldsky account and no key, paying per request with x402 in USDC. A keyless request answers `402` with a `PAYMENT-REQUIRED` header: a base64 JSON x402 v2 challenge (`scheme: exact`) listing two ways to pay. **Circle Gateway** accepts USDC on Ethereum, Base, Avalanche, Arbitrum, Optimism, Polygon and more, funded by a one-time deposit. A **standard USDC payment settled through the Coinbase CDP facilitator** (Base, Polygon, Arbitrum, World Chain, Monad) needs no deposit: an unmodified x402 client, such as the CDP SDK or `x402-fetch`, signs against the USDC token's own EIP-712 domain and pays directly.
 
 - **Wallet Transfers, wallet Balances, Tokens:** 350 atomic USDC ($0.00035) per request.
 - **Prediction markets and Network datasets:** 10 atomic USDC ($0.00001) per request, flat, whatever the row count.
