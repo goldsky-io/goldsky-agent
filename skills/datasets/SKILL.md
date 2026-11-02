@@ -1,11 +1,13 @@
 ---
 name: datasets
-description: "Use this skill when the user needs to look up or verify Goldsky blockchain dataset names, chain prefixes, dataset types, or versions. Triggers on questions like 'what\\'s the dataset name for X?', 'what prefix does Goldsky use for chain Y?', 'what version should I use for Z?', or 'what datasets are available for Solana/Stellar/Arbitrum/etc?'. Also use for chain-specific dataset questions (e.g., polygon vs matic prefix, stellarnet balance datasets, solana token transfer dataset names), and to answer 'is there a dataset for X?' where X is a domain rather than a chain — decoded logs, token transfers and balances, mint/burn events for circulating supply, DEX or prediction-market activity (Polymarket), or the raw blocks, transactions and traces behind wallet history and reconciliation. Do NOT trigger for questions about CLI commands, pipeline setup, or general Goldsky architecture unless the core question is about finding the right dataset name or chain prefix. Wallet Feeds API queries are /feeds."
+description: "Use this skill when the user needs to look up or verify Goldsky blockchain dataset names, chain prefixes, dataset types, or versions. Triggers on questions like 'what\\'s the dataset name for X?', 'what prefix does Goldsky use for chain Y?', 'what version should I use for Z?', or 'what datasets are available for Solana/Stellar/Arbitrum/etc?'. Also use for chain-specific dataset questions (e.g., polygon vs matic prefix, stellarnet balance datasets, solana token transfer dataset names), and to answer 'is there a dataset for X?' where X is a domain rather than a chain — decoded logs, token transfers and balances, mint/burn events for circulating supply, DEX or prediction-market activity (Polymarket), or the raw blocks, transactions and traces behind wallet history and reconciliation. Do NOT trigger for questions about CLI commands, pipeline setup, or general Goldsky architecture unless the core question is about finding the right dataset name or chain prefix. Feeds REST queries (Polymarket, blocks) are /feeds."
 ---
 
 # Goldsky Dataset Reference
 
 Reference tables for blockchain datasets available in Turbo pipelines.
+
+These are Turbo (and Mirror) source datasets. Feeds' "Prediction markets" and "Network datasets" (Polymarket activity, positions and balances; block headers and chain head) are a REST API read with a Feeds key, not datasets a pipeline sources from. Questions about calling them are `/feeds`.
 
 For quick dataset questions (e.g., "what dataset for Solana transfers?"), answer directly: identify the chain prefix (see Popular Chain Prefixes below), identify the dataset type (see Common Datasets), and return a YAML snippet like:
 
