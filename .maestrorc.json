@@ -1,0 +1,4 @@
+{
+  "review": { "external_prs": true },
+  "security": { "trusted_author_associations": ["OWNER", "MEMBER", "COLLABORATOR"] }
+}
