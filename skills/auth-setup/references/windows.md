@@ -19,6 +19,6 @@ wsl.exe --distribution Ubuntu-24.04 --exec bash -ec 'export PATH="$HOME/.local/b
 if ($LASTEXITCODE -ne 0) { throw 'Goldsky verification failed' }
 ```
 
-Check each required command's exit status separately when diagnosing a failure; do not treat the last successful command as proof of the preceding ones. Run `goldsky login` yourself in that same WSL distribution, with the PATH above, and leave it running. Logging in through a native Windows installation does not authenticate the Linux installation.
+Check each required command's exit status separately when diagnosing a failure; do not treat the last successful command as proof of the preceding ones. Run `goldsky login` yourself in that same WSL distribution, with the PATH above, in the background as in SKILL.md Step 3. Logging in through a native Windows installation does not authenticate the Linux installation.
 
 If the agent already runs inside WSL, use `bash scripts/install.sh` from this skill directly. A native PowerShell session without WSL cannot currently install the complete toolset; report the missing prerequisite instead of claiming system-wide support.

@@ -60,9 +60,33 @@ goldsky project list 2>&1
 
 **Never handle the user's API token in the chat.** A token pasted into the conversation ends up in the transcript and is sent to the model. Do not ask for one, and do not pass `--token`.
 
-Run `goldsky login` yourself, with PATH restored, and leave it running for up to 5 minutes. It prints a URL, opens the browser, and writes the token to disk. The token is not printed. The user only approves the login in that browser, on this same machine. Creating an account or choosing a project happens there too. If the browser does not open, open the printed URL yourself. Give the user that URL only when you cannot open a browser.
+Start `goldsky login` yourself in the background with its output going to a file, with PATH restored. Never run it in the foreground, under `timeout`, or piped through `tail`/`head`: the output is held back, the login URL stays hidden until the command ends, and the spinner frames bury it.
 
-If this host kills the command before login finishes, run it again. Hand the user the command only when you have no shell. Then verify (Step 4).
+```bash
+export PATH="$HOME/.local/bin:$HOME/.goldsky/bin:$PATH"
+nohup goldsky login > /tmp/goldsky-login.log 2>&1 &
+sleep 3
+grep -o 'https\?://[^[:space:]]*' /tmp/goldsky-login.log | head -1
+```
+
+`goldsky login` starts a listener on `127.0.0.1` (random port), prints the login URL on its first lines, opens the browser, and waits up to 5 minutes for the browser to call back. The token is written to `~/.goldsky/auth_token` and is not printed. Because the callback is to `127.0.0.1`, the browser must run on the same machine as the CLI. If the URL is not in the file yet, wait a few more seconds and read it again.
+
+Show the user the URL right away, even if a browser window opened, and tell them to approve the login there. Creating an account or choosing a project happens in that browser too. Do not wait silently. Pass `--no-browser` when the host has no browser to open; it only skips the auto-open and still prints the URL.
+
+Then poll for completion instead of waiting on the login process, for example every 5 seconds for up to 5 minutes:
+
+```bash
+goldsky project list 2>&1
+```
+
+Login is done when `goldsky project list` succeeds (Step 4). If the login process exits first, read `/tmp/goldsky-login.log` for the error (`Timed out waiting for login`, `State mismatch`) and start it again for a fresh URL; an old URL does not work after the process exits.
+
+**If the login cannot complete** (headless host, a remote machine whose browser cannot reach `127.0.0.1` here, or the user does not reply within the 5 minutes): stop waiting, kill the background login, and do not report setup complete. Tell the user the two ways to finish themselves:
+
+1. Run `goldsky login` in their own terminal on the machine that has the browser, then tell you it is done so you can re-run `goldsky project list`.
+2. Create a project API key in the dashboard (Settings, API Keys) and export it in their own shell, outside this chat: `export GOLDSKY_API_TOKEN=<key>`. The Compose CLI reads it directly (`--token` > `GOLDSKY_API_TOKEN` > the `goldsky login` token), the same as `/compose` uses with `-t "$GOLDSKY_API_TOKEN"`. For the full `goldsky` CLI, they can persist it with `goldsky login --token "$GOLDSKY_API_TOKEN"` in that same shell.
+
+Either way the key stays in their shell. Never ask them to paste it into the chat, and never pass a token literal yourself.
 
 ### Step 4: Verify Login
 
@@ -79,7 +103,7 @@ goldsky project list
 - `Make sure to run 'goldsky login'` still appears
 - `invalid token` or `unauthorized`
 
-If verification fails, run `goldsky login` again.
+If verification fails, start `goldsky login` again in the background as in Step 3.
 
 ## Completion Summary
 
@@ -110,7 +134,7 @@ If they have not said what they are trying to do, ask, and suggest only jobs the
 
 | Command                        | Purpose                         | Key Flags               |
 | ------------------------------ | ------------------------------- | ----------------------- |
-| `goldsky login`                | Authenticate with Goldsky       | Opens the browser. Do not pass `--token` |
+| `goldsky login`                | Authenticate with Goldsky       | Run in the background. `--no-browser` prints the URL only. Do not pass `--token` yourself |
 | `goldsky logout`               | Remove local credentials        |                         |
 | `goldsky project list`         | List all projects you belong to |                         |
 | `goldsky project create`       | Create a new project            | `--name` (required)     |
@@ -156,7 +180,7 @@ goldsky login
 | ----------------- | ------------------------------------------------------ |
 | Installer asks for confirmation or sudo | Use the bundled installer. It installs into `$HOME/.local` with npm and does not use sudo. Do not retry with sudo or a remote shell script |
 | `turbo` or `compose` is missing or cannot run | Re-run the bundled installer for that component. If `goldsky turbo install` is not a command, stop. Do not curl an installer |
-| Not logged in     | Run `goldsky login` yourself and leave it running until the browser login finishes |
+| Not logged in     | Start `goldsky login` in the background, show the user the URL, poll `goldsky project list`. If it cannot complete, see Step 3 |
 | Invalid token     | Run `goldsky login` again. Do not ask for a token      |
 | Permission denied | User needs role upgrade from project Owner/Admin       |
 | Session expired   | Run `goldsky login` again                                  |
