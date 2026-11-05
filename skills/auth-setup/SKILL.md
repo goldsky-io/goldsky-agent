@@ -11,7 +11,7 @@ Set up the Goldsky CLI, authenticate your account, and configure projects for yo
 
 - [ ] macOS, Linux, or Windows with WSL (see Step 1 for binary compatibility)
 - [ ] Internet connection
-- [ ] A Goldsky account. Creating one happens in the browser during Step 3. Do not send the user to sign up as a separate step.
+- [ ] A Goldsky account. Creating one happens in the browser during Step 3. Do not send the user to sign up as a separate step. New users can also sign up at https://app.goldsky.com/signup.
 
 ## Authentication Workflow
 
