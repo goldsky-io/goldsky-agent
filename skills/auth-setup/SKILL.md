@@ -54,7 +54,7 @@ goldsky project list 2>&1
 
 **Already logged in:** Output shows a table with project IDs and Names. Skip to Step 4.
 
-**Not logged in:** Output contains `Make sure to run 'goldsky login'`. Continue to Step 3.
+**Not logged in:** Output contains `Make sure to run 'goldsky login'`. Continue to Step 3, unless you only came here to install a component for another skill's build task: scaffolding and running locally need no login, so return to that task and log in later, when a command needs it (deploy, `deployContract`, `secret set`).
 
 ### Step 3: Log in
 
