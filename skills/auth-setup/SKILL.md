@@ -81,12 +81,12 @@ goldsky project list 2>&1
 
 Login is done when `goldsky project list` succeeds (Step 4). If the login process exits first, read `/tmp/goldsky-login.log` for the error (`Timed out waiting for login`, `State mismatch`) and start it again for a fresh URL; an old URL does not work after the process exits.
 
-**If the login cannot complete** (headless host, a remote machine whose browser cannot reach `127.0.0.1` here, or the user does not reply within the 5 minutes): stop waiting, kill the background login, and do not report setup complete. Tell the user the two ways to finish themselves:
+**If the login cannot complete** (headless host, a remote machine whose browser cannot reach `127.0.0.1` here, or the user does not reply within the 5 minutes): stop waiting, kill the background login, and do not report setup complete. The credentials must land in the environment this agent runs in, so tell the user one of these:
 
-1. Run `goldsky login` in their own terminal on the machine that has the browser, then tell you it is done so you can re-run `goldsky project list`.
-2. Create a project API key in the dashboard (Settings, API Keys) and export it in their own shell, outside this chat: `export GOLDSKY_API_TOKEN=<key>`. The Compose CLI reads it directly (`--token` > `GOLDSKY_API_TOKEN` > the `goldsky login` token), the same as `/compose` uses with `-t "$GOLDSKY_API_TOKEN"`. For the full `goldsky` CLI, they can persist it with `goldsky login --token "$GOLDSKY_API_TOKEN"` in that same shell.
+1. If the agent runs on their own machine: run `goldsky login` in a terminal there, as the same user, then tell you it is done so you can re-run `goldsky project list`.
+2. Otherwise: create a project API key in the dashboard (Settings, API Keys), then either run `goldsky login --token <key>` in a terminal they control on the agent's host, as the agent's user (it writes `~/.goldsky/auth_token` for that user), or set `GOLDSKY_API_TOKEN` in the agent's environment and restart the agent session. The Compose CLI reads it directly (`--token` > `GOLDSKY_API_TOKEN` > the `goldsky login` token), the same as `/compose` uses with `-t "$GOLDSKY_API_TOKEN"`.
 
-Either way the key stays in their shell. Never ask them to paste it into the chat, and never pass a token literal yourself.
+Then re-run `goldsky project list`. A login on a different machine, or a variable exported in a separate shell, does not reach this agent. Never ask them to paste the key into the chat, and never pass a token literal yourself.
 
 ### Step 4: Verify Login
 
